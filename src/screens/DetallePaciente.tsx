@@ -43,7 +43,13 @@ export default function DetallePaciente({ route, navigation }: Props) {
   } = usePacientes();
   const paciente = obtenerPaciente(pacienteId);
   const { consultorio } = useConsultorio();
-  const [pestana, setPestana] = useState<Pestana>('odontograma');
+  const [pestanaLocal, setPestanaLocal] = useState<Pestana>('odontograma');
+  const pestana = route.params.pestana ?? pestanaLocal;
+
+  const cambiarPestana = (siguiente: Pestana) => {
+    setPestanaLocal(siguiente);
+    if (route.params.pestana) navigation.setParams({ pestana: undefined });
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -111,7 +117,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
                   key={opcion.valor}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: activa }}
-                  onPress={() => setPestana(opcion.valor)}
+                  onPress={() => cambiarPestana(opcion.valor)}
                   style={({ pressed }) => [
                     styles.chipPestana,
                     activa && styles.chipPestanaActivo,

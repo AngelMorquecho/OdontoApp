@@ -7,6 +7,8 @@ interface Opcion<T extends string> {
   valor: T;
   etiqueta: string;
   icono?: keyof typeof MaterialCommunityIcons.glyphMap;
+  color?: string;
+  fondo?: string;
 }
 
 interface Props<T extends string> {
@@ -34,7 +36,11 @@ export default function SegmentedControl<T extends string>({
             key={opcion.valor}
             style={({ pressed }) => [
               styles.segmento,
-              activo && styles.segmentoActivo,
+              activo && (opcion.color ? styles.segmentoEstadoActivo : styles.segmentoActivo),
+              opcion.fondo && { backgroundColor: opcion.fondo },
+              opcion.color && {
+                borderColor: activo ? opcion.color : opcion.fondo ?? opcion.color,
+              },
               pressed && styles.presionado,
             ]}
             onPress={() => onSeleccionar(opcion.valor)}
@@ -45,13 +51,17 @@ export default function SegmentedControl<T extends string>({
               <MaterialCommunityIcons
                 name={opcion.icono}
                 size={16}
-                color={activo ? colors.surface : colors.textSecondary}
+                color={opcion.color ?? (activo ? colors.surface : colors.textSecondary)}
               />
             )}
             <Text
               numberOfLines={1}
               adjustsFontSizeToFit={true}
-              style={[styles.texto, activo && styles.textoActivo]}
+              style={[
+                styles.texto,
+                activo && !opcion.color && styles.textoActivo,
+                opcion.color && { color: opcion.color },
+              ]}
             >
               {opcion.etiqueta}
             </Text>
@@ -85,6 +95,9 @@ const styles = StyleSheet.create({
   segmentoActivo: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    ...shadows.sm,
+  },
+  segmentoEstadoActivo: {
     ...shadows.sm,
   },
   texto: {

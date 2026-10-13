@@ -9,7 +9,7 @@ export type RootStackParamList = {
   AgendarCita: { pacienteId?: string } | undefined;
   CrearReceta: { pacienteId: string };
   Ajustes: { seccion?: 'respaldo' } | undefined;
-  DetallePaciente: { pacienteId: string };
+  DetallePaciente: { pacienteId: string; pestana?: 'odontograma' | 'notas' };
   AgregarPaciente: undefined;
 };
 

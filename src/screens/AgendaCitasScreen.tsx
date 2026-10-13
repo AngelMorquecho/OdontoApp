@@ -27,10 +27,10 @@ const ESTATUS: {
   color: string;
   fondo: string;
 }[] = [
-  { valor: 'programada', etiqueta: 'Programadas', icono: 'calendar-check-outline', color: '#059669', fondo: '#D1FAE5' },
+  { valor: 'programada', etiqueta: 'Programadas', icono: 'calendar-check-outline', color: '#0284C7', fondo: '#E0F2FE' },
   { valor: 'pospuesta', etiqueta: 'Pospuestas', icono: 'calendar-clock-outline', color: '#D97706', fondo: '#FEF3C7' },
-  { valor: 'completada', etiqueta: 'Completadas', icono: 'check-circle-outline', color: colors.primary, fondo: colors.primaryLight },
-  { valor: 'cancelada', etiqueta: 'Canceladas', icono: 'calendar-remove-outline', color: colors.danger, fondo: '#FEE2E2' },
+  { valor: 'completada', etiqueta: 'Completadas', icono: 'check-circle-outline', color: '#15803D', fondo: '#DCFCE7' },
+  { valor: 'cancelada', etiqueta: 'Canceladas', icono: 'calendar-remove-outline', color: '#B91C1C', fondo: '#FEE2E2' },
 ];
 
 const ACCIONES_ESTATUS: { valor: EstatusCita; etiqueta: string }[] = [
@@ -110,7 +110,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
       <BlurTargetView ref={blurTarget} style={styles.contenedor}>
         <View style={styles.filtros}>
           <SegmentedControl
-            opciones={ESTATUS.map(({ valor, etiqueta, icono }) => ({ valor, etiqueta, icono }))}
+            opciones={ESTATUS}
             valorSeleccionado={estatusActivo}
             onSeleccionar={setEstatusActivo}
           />
@@ -154,7 +154,10 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                     Alert.alert('Paciente no disponible', 'No se encontró el expediente asociado a esta cita.');
                     return;
                   }
-                  navigation.navigate('DetallePaciente', { pacienteId: item.pacienteId });
+                  navigation.navigate('DetallePaciente', {
+                    pacienteId: item.pacienteId,
+                    pestana: 'notas',
+                  });
                 }}
                 style={({ pressed }) => [styles.filaPaciente, pressed && styles.presionado]}
               >
@@ -192,7 +195,12 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                 <Pressable
                   accessibilityRole="button"
                   disabled={!pacienteExiste}
-                  onPress={() => navigation.navigate('DetallePaciente', { pacienteId: item.pacienteId })}
+                  onPress={() =>
+                    navigation.navigate('DetallePaciente', {
+                      pacienteId: item.pacienteId,
+                      pestana: 'notas',
+                    })
+                  }
                   style={({ pressed }) => [
                     styles.botonConsulta,
                     pressed && styles.presionado,
@@ -218,9 +226,31 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                       key={opcion.valor}
                       accessibilityRole="button"
                       onPress={() => void cambiarEstado(item.id, opcion.valor)}
-                      style={({ pressed }) => [styles.opcionEstado, pressed && styles.presionado]}
+                      style={({ pressed }) => [
+                        styles.opcionEstado,
+                        {
+                          backgroundColor:
+                            ESTATUS.find((estado) => estado.valor === opcion.valor)?.fondo ??
+                            colors.primaryLight,
+                          borderColor:
+                            ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
+                            colors.primary,
+                        },
+                        pressed && styles.presionado,
+                      ]}
                     >
-                      <Text style={styles.textoOpcionEstado}>{opcion.etiqueta}</Text>
+                      <Text
+                        style={[
+                          styles.textoOpcionEstado,
+                          {
+                            color:
+                              ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
+                              colors.primary,
+                          },
+                        ]}
+                      >
+                        {opcion.etiqueta}
+                      </Text>
                     </Pressable>
                   ))}
                 </View>
@@ -316,10 +346,10 @@ const styles = StyleSheet.create({
   opcionEstado: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+    borderWidth: 1,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryLight,
   },
-  textoOpcionEstado: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+  textoOpcionEstado: { fontSize: 12, fontWeight: '600' },
   vacio: {
     alignItems: 'center',
     justifyContent: 'flex-start',
