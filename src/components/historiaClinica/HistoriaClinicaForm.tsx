@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   barraGuardar: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#ECEFF1',
+    borderTopColor: '#E2E8F0',
     backgroundColor: '#fff',
   },
   avisoCambios: {
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   boton: {
-    backgroundColor: '#1E88E5',
+    backgroundColor: '#0284C7',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',

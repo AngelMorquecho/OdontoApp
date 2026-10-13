@@ -40,7 +40,7 @@ export default function SeccionColapsable({
     <View style={styles.contenedor}>
       <Pressable
         onPress={alternar}
-        style={styles.encabezado}
+        style={({ pressed }) => [styles.encabezado, pressed && styles.presionado]}
         accessibilityRole="button"
         accessibilityState={{ expanded: abierta }}
       >
@@ -55,8 +55,8 @@ export default function SeccionColapsable({
 const styles = StyleSheet.create({
   contenedor: {
     borderWidth: 1,
-    borderColor: '#ECEFF1',
-    borderRadius: 12,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
     marginBottom: 12,
     backgroundColor: '#fff',
     overflow: 'hidden',
@@ -67,21 +67,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#F5F7F8',
+    backgroundColor: '#F8FAFC',
   },
   titulo: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#263238',
+    color: '#0F172A',
+    flexShrink: 1,
   },
   icono: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1E88E5',
+    color: '#0284C7',
     width: 20,
     textAlign: 'center',
   },
   contenido: {
     padding: 16,
+  },
+  presionado: {
+    opacity: 0.7,
   },
 });

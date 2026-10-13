@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { File, Paths } from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
@@ -128,21 +129,34 @@ export default function PanelRespaldo({
           accessibilityRole="button"
           disabled={ocupado || deshabilitado}
           onPress={() => void exportar()}
-          style={[styles.boton, (ocupado || deshabilitado) && styles.botonOcupado]}
+          style={({ pressed }) => [
+            styles.boton,
+            compacto && styles.botonCompacto,
+            (ocupado || deshabilitado) && styles.botonOcupado,
+            pressed && styles.botonPresionado,
+          ]}
         >
-          <Text style={styles.textoBoton}>Exportar JSON</Text>
+          <Ionicons name="cloud-download-outline" size={18} color={compacto ? '#0284C7' : '#fff'} />
+          <Text style={[styles.textoBoton, compacto && styles.textoBotonCompacto]}>
+            Exportar JSON
+          </Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
           disabled={ocupado || deshabilitado}
           onPress={() => void importar()}
-          style={[
+          style={({ pressed }) => [
             styles.boton,
             styles.botonImportar,
+            compacto && styles.botonCompacto,
             (ocupado || deshabilitado) && styles.botonOcupado,
+            pressed && styles.botonPresionado,
           ]}
         >
-          <Text style={[styles.textoBoton, styles.textoImportar]}>Importar JSON</Text>
+          <Ionicons name="cloud-upload-outline" size={18} color="#0284C7" />
+          <Text style={[styles.textoBoton, styles.textoImportar, compacto && styles.textoBotonCompacto]}>
+            Importar JSON
+          </Text>
         </Pressable>
       </View>
       {!compacto && (
@@ -157,12 +171,12 @@ export default function PanelRespaldo({
 
 const styles = StyleSheet.create({
   panel: {
-    backgroundColor: '#F5F7F8',
-    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF1',
+    borderColor: '#E2E8F0',
   },
   panelCompacto: {
     padding: 0,
@@ -171,12 +185,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   titulo: {
-    color: '#263238',
+    color: '#0F172A',
     fontSize: 16,
     fontWeight: '700',
   },
   descripcion: {
-    color: '#607D8B',
+    color: '#64748B',
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
@@ -184,21 +198,31 @@ const styles = StyleSheet.create({
   },
   acciones: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   boton: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
+    flexDirection: 'row',
+    gap: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 9,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    backgroundColor: '#0284C7',
+  },
+  botonCompacto: {
+    minHeight: 40,
     paddingHorizontal: 8,
-    backgroundColor: '#1565C0',
+    borderRadius: 10,
   },
   botonImportar: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#1565C0',
+    borderColor: '#BAE6FD',
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
   botonOcupado: {
     opacity: 0.5,
@@ -207,12 +231,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
+    flexShrink: 1,
+    textAlign: 'center',
+  },
+  textoBotonCompacto: {
+    color: '#0369A1',
+    fontSize: 11,
   },
   textoImportar: {
-    color: '#1565C0',
+    color: '#0369A1',
   },
   nota: {
-    color: '#78909C',
+    color: '#64748B',
     fontSize: 11,
     lineHeight: 16,
     marginTop: 10,

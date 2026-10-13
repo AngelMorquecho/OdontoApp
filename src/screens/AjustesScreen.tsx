@@ -137,9 +137,10 @@ function FormularioAjustes({
           accessibilityRole="button"
           disabled={guardando || cargandoConsultorio}
           onPress={() => void guardar()}
-          style={[
+          style={({ pressed }) => [
             styles.botonGuardar,
             (guardando || cargandoConsultorio) && styles.botonDeshabilitado,
+            pressed && !(guardando || cargandoConsultorio) && styles.botonPresionado,
           ]}
         >
           <Text style={styles.textoBotonGuardar}>
@@ -271,11 +272,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-    backgroundColor: '#1565C0',
+    backgroundColor: '#0284C7',
     marginTop: 4,
   },
   botonDeshabilitado: {
     opacity: 0.55,
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
   textoBotonGuardar: {
     color: '#fff',

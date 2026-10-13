@@ -310,10 +310,16 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
 
       <Text style={styles.tituloSeccion}>1. Elige una imagen de {paciente.nombre}</Text>
       <View style={styles.filaAcciones}>
-        <Pressable style={styles.botonSecundario} onPress={() => void elegirImagenGaleria()}>
+        <Pressable
+          style={({ pressed }) => [styles.botonSecundario, pressed && styles.botonPresionado]}
+          onPress={() => void elegirImagenGaleria()}
+        >
           <Text style={styles.textoBotonSecundario}>🖼️ Galería</Text>
         </Pressable>
-        <Pressable style={styles.botonSecundario} onPress={() => void tomarImagen()}>
+        <Pressable
+          style={({ pressed }) => [styles.botonSecundario, pressed && styles.botonPresionado]}
+          onPress={() => void tomarImagen()}
+        >
           <Text style={styles.textoBotonSecundario}>📷 Tomar foto</Text>
         </Pressable>
       </View>
@@ -332,7 +338,11 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: seleccionada }}
                 onPress={() => seleccionarImagen(imagen)}
-                style={[styles.tarjetaImagen, seleccionada && styles.tarjetaImagenSeleccionada]}
+                style={({ pressed }) => [
+                  styles.tarjetaImagen,
+                  seleccionada && styles.tarjetaImagenSeleccionada,
+                  pressed && styles.botonPresionado,
+                ]}
               >
                 <Image source={{ uri: imagen.uri }} style={styles.miniatura} />
                 <Text style={styles.etiquetaImagen}>
@@ -362,9 +372,10 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
         accessibilityRole="button"
         disabled={!imagenSeleccionada || analizando}
         onPress={() => void analizar()}
-        style={[
+        style={({ pressed }) => [
           styles.botonPrincipal,
           (!imagenSeleccionada || analizando) && styles.botonDeshabilitado,
+          pressed && imagenSeleccionada && !analizando && styles.botonPresionado,
         ]}
       >
         {analizando ? (
@@ -390,7 +401,7 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: confirmado }}
                   onPress={() => alternarConfirmacion(indice)}
-                  style={styles.filaHallazgo}
+                  style={({ pressed }) => [styles.filaHallazgo, pressed && styles.botonPresionado]}
                 >
                   <View style={[styles.checkbox, confirmado && styles.checkboxActivo]}>
                     {confirmado && <Text style={styles.check}>✓</Text>}
@@ -418,7 +429,11 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
                             accessibilityRole="radio"
                             accessibilityState={{ selected: activa }}
                             onPress={() => elegirCara(indice, cara)}
-                            style={[styles.chipCara, activa && styles.chipCaraActivo]}
+                            style={({ pressed }) => [
+                              styles.chipCara,
+                              activa && styles.chipCaraActivo,
+                              pressed && styles.botonPresionado,
+                            ]}
                           >
                             <Text style={[styles.textoCara, activa && styles.textoCaraActivo]}>
                               {ETIQUETAS_CARA[cara]}
@@ -444,14 +459,14 @@ export default function DiagnosticoIaScreen({ route, navigation }: Props) {
           <Pressable
             accessibilityRole="button"
             onPress={() => aplicarHallazgos(true)}
-            style={styles.botonAplicar}
+            style={({ pressed }) => [styles.botonAplicar, pressed && styles.botonPresionado]}
           >
             <Text style={styles.textoBotonAplicar}>Aplicar al Odontograma / Expediente</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => aplicarHallazgos(false)}
-            style={styles.botonNota}
+            style={({ pressed }) => [styles.botonNota, pressed && styles.botonPresionado]}
           >
             <Text style={styles.textoBotonNota}>Solo crear nota de evolución</Text>
           </Pressable>
@@ -642,11 +657,14 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: '#1565C0',
+    backgroundColor: '#0284C7',
     marginTop: 4,
   },
   botonDeshabilitado: {
     opacity: 0.5,
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
   filaCarga: {
     flexDirection: 'row',

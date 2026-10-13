@@ -20,7 +20,11 @@ export default function CampoSiNo({ etiqueta, valor, onChange }: Props) {
             <Pressable
               key={opcion}
               onPress={() => onChange(opcion)}
-              style={[styles.boton, seleccionado && styles.botonSeleccionado]}
+              style={({ pressed }) => [
+                styles.boton,
+                seleccionado && styles.botonSeleccionado,
+                pressed && styles.presionado,
+              ]}
             >
               <Text
                 style={[
@@ -47,7 +51,7 @@ const styles = StyleSheet.create({
   },
   etiqueta: {
     fontSize: 14,
-    color: '#455A64',
+    color: '#475569',
     flex: 1,
     paddingRight: 8,
   },
@@ -59,19 +63,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: '#CBD5E1',
     marginLeft: 8,
   },
   botonSeleccionado: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
   },
   botonTexto: {
     fontSize: 14,
-    color: '#455A64',
+    color: '#475569',
     fontWeight: '600',
   },
   botonTextoSeleccionado: {
     color: '#fff',
+  },
+  presionado: {
+    opacity: 0.7,
   },
 });

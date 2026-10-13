@@ -11,7 +11,7 @@ interface Props {
 export default function CampoCheckbox({ etiqueta, marcado, onChange }: Props) {
   return (
     <Pressable
-      style={styles.fila}
+      style={({ pressed }) => [styles.fila, pressed && styles.presionado]}
       onPress={() => onChange(!marcado)}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: marcado }}
@@ -36,14 +36,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#CFD8DC',
+    borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   cajaMarcada: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
   },
   check: {
     color: '#fff',
@@ -52,6 +52,9 @@ const styles = StyleSheet.create({
   },
   etiqueta: {
     fontSize: 14,
-    color: '#455A64',
+    color: '#475569',
+  },
+  presionado: {
+    opacity: 0.7,
   },
 });

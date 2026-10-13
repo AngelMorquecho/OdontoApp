@@ -1,5 +1,6 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import Odontograma2D from '../components/Odontograma2D';
@@ -8,7 +9,6 @@ import { usePacientes } from '../context/PacientesContext';
 import { crearHistoriaClinicaVacia, HistoriaClinica, NotaEvolucion, Radiografia } from '../types/paciente';
 import { generarYCompartirPdfExpediente } from '../utils/generarPdfExpediente';
 import { useConsultorio } from '../context/ConsultorioContext';
-import SegmentedControl from '../components/SegmentedControl';
 import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaForm';
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
 import TabRadiografias from '../components/radiografias/TabRadiografias';
@@ -17,11 +17,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DetallePaciente'>;
 
 type Pestana = 'odontograma' | 'historia' | 'notas' | 'radiografias';
 
-const OPCIONES_PESTANAS: { valor: Pestana; etiqueta: string }[] = [
-  { valor: 'odontograma', etiqueta: 'Odontograma' },
-  { valor: 'historia', etiqueta: 'Historia Clínica' },
-  { valor: 'notas', etiqueta: 'Notas de Evolución' },
-  { valor: 'radiografias', etiqueta: 'Radiografías / Galería' },
+const OPCIONES_PESTANAS: {
+  valor: Pestana;
+  etiqueta: string;
+  icono: keyof typeof MaterialCommunityIcons.glyphMap;
+}[] = [
+  { valor: 'odontograma', etiqueta: 'Odontograma', icono: 'tooth' },
+  { valor: 'historia', etiqueta: 'Historia Clínica', icono: 'clipboard-text-outline' },
+  { valor: 'notas', etiqueta: 'Notas de Evolución', icono: 'note-text-outline' },
+  { valor: 'radiografias', etiqueta: 'Radiografías / Galería', icono: 'image-multiple-outline' },
 ];
 
 export default function DetallePaciente({ route, navigation }: Props) {
@@ -67,6 +71,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
               accessibilityState={{ disabled: exportandoPdf, busy: exportandoPdf }}
               disabled={exportandoPdf || cargandoConsultorio}
               hitSlop={8}
+              style={({ pressed }) => pressed && styles.botonPdfPresionado}
               onPress={() => {
                 void alExportarPdf();
               }}
@@ -121,11 +126,40 @@ export default function DetallePaciente({ route, navigation }: Props) {
         </Text>
       </View>
 
-      <SegmentedControl
-        opciones={OPCIONES_PESTANAS}
-        valorSeleccionado={pestana}
-        onSeleccionar={setPestana}
-      />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listaPestanas}
+      >
+        {OPCIONES_PESTANAS.map((opcion) => {
+          const activa = pestana === opcion.valor;
+          return (
+            <Pressable
+              key={opcion.valor}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activa }}
+              onPress={() => setPestana(opcion.valor)}
+              style={({ pressed }) => [
+                styles.chipPestana,
+                activa && styles.chipPestanaActivo,
+                pressed && styles.chipPestanaPresionado,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={opcion.icono}
+                size={17}
+                color={activa ? '#fff' : '#475569'}
+              />
+              <Text
+                numberOfLines={1}
+                style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
+              >
+                {opcion.etiqueta}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {pestana === 'odontograma' && (
         <ScrollView contentContainerStyle={styles.contenidoOdontograma}>
@@ -167,7 +201,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
   centrado: {
     flex: 1,
@@ -176,31 +210,72 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   encabezado: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECEFF1',
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 15,
+    backgroundColor: '#fff',
   },
   nombre: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#263238',
+    color: '#0F172A',
+    flexShrink: 1,
   },
   detalle: {
     fontSize: 13,
-    color: '#607D8B',
+    color: '#64748B',
     marginTop: 4,
+    flexShrink: 1,
   },
   motivo: {
     fontSize: 13,
-    color: '#455A64',
+    color: '#475569',
     marginTop: 6,
+    flexShrink: 1,
   },
   botonExportarPdf: {
-    color: '#1E88E5',
+    color: '#0284C7',
     fontSize: 13,
     fontWeight: '600',
+    flexShrink: 1,
+  },
+  botonPdfPresionado: {
+    opacity: 0.7,
+  },
+  listaPestanas: {
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    gap: 8,
+  },
+  chipPestana: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    maxWidth: 210,
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+    borderRadius: 22,
+    backgroundColor: '#E2E8F0',
+  },
+  chipPestanaActivo: {
+    backgroundColor: '#0284C7',
+    shadowColor: '#0284C7',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  chipPestanaPresionado: {
+    opacity: 0.7,
+  },
+  textoPestana: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  textoPestanaActivo: {
+    color: '#fff',
   },
   contenidoOdontograma: {
     padding: 16,
@@ -208,6 +283,6 @@ const styles = StyleSheet.create({
   },
   ayuda: {
     marginTop: 12,
-    color: '#607D8B',
+    color: '#64748B',
   },
 });

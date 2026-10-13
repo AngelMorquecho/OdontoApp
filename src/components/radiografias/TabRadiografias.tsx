@@ -96,11 +96,18 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
   return (
     <View style={styles.flex}>
       <View style={styles.barraAcciones}>
-        <Pressable style={styles.botonAccion} onPress={tomarFoto}>
+        <Pressable
+          style={({ pressed }) => [styles.botonAccion, pressed && styles.botonPresionado]}
+          onPress={tomarFoto}
+        >
           <Text style={styles.botonAccionTexto}>📷 Tomar foto</Text>
         </Pressable>
         <Pressable
-          style={[styles.botonAccion, styles.botonAccionSecundario]}
+          style={({ pressed }) => [
+            styles.botonAccion,
+            styles.botonAccionSecundario,
+            pressed && styles.botonPresionado,
+          ]}
           onPress={elegirDeGaleria}
         >
           <Text style={styles.botonAccionTexto}>🖼️ Elegir de galería</Text>
@@ -109,7 +116,7 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
       <Pressable
         accessibilityRole="button"
         onPress={onAnalizar}
-        style={styles.botonAnalizar}
+        style={({ pressed }) => [styles.botonAnalizar, pressed && styles.botonPresionado]}
       >
         <Text style={styles.botonAnalizarTexto}>🤖 Analizar con IA</Text>
       </Pressable>
@@ -156,9 +163,10 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
               {(['foto', 'rx'] as TipoRadiografia[]).map((tipo) => (
                 <Pressable
                   key={tipo}
-                  style={[
+                  style={({ pressed }) => [
                     styles.chipTipo,
                     tipoPendiente === tipo && styles.chipTipoSeleccionado,
+                    pressed && styles.botonPresionado,
                   ]}
                   onPress={() => setTipoPendiente(tipo)}
                 >
@@ -182,12 +190,19 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
             />
             <View style={styles.filaBotonesModal}>
               <Pressable
-                style={[styles.botonModal, styles.botonModalSecundario]}
+                style={({ pressed }) => [
+                  styles.botonModal,
+                  styles.botonModalSecundario,
+                  pressed && styles.botonPresionado,
+                ]}
                 onPress={cancelarAlta}
               >
                 <Text style={styles.botonModalSecundarioTexto}>Cancelar</Text>
               </Pressable>
-              <Pressable style={styles.botonModal} onPress={confirmarAlta}>
+              <Pressable
+                style={({ pressed }) => [styles.botonModal, pressed && styles.botonPresionado]}
+                onPress={confirmarAlta}
+              >
                 <Text style={styles.botonModalTexto}>Guardar</Text>
               </Pressable>
             </View>
@@ -234,6 +249,9 @@ const styles = StyleSheet.create({
   botonAccionSecundario: {
     backgroundColor: '#455A64',
     marginRight: 0,
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
   botonAccionTexto: {
     color: '#fff',
@@ -332,8 +350,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipTipoSeleccionado: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
   },
   chipTipoTexto: {
     fontSize: 13,

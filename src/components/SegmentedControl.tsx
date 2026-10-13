@@ -25,7 +25,11 @@ export default function SegmentedControl<T extends string>({
         return (
           <Pressable
             key={opcion.valor}
-            style={[styles.segmento, activo && styles.segmentoActivo]}
+            style={({ pressed }) => [
+              styles.segmento,
+              activo && styles.segmentoActivo,
+              pressed && styles.presionado,
+            ]}
             onPress={() => onSeleccionar(opcion.valor)}
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
@@ -43,8 +47,8 @@ export default function SegmentedControl<T extends string>({
 const styles = StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
-    backgroundColor: '#ECEFF1',
-    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 14,
     padding: 4,
     margin: 16,
     marginBottom: 8,
@@ -66,9 +70,12 @@ const styles = StyleSheet.create({
   texto: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#607D8B',
+    color: '#475569',
   },
   textoActivo: {
-    color: '#1E88E5',
+    color: '#0284C7',
+  },
+  presionado: {
+    opacity: 0.7,
   },
 });

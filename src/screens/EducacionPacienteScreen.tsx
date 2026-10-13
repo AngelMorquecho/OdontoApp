@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   FlatList,
   Modal,
@@ -23,6 +24,14 @@ const CATEGORIAS: CategoriaEducativa[] = [
   'Tratamientos especializados',
   'Encías y periodoncia',
 ];
+
+const ICONOS_CATEGORIA: Record<CategoriaEducativa | 'Todos', keyof typeof Ionicons.glyphMap> = {
+  Todos: 'grid-outline',
+  Prevención: 'shield-checkmark-outline',
+  'Tratamientos restauradores': 'construct-outline',
+  'Tratamientos especializados': 'medical-outline',
+  'Encías y periodoncia': 'leaf-outline',
+};
 
 export default function EducacionPacienteScreen() {
   const [busqueda, setBusqueda] = useState('');
@@ -64,8 +73,10 @@ export default function EducacionPacienteScreen() {
       <View style={styles.miniIlustracion}>
         <SvgXml xml={tema.svgIlustracion} width="100%" height="100%" />
       </View>
-      <Text style={styles.categoriaTarjeta}>{tema.categoria}</Text>
-      <Text style={styles.tituloTarjeta}>{tema.titulo}</Text>
+      <View style={styles.badgeCategoria}>
+        <Text style={styles.categoriaTarjeta} numberOfLines={1}>{tema.categoria}</Text>
+      </View>
+      <Text style={styles.tituloTarjeta} numberOfLines={2}>{tema.titulo}</Text>
       <Text style={styles.descripcionTarjeta} numberOfLines={3}>
         {tema.descripcionCorta}
       </Text>
@@ -100,9 +111,19 @@ export default function EducacionPacienteScreen() {
           accessibilityRole="button"
           accessibilityState={{ selected: categoriaSeleccionada === null }}
           onPress={() => setCategoriaSeleccionada(null)}
-          style={[styles.chipCategoria, categoriaSeleccionada === null && styles.chipActivo]}
+          style={({ pressed }) => [
+            styles.chipCategoria,
+            categoriaSeleccionada === null && styles.chipActivo,
+            pressed && styles.chipPresionado,
+          ]}
         >
+          <Ionicons
+            name={ICONOS_CATEGORIA.Todos}
+            size={15}
+            color={categoriaSeleccionada === null ? '#fff' : '#475569'}
+          />
           <Text
+            numberOfLines={1}
             style={[
               styles.textoChip,
               categoriaSeleccionada === null && styles.textoChipActivo,
@@ -119,9 +140,21 @@ export default function EducacionPacienteScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: activo }}
               onPress={() => setCategoriaSeleccionada(activo ? null : categoria)}
-              style={[styles.chipCategoria, activo && styles.chipActivo]}
+              style={({ pressed }) => [
+                styles.chipCategoria,
+                activo && styles.chipActivo,
+                pressed && styles.chipPresionado,
+              ]}
             >
-              <Text style={[styles.textoChip, activo && styles.textoChipActivo]}>
+              <Ionicons
+                name={ICONOS_CATEGORIA[categoria]}
+                size={15}
+                color={activo ? '#fff' : '#475569'}
+              />
+              <Text
+                numberOfLines={1}
+                style={[styles.textoChip, activo && styles.textoChipActivo]}
+              >
                 {categoria}
               </Text>
             </Pressable>
@@ -166,7 +199,7 @@ export default function EducacionPacienteScreen() {
                 accessibilityLabel="Cerrar detalle"
                 onPress={() => setTemaSeleccionado(null)}
                 hitSlop={10}
-                style={styles.botonCerrar}
+                style={({ pressed }) => [styles.botonCerrar, pressed && styles.botonPresionado]}
               >
                 <Text style={styles.textoCerrar}>Cerrar</Text>
               </Pressable>
@@ -221,10 +254,10 @@ export default function EducacionPacienteScreen() {
 const styles = StyleSheet.create({
   pantalla: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
   introduccion: {
-    color: '#455A64',
+    color: '#475569',
     fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: 16,
@@ -235,11 +268,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 10,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
-    backgroundColor: '#F5F7F8',
-    color: '#263238',
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+    color: '#0F172A',
     fontSize: 16,
   },
   listaCategorias: {
@@ -248,24 +281,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chipCategoria: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
-    paddingHorizontal: 13,
-    paddingVertical: 8,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 11,
+    paddingVertical: 7,
     backgroundColor: '#fff',
   },
   chipActivo: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#1E88E5',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  chipPresionado: {
+    opacity: 0.7,
   },
   textoChip: {
-    color: '#546E7A',
-    fontSize: 13,
+    color: '#475569',
+    fontSize: 12,
     fontWeight: '600',
+    flexShrink: 1,
   },
   textoChipActivo: {
-    color: '#1565C0',
+    color: '#fff',
   },
   listaTemas: {
     flex: 1,
@@ -278,7 +318,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   tituloGrupo: {
-    color: '#263238',
+    color: '#0F172A',
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 10,
@@ -291,50 +331,65 @@ const styles = StyleSheet.create({
   },
   tarjetaTema: {
     width: '48%',
-    minHeight: 220,
+    minHeight: 215,
     borderWidth: 1,
-    borderColor: '#E4EAEE',
-    borderRadius: 14,
-    padding: 10,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    padding: 12,
     backgroundColor: '#fff',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   tarjetaPresionada: {
-    backgroundColor: '#F4F8FA',
+    opacity: 0.7,
   },
   miniIlustracion: {
-    height: 82,
+    height: 94,
     overflow: 'hidden',
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    marginBottom: 10,
+    padding: 4,
+  },
+  badgeCategoria: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
     borderRadius: 10,
-    backgroundColor: '#F2F8FE',
-    marginBottom: 9,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    backgroundColor: '#E0F2FE',
+    marginBottom: 6,
   },
   categoriaTarjeta: {
-    color: '#607D8B',
-    fontSize: 10,
+    color: '#0369A1',
+    fontSize: 9,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    flexShrink: 1,
   },
   tituloTarjeta: {
-    color: '#263238',
+    color: '#0F172A',
     fontSize: 15,
     fontWeight: '700',
+    flexShrink: 1,
   },
   descripcionTarjeta: {
-    color: '#546E7A',
+    color: '#64748B',
     fontSize: 12,
     lineHeight: 17,
     marginTop: 4,
     flex: 1,
   },
   enlaceDetalle: {
-    color: '#1976D2',
+    color: '#0284C7',
     fontSize: 13,
     fontWeight: '700',
     marginTop: 8,
   },
   sinResultados: {
-    color: '#607D8B',
+    color: '#64748B',
     textAlign: 'center',
     marginTop: 36,
     lineHeight: 22,
@@ -348,7 +403,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#ECEFF1',
+    borderBottomColor: '#E2E8F0',
     paddingHorizontal: 18,
     paddingBottom: 14,
   },
@@ -357,13 +412,13 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   categoriaDetalle: {
-    color: '#607D8B',
+    color: '#64748B',
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 3,
   },
   tituloDetalle: {
-    color: '#263238',
+    color: '#0F172A',
     fontSize: 21,
     fontWeight: '700',
   },
@@ -371,8 +426,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
+  botonPresionado: {
+    opacity: 0.7,
+  },
   textoCerrar: {
-    color: '#1976D2',
+    color: '#0284C7',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -388,14 +446,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tituloSeccion: {
-    color: '#263238',
+    color: '#0F172A',
     fontSize: 17,
     fontWeight: '700',
     marginTop: 12,
     marginBottom: 8,
   },
   textoDetalle: {
-    color: '#455A64',
+    color: '#475569',
     fontSize: 15,
     lineHeight: 23,
   },
@@ -414,13 +472,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   textoNumeroPaso: {
-    color: '#1565C0',
+    color: '#0284C7',
     fontSize: 13,
     fontWeight: '700',
   },
   textoPaso: {
     flex: 1,
-    color: '#455A64',
+    color: '#475569',
     fontSize: 14,
     lineHeight: 21,
     paddingTop: 2,
@@ -438,7 +496,7 @@ const styles = StyleSheet.create({
   },
   textoRecomendacion: {
     flex: 1,
-    color: '#455A64',
+    color: '#475569',
     fontSize: 14,
     lineHeight: 21,
   },

@@ -116,9 +116,10 @@ export default function FormularioNotaEvolucion({
               <Pressable
                 key={numero}
                 onPress={() => alternarDienteEnRegion(numero)}
-                style={[
+                style={({ pressed }) => [
                   styles.chipDiente,
                   seleccionado && styles.chipDienteSeleccionado,
+                  pressed && styles.botonPresionado,
                 ]}
               >
                 <Text
@@ -181,12 +182,19 @@ export default function FormularioNotaEvolucion({
 
         <View style={styles.filaBotones}>
           <Pressable
-            style={[styles.boton, styles.botonSecundario]}
+            style={({ pressed }) => [
+              styles.boton,
+              styles.botonSecundario,
+              pressed && styles.botonPresionado,
+            ]}
             onPress={onCancelar}
           >
             <Text style={styles.botonSecundarioTexto}>Cancelar</Text>
           </Pressable>
-          <Pressable style={styles.boton} onPress={guardar}>
+          <Pressable
+            style={({ pressed }) => [styles.boton, pressed && styles.botonPresionado]}
+            onPress={guardar}
+          >
             <Text style={styles.botonTexto}>Guardar nota</Text>
           </Pressable>
         </View>
@@ -267,5 +275,8 @@ const styles = StyleSheet.create({
     color: '#455A64',
     fontSize: 16,
     fontWeight: '700',
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
 });

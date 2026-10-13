@@ -20,7 +20,16 @@ export default function App() {
       <ConsultorioProvider>
         <NavigationContainer>
           <StatusBar barStyle="dark-content" />
-          <Stack.Navigator initialRouteName="ListaPacientes">
+          <Stack.Navigator
+            initialRouteName="ListaPacientes"
+            screenOptions={{
+              headerStyle: { backgroundColor: '#FFFFFF' },
+              headerTintColor: '#0284C7',
+              headerTitleStyle: { color: '#0F172A', fontWeight: '700' },
+              headerShadowVisible: false,
+              contentStyle: { backgroundColor: '#F8FAFC' },
+            }}
+          >
             <Stack.Screen
               name="ListaPacientes"
               component={ListaPacientes}

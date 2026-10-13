@@ -30,7 +30,11 @@ export default function CampoOpciones<T extends string>({
             <Pressable
               key={opcion.valor}
               onPress={() => onChange(opcion.valor)}
-              style={[styles.chip, seleccionado && styles.chipSeleccionado]}
+              style={({ pressed }) => [
+                styles.chip,
+                seleccionado && styles.chipSeleccionado,
+                pressed && styles.presionado,
+              ]}
             >
               <Text
                 style={[
@@ -55,7 +59,7 @@ const styles = StyleSheet.create({
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#455A64',
+    color: '#475569',
     marginBottom: 6,
   },
   opciones: {
@@ -67,20 +71,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: '#CBD5E1',
     marginRight: 8,
     marginBottom: 8,
   },
   chipSeleccionado: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
   },
   chipTexto: {
     fontSize: 13,
-    color: '#455A64',
+    color: '#475569',
     fontWeight: '600',
   },
   chipTextoSeleccionado: {
     color: '#fff',
+  },
+  presionado: {
+    opacity: 0.7,
   },
 });

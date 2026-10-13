@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
@@ -46,8 +47,12 @@ export default function ListaPacientes({ navigation }: Props) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={confirmarRestablecer} hitSlop={8}>
-          <Text style={styles.botonRestablecer}>Restablecer</Text>
+        <Pressable
+          onPress={confirmarRestablecer}
+          hitSlop={8}
+          style={({ pressed }) => [styles.botonRestablecer, pressed && styles.botonAccesoPresionado]}
+        >
+          <Text style={styles.textoRestablecer}>Restablecer</Text>
         </Pressable>
       ),
     });
@@ -67,6 +72,19 @@ export default function ListaPacientes({ navigation }: Props) {
   const irAAgregar = () => {
     navigation.navigate('AgregarPaciente');
   };
+
+  const coloresAvatar = ['#0284C7', '#059669', '#7C3AED', '#DB2777', '#D97706'];
+  const obtenerColorAvatar = (nombre: string) => {
+    const indice = [...nombre].reduce((total, caracter) => total + caracter.charCodeAt(0), 0);
+    return coloresAvatar[indice % coloresAvatar.length];
+  };
+  const obtenerIniciales = (nombre: string) =>
+    nombre
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((parte) => parte.charAt(0).toLocaleUpperCase('es'))
+      .join('');
 
   if (cargando) {
     return (
@@ -93,35 +111,26 @@ export default function ListaPacientes({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('EducacionPaciente')}
-          style={({ pressed }) => [
-            styles.botonAcceso,
-            pressed && styles.botonEducacionPresionado,
-          ]}
+          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Text style={styles.iconoEducacion}>📚</Text>
-          <Text style={styles.tituloAcceso}>Educación</Text>
+          <Ionicons name="book-outline" size={23} color="#0284C7" />
+          <Text numberOfLines={1} style={styles.tituloAcceso}>Educación</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('Ajustes')}
-          style={({ pressed }) => [
-            styles.botonAcceso,
-            pressed && styles.botonEducacionPresionado,
-          ]}
+          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Text style={styles.iconoEducacion}>⚙️</Text>
-          <Text style={styles.tituloAcceso}>Ajustes</Text>
+          <Ionicons name="settings-outline" size={23} color="#0284C7" />
+          <Text numberOfLines={1} style={styles.tituloAcceso}>Ajustes</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('Ajustes', { seccion: 'respaldo' })}
-          style={({ pressed }) => [
-            styles.botonAcceso,
-            pressed && styles.botonEducacionPresionado,
-          ]}
+          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Text style={styles.iconoEducacion}>💾</Text>
-          <Text style={styles.tituloAcceso}>Respaldo</Text>
+          <Ionicons name="cloud-download-outline" size={23} color="#0284C7" />
+          <Text numberOfLines={1} style={styles.tituloAcceso}>Respaldo</Text>
         </Pressable>
       </View>
 
@@ -164,19 +173,22 @@ export default function ListaPacientes({ navigation }: Props) {
             ]}
             android_ripple={{ color: '#CFD8DC' }}
           >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarTexto}>
-                {item.nombre.charAt(0).toUpperCase()}
+            <View style={[styles.avatar, { backgroundColor: obtenerColorAvatar(item.nombre) }]}>
+              <Text numberOfLines={1} style={styles.avatarTexto}>
+                {obtenerIniciales(item.nombre)}
               </Text>
             </View>
             <View style={styles.infoPaciente}>
-              <Text style={styles.nombre}>{item.nombre}</Text>
-              <Text style={styles.detalle}>
-                {item.edad} años · {item.telefono}
-              </Text>
-              <Text style={styles.motivo} numberOfLines={1}>
-                {item.motivoConsulta}
-              </Text>
+              <View style={styles.filaNombre}>
+                <Text style={styles.nombre} numberOfLines={1}>{item.nombre}</Text>
+                <View style={styles.badgeEdad}>
+                  <Text style={styles.textoEdad} numberOfLines={1}>{item.edad} años</Text>
+                </View>
+              </View>
+              <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
+              <View style={styles.cajaMotivo}>
+                <Text style={styles.motivo} numberOfLines={2}>{item.motivoConsulta}</Text>
+              </View>
             </View>
           </Pressable>
         )}
@@ -191,7 +203,7 @@ export default function ListaPacientes({ navigation }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Agregar nuevo paciente"
       >
-        <Text style={styles.botonFlotanteTexto}>+</Text>
+        <Ionicons name="add" size={29} color="#fff" />
       </Pressable>
     </View>
   );
@@ -200,7 +212,7 @@ export default function ListaPacientes({ navigation }: Props) {
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
     padding: 16,
   },
   centrado: {
@@ -211,42 +223,49 @@ const styles = StyleSheet.create({
   },
   buscador: {
     height: 44,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: '#E2E8F0',
     paddingHorizontal: 14,
     fontSize: 16,
     marginBottom: 12,
-    backgroundColor: '#F5F7F8',
+    backgroundColor: '#fff',
   },
   accesosRapidos: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     marginBottom: 12,
   },
   botonAcceso: {
     flex: 1,
+    aspectRatio: 1,
+    maxHeight: 82,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 62,
-    paddingHorizontal: 5,
-    paddingVertical: 7,
-    borderRadius: 10,
-    backgroundColor: '#E3F2FD',
+    gap: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 9,
+    borderRadius: 16,
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#BBDEFB',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
-  botonEducacionPresionado: {
-    backgroundColor: '#D5EAFB',
-  },
-  iconoEducacion: {
-    fontSize: 19,
+  botonAccesoPresionado: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   tituloAcceso: {
-    color: '#0D47A1',
-    fontSize: 11,
+    color: '#334155',
+    fontSize: 12,
     fontWeight: '700',
-    marginTop: 3,
+    flexShrink: 1,
+    textAlign: 'center',
+    maxWidth: '100%',
   },
   panelRespaldo: {
     marginBottom: 8,
@@ -258,52 +277,81 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#ECEFF1',
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   tarjetaPresionada: {
-    backgroundColor: '#ECEFF1',
+    opacity: 0.7,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E88E5',
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarTexto: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#0284C7',
+    fontSize: 15,
     fontWeight: '700',
   },
   infoPaciente: {
     flex: 1,
+    minWidth: 0,
+  },
+  filaNombre: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   nombre: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#263238',
+    fontWeight: '700',
+    color: '#0F172A',
+    flex: 1,
+    flexShrink: 1,
   },
   detalle: {
     fontSize: 13,
-    color: '#607D8B',
+    color: '#64748B',
     marginTop: 2,
+    flexShrink: 1,
+  },
+  badgeEdad: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  textoEdad: {
+    color: '#047857',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cajaMotivo: {
+    alignSelf: 'stretch',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginTop: 7,
   },
   motivo: {
-    fontSize: 13,
-    color: '#455A64',
-    marginTop: 4,
-    fontStyle: 'italic',
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#475569',
+    flexShrink: 1,
   },
   sinResultados: {
     textAlign: 'center',
@@ -318,7 +366,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1E88E5',
+    backgroundColor: '#0284C7',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -328,18 +376,16 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   botonFlotantePresionado: {
-    backgroundColor: '#1669AC',
-  },
-  botonFlotanteTexto: {
-    color: '#fff',
-    fontSize: 28,
-    lineHeight: 30,
-    fontWeight: '600',
+    opacity: 0.7,
   },
   botonRestablecer: {
-    color: '#C62828',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    marginRight: 4,
+  },
+  textoRestablecer: {
+    color: '#DC2626',
     fontSize: 13,
     fontWeight: '700',
-    marginRight: 8,
   },
 });
