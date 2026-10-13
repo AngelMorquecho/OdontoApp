@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cita, Receta, Usuario } from '../types';
-import { PACIENTES_INICIALES, Paciente } from '../types/paciente';
+import {
+  NotaEvolucion,
+  PACIENTES_INICIALES,
+  Paciente,
+  Radiografia,
+} from '../types/paciente';
 
 export const CLAVES_DATOS = {
   pacientes: '@OdontoApp:pacientes',
@@ -8,6 +13,8 @@ export const CLAVES_DATOS = {
   recetas: '@OdontoApp:recetas',
   usuarios: '@OdontoApp:usuarios',
   usuarioActual: '@OdontoApp:usuario_actual',
+  notasEvolucion: '@notas_evolucion',
+  galeriaPacientes: '@galeria_pacientes',
 } as const;
 
 export interface DatosPrueba {
@@ -16,6 +23,8 @@ export interface DatosPrueba {
   recetas: Receta[];
   usuarios: Usuario[];
   usuarioActual: Usuario;
+  notasEvolucion: Record<string, NotaEvolucion[]>;
+  galeriaPacientes: Record<string, Radiografia[]>;
 }
 
 function fechaRelativa(dias: number): string {
@@ -35,6 +44,61 @@ export function crearDatosPrueba(): DatosPrueba {
   pacientes[0].correo = 'maria.lopez@example.test';
   pacientes[1].correo = 'juan.perez@example.test';
   pacientes[2].correo = 'ana.ramirez@example.test';
+
+  const notasMaria: NotaEvolucion[] = [
+    {
+      id: 'nota-demo-maria-001',
+      fecha: fechaRelativa(-10),
+      hora: '10:20',
+      regionOD: '36',
+      evolucionProcedimiento:
+        'Aislamiento relativo, eliminación selectiva de tejido cariado y restauración con resina compuesta fotopolimerizable.',
+      dx: 'Caries dentinaria oclusal en órgano dentario 36.',
+      pronostico: 'Favorable',
+      plan: 'Control clínico de sensibilidad y revisión de la restauración en la siguiente cita.',
+      anestesia: 'si',
+      estudios: { rx: true, fotos: true, escaneo: false, cbct: false },
+      receta: 'Ibuprofeno 400 mg cada 8 horas, solo en caso de dolor, por 3 días.',
+      indicaciones: 'Evitar alimentos muy duros durante el resto del día y mantener higiene oral.',
+      proximaCita: fechaRelativa(2),
+      tratante: 'Dr. Luis Morquecho García',
+    },
+    {
+      id: 'nota-demo-maria-002',
+      fecha: fechaRelativa(-2),
+      hora: '09:45',
+      regionOD: '36',
+      evolucionProcedimiento:
+        'Revisión de restauración; ajuste oclusal conservador y pulido de superficies. La paciente refiere disminución de sensibilidad.',
+      dx: 'Restauración oclusal en 36 íntegra, sin signos clínicos de filtración.',
+      pronostico: 'Favorable',
+      plan: 'Continuar observación y acudir a revisión si reaparece dolor espontáneo.',
+      anestesia: 'no',
+      estudios: { rx: false, fotos: true, escaneo: false, cbct: false },
+      receta: '',
+      indicaciones: 'Cepillado cuidadoso dos veces al día y uso diario de hilo dental.',
+      proximaCita: fechaRelativa(90),
+      tratante: 'Dra. Jacqueline Rodríguez Enríquez',
+    },
+  ];
+  const galeriaMaria: Radiografia[] = [
+    {
+      id: 'media-demo-maria-rx-001',
+      uri: 'https://upload.wikimedia.org/wikipedia/commons/2/2d/Abscessed_tooth_periapical_radiograph.jpg',
+      tipo: 'rx',
+      fecha: fechaRelativa(-10),
+      descripcion: 'Radiografía periapical de OD 36. Fuente: Coronation Dental Specialty Group, Wikimedia Commons, CC BY-SA 3.0 (creativecommons.org/licenses/by-sa/3.0).',
+    },
+    {
+      id: 'media-demo-maria-foto-001',
+      uri: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=900&q=80',
+      tipo: 'foto',
+      fecha: fechaRelativa(-2),
+      descripcion: 'Fotografía clínica intraoral posterior a restauración.',
+    },
+  ];
+  pacientes[0].historiaClinica.notasEvolucion = notasMaria;
+  pacientes[0].radiografias = galeriaMaria;
 
   const usuarios: Usuario[] = [
     {
@@ -122,6 +186,8 @@ export function crearDatosPrueba(): DatosPrueba {
     recetas,
     usuarios,
     usuarioActual: usuarios[0],
+    notasEvolucion: { [pacientes[0].id]: notasMaria },
+    galeriaPacientes: { [pacientes[0].id]: galeriaMaria },
   };
 }
 
@@ -134,6 +200,8 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
     CLAVES_DATOS.citas,
     CLAVES_DATOS.recetas,
     CLAVES_DATOS.usuarioActual,
+    CLAVES_DATOS.notasEvolucion,
+    CLAVES_DATOS.galeriaPacientes,
   ];
   const todasVacias = clavesPrincipales.every((clave) => !valores.get(clave));
 
@@ -156,6 +224,37 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
           idsIniciales.has(paciente.id),
       );
     const clavesPorCompletar: [string, string][] = [];
+    let pacientesActualizados: Paciente[] | null = null;
+    if (sonPacientesIniciales && Array.isArray(pacientesParseados)) {
+      pacientesActualizados = pacientesParseados as Paciente[];
+      const pacienteMaria = pacientesActualizados.find(
+        (paciente) => paciente.id === 'paciente-001',
+      );
+      const pacienteMariaSeed = datos.pacientes.find(
+        (paciente) => paciente.id === 'paciente-001',
+      );
+      if (pacienteMaria && pacienteMariaSeed) {
+        let actualizarMaria = false;
+        if (!pacienteMaria.historiaClinica?.notasEvolucion?.length) {
+          pacienteMaria.historiaClinica = {
+            ...pacienteMariaSeed.historiaClinica,
+            ...pacienteMaria.historiaClinica,
+            notasEvolucion: pacienteMariaSeed.historiaClinica.notasEvolucion,
+          };
+          actualizarMaria = true;
+        }
+        if (!pacienteMaria.radiografias?.length) {
+          pacienteMaria.radiografias = pacienteMariaSeed.radiografias;
+          actualizarMaria = true;
+        }
+        if (actualizarMaria) {
+          clavesPorCompletar.push([
+            CLAVES_DATOS.pacientes,
+            JSON.stringify(pacientesActualizados),
+          ]);
+        }
+      }
+    }
     if (!valores.get(CLAVES_DATOS.usuarioActual)) {
       clavesPorCompletar.push([
         CLAVES_DATOS.usuarioActual,
@@ -174,6 +273,43 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
           clavesPorCompletar.push([clave, JSON.stringify(valor)]);
         }
       }
+      if (!valores.get(CLAVES_DATOS.notasEvolucion)) {
+        const notas = pacientesActualizados?.reduce<Record<string, NotaEvolucion[]>>(
+          (acumuladas, paciente) => {
+            const pacienteSeed = datos.pacientes.find((item) => item.id === paciente.id);
+            const existentes = paciente.historiaClinica?.notasEvolucion ?? [];
+            const notasPaciente =
+              existentes.length > 0
+                ? existentes
+                : pacienteSeed?.historiaClinica.notasEvolucion ?? [];
+            if (notasPaciente.length > 0) acumuladas[paciente.id] = notasPaciente;
+            return acumuladas;
+          },
+          {},
+        ) ?? {};
+        clavesPorCompletar.push([
+          CLAVES_DATOS.notasEvolucion,
+          JSON.stringify(notas),
+        ]);
+      }
+      if (!valores.get(CLAVES_DATOS.galeriaPacientes)) {
+        const galeria = pacientesActualizados?.reduce<Record<string, Radiografia[]>>(
+          (acumuladas, paciente) => {
+            const pacienteSeed = datos.pacientes.find((item) => item.id === paciente.id);
+            const imagenes =
+              paciente.radiografias?.length
+                ? paciente.radiografias
+                : pacienteSeed?.radiografias ?? [];
+            if (imagenes.length > 0) acumuladas[paciente.id] = imagenes;
+            return acumuladas;
+          },
+          {},
+        ) ?? {};
+        clavesPorCompletar.push([
+          CLAVES_DATOS.galeriaPacientes,
+          JSON.stringify(galeria),
+        ]);
+      }
     }
     if (clavesPorCompletar.length > 0) {
       await AsyncStorage.multiSet(clavesPorCompletar);
@@ -188,6 +324,8 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
     [CLAVES_DATOS.recetas, JSON.stringify(datos.recetas)],
     [CLAVES_DATOS.usuarios, JSON.stringify(datos.usuarios)],
     [CLAVES_DATOS.usuarioActual, JSON.stringify(datos.usuarioActual)],
+    [CLAVES_DATOS.notasEvolucion, JSON.stringify(datos.notasEvolucion)],
+    [CLAVES_DATOS.galeriaPacientes, JSON.stringify(datos.galeriaPacientes)],
   ];
 
   await AsyncStorage.multiSet(valoresIniciales);
