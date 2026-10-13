@@ -29,7 +29,8 @@
           "cameraPermission": "OdontoApp necesita acceso a la cámara para tomar fotos intraorales y radiografías."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Alert,
@@ -16,35 +16,38 @@ import type { RootStackParamList } from '../navigation/types';
 import { usePacientes } from '../context/PacientesContext';
 import { Cita } from '../types';
 import { borderRadius, colors, shadows } from '../constants/theme';
+import AppointmentDateTimePicker from '../components/AppointmentDateTimePicker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AgendarCita'>;
 
-function fechaLocal(): string {
-  const fecha = new Date();
+type ModoSelector = 'date' | 'time';
+
+function fechaISO(fecha: Date): string {
   const anio = fecha.getFullYear();
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
   const dia = String(fecha.getDate()).padStart(2, '0');
   return `${anio}-${mes}-${dia}`;
 }
 
-function fechaValida(valor: string): boolean {
-  const coincidencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
-  if (!coincidencia) return false;
-  const [, anio, mes, dia] = coincidencia;
-  const fecha = new Date(Number(anio), Number(mes) - 1, Number(dia));
-  return (
-    fecha.getFullYear() === Number(anio) &&
-    fecha.getMonth() === Number(mes) - 1 &&
-    fecha.getDate() === Number(dia)
-  );
+function fechaLegible(fecha: Date): string {
+  return fecha.toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function hora24(hora: Date): string {
+  return `${String(hora.getHours()).padStart(2, '0')}:${String(hora.getMinutes()).padStart(2, '0')}`;
 }
 
 export default function AgendarCitaScreen({ navigation, route }: Props) {
   const { pacientes, crearCita, cargandoCitas } = usePacientes();
   const [pacienteId, setPacienteId] = useState(route.params?.pacienteId ?? '');
   const [mostrarPacientes, setMostrarPacientes] = useState(false);
-  const [fecha, setFecha] = useState(fechaLocal);
-  const [hora, setHora] = useState('');
+  const [fecha, setFecha] = useState(() => new Date());
+  const [hora, setHora] = useState<Date | null>(null);
+  const [selectorActivo, setSelectorActivo] = useState<ModoSelector | null>(null);
   const paciente = useMemo(
     () => pacientes.find((item) => item.id === pacienteId),
     [pacienteId, pacientes],
@@ -54,17 +57,21 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
   const [notasAgenda, setNotasAgenda] = useState('');
   const [guardando, setGuardando] = useState(false);
 
+  const cambiarFechaHora = useCallback(
+    (valor: Date) => {
+      if (selectorActivo === 'date') setFecha(valor);
+      if (selectorActivo === 'time') setHora(valor);
+    },
+    [selectorActivo],
+  );
+
   const guardar = async () => {
     if (!paciente) {
       Alert.alert('Falta información', 'Selecciona al paciente de esta cita.');
       return;
     }
-    if (!fechaValida(fecha.trim())) {
-      Alert.alert('Fecha no válida', 'Ingresa una fecha válida con formato AAAA-MM-DD.');
-      return;
-    }
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hora.trim())) {
-      Alert.alert('Hora no válida', 'Ingresa una hora válida en formato 24 horas (HH:MM).');
+    if (!hora) {
+      Alert.alert('Falta información', 'Selecciona la hora de la cita.');
       return;
     }
     if (!motivoConsulta.trim()) {
@@ -80,8 +87,8 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
       id: `cita-${Date.now()}`,
       pacienteId: paciente.id,
       nombrePaciente: paciente.nombre,
-      fecha: fecha.trim(),
-      hora: hora.trim(),
+      fecha: fechaISO(fecha),
+      hora: hora24(hora),
       motivoConsulta: motivoConsulta.trim(),
       tratamientoPrevisto: tratamientoPrevisto.trim(),
       estatus: 'programada',
@@ -163,27 +170,31 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
             </>
           )}
 
-          <Text style={styles.etiqueta}>Fecha * (AAAA-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            value={fecha}
-            onChangeText={setFecha}
-            placeholder="2026-10-13"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-          />
+          <Text style={styles.etiqueta}>Fecha *</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Seleccionar fecha. Fecha actual: ${fechaLegible(fecha)}`}
+            onPress={() => setSelectorActivo('date')}
+            style={({ pressed }) => [styles.selectorFechaHora, pressed && styles.presionado]}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            <Text style={styles.valorFechaHora}>{fechaLegible(fecha)}</Text>
+            <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+          </Pressable>
 
           <Text style={styles.etiqueta}>Hora * (24 horas)</Text>
-          <TextInput
-            style={styles.input}
-            value={hora}
-            onChangeText={setHora}
-            placeholder="09:30"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numbers-and-punctuation"
-            maxLength={5}
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Seleccionar hora${hora ? `. Hora actual: ${hora24(hora)}` : ''}`}
+            onPress={() => setSelectorActivo('time')}
+            style={({ pressed }) => [styles.selectorFechaHora, pressed && styles.presionado]}
+          >
+            <Ionicons name="time-outline" size={20} color={colors.primary} />
+            <Text style={[styles.valorFechaHora, !hora && styles.textoPlaceholder]}>
+              {hora ? hora24(hora) : 'Selecciona una hora'}
+            </Text>
+            <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+          </Pressable>
         </View>
 
         <View style={styles.tarjetaFormulario}>
@@ -234,6 +245,15 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
           </Text>
         </Pressable>
       </ScrollView>
+      {selectorActivo && (
+        <AppointmentDateTimePicker
+          visible
+          mode={selectorActivo}
+          value={selectorActivo === 'time' ? hora ?? new Date() : fecha}
+          onChange={cambiarFechaHora}
+          onClose={() => setSelectorActivo(null)}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -287,6 +307,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     color: colors.textPrimary,
     fontSize: 15,
+  },
+  selectorFechaHora: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+  },
+  valorFechaHora: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  textoPlaceholder: {
+    color: colors.textSecondary,
+    fontWeight: '400',
   },
   multilinea: {
     minHeight: 76,
