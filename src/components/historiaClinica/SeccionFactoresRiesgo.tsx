@@ -4,6 +4,7 @@ import CampoTexto from '../campos/CampoTexto';
 import CampoSiNo from '../campos/CampoSiNo';
 import CampoOpciones from '../campos/CampoOpciones';
 import { HistoriaClinica } from '../../types/paciente';
+import { colors } from '../../constants/theme';
 
 interface Props {
   historiaClinica: HistoriaClinica;
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   subtitulo: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E88E5',
+    color: colors.primary,
     marginBottom: 10,
     marginTop: 4,
   },

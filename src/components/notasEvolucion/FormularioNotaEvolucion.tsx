@@ -15,6 +15,7 @@ import CampoOpciones from '../campos/CampoOpciones';
 import CampoCheckbox from '../campos/CampoCheckbox';
 import { TODOS_LOS_DIENTES } from '../types/odontograma';
 import { NotaEvolucion, Pronostico, SiNo } from '../../types/paciente';
+import { borderRadius, colors } from '../../constants/theme';
 
 interface Props {
   tratantePorDefecto?: string;
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#455A64',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   chipsDientes: {
@@ -225,21 +226,22 @@ const styles = StyleSheet.create({
   chipDiente: {
     width: 40,
     height: 36,
-    borderRadius: 8,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 6,
     marginBottom: 6,
   },
   chipDienteSeleccionado: {
-    backgroundColor: '#1E88E5',
-    borderColor: '#1E88E5',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipDienteTexto: {
     fontSize: 12,
-    color: '#455A64',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   chipDienteTextoSeleccionado: {
@@ -256,14 +258,14 @@ const styles = StyleSheet.create({
   },
   boton: {
     flex: 1,
-    backgroundColor: '#1E88E5',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
     marginLeft: 8,
   },
   botonSecundario: {
-    backgroundColor: '#ECEFF1',
+    backgroundColor: colors.background,
     marginLeft: 0,
   },
   botonTexto: {
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   botonSecundarioTexto: {
-    color: '#455A64',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '700',
   },

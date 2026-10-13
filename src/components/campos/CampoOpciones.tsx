@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { borderRadius, colors } from '../../constants/theme';
 
 interface Opcion<T extends string> {
   valor: T;
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#475569',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   opciones: {
@@ -69,23 +70,24 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     marginRight: 8,
     marginBottom: 8,
   },
   chipSeleccionado: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipTexto: {
     fontSize: 13,
-    color: '#475569',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   chipTextoSeleccionado: {
-    color: '#fff',
+    color: colors.surface,
   },
   presionado: {
     opacity: 0.7,

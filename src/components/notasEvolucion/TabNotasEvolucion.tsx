@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import CronologiaNotas from './CronologiaNotas';
 import FormularioNotaEvolucion from './FormularioNotaEvolucion';
 import { NotaEvolucion } from '../../types/paciente';
+import { borderRadius, colors, shadows } from '../../constants/theme';
 
 interface Props {
   notas: NotaEvolucion[];
@@ -54,21 +55,17 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 20,
-    backgroundColor: '#0284C7',
-    borderRadius: 28,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
     paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    ...shadows.md,
   },
   botonFlotantePresionado: {
-    backgroundColor: '#1669AC',
+    opacity: 0.7,
   },
   botonFlotanteTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 15,
     fontWeight: '700',
   },

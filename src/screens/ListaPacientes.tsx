@@ -16,6 +16,7 @@ import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
 import { useConsultorio } from '../context/ConsultorioContext';
 import PanelRespaldo from '../components/PanelRespaldo';
+import { borderRadius, colors, shadows } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
 
@@ -73,11 +74,6 @@ export default function ListaPacientes({ navigation }: Props) {
     navigation.navigate('AgregarPaciente');
   };
 
-  const coloresAvatar = ['#0284C7', '#059669', '#7C3AED', '#DB2777', '#D97706'];
-  const obtenerColorAvatar = (nombre: string) => {
-    const indice = [...nombre].reduce((total, caracter) => total + caracter.charCodeAt(0), 0);
-    return coloresAvatar[indice % coloresAvatar.length];
-  };
   const obtenerIniciales = (nombre: string) =>
     nombre
       .trim()
@@ -89,7 +85,7 @@ export default function ListaPacientes({ navigation }: Props) {
   if (cargando) {
     return (
       <View style={styles.centrado}>
-        <ActivityIndicator size="large" color="#1E88E5" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -99,7 +95,7 @@ export default function ListaPacientes({ navigation }: Props) {
       <TextInput
         style={styles.buscador}
         placeholder="Buscar paciente por nombre..."
-        placeholderTextColor="#90A4AE"
+        placeholderTextColor={colors.textSecondary}
         value={busqueda}
         onChangeText={setBusqueda}
         autoCapitalize="words"
@@ -113,7 +109,7 @@ export default function ListaPacientes({ navigation }: Props) {
           onPress={() => navigation.navigate('EducacionPaciente')}
           style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Ionicons name="book-outline" size={23} color="#0284C7" />
+          <Ionicons name="book-outline" size={23} color={colors.primary} />
           <Text numberOfLines={1} style={styles.tituloAcceso}>Educación</Text>
         </Pressable>
         <Pressable
@@ -121,7 +117,7 @@ export default function ListaPacientes({ navigation }: Props) {
           onPress={() => navigation.navigate('Ajustes')}
           style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Ionicons name="settings-outline" size={23} color="#0284C7" />
+          <Ionicons name="settings-outline" size={23} color={colors.primary} />
           <Text numberOfLines={1} style={styles.tituloAcceso}>Ajustes</Text>
         </Pressable>
         <Pressable
@@ -129,7 +125,7 @@ export default function ListaPacientes({ navigation }: Props) {
           onPress={() => navigation.navigate('Ajustes', { seccion: 'respaldo' })}
           style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
         >
-          <Ionicons name="cloud-download-outline" size={23} color="#0284C7" />
+          <Ionicons name="cloud-download-outline" size={23} color={colors.primary} />
           <Text numberOfLines={1} style={styles.tituloAcceso}>Respaldo</Text>
         </Pressable>
       </View>
@@ -171,9 +167,9 @@ export default function ListaPacientes({ navigation }: Props) {
               styles.tarjeta,
               pressed && styles.tarjetaPresionada,
             ]}
-            android_ripple={{ color: '#CFD8DC' }}
+            android_ripple={{ color: colors.border }}
           >
-            <View style={[styles.avatar, { backgroundColor: obtenerColorAvatar(item.nombre) }]}>
+            <View style={styles.avatar}>
               <Text numberOfLines={1} style={styles.avatarTexto}>
                 {obtenerIniciales(item.nombre)}
               </Text>
@@ -203,7 +199,7 @@ export default function ListaPacientes({ navigation }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Agregar nuevo paciente"
       >
-        <Ionicons name="add" size={29} color="#fff" />
+        <Ionicons name="add" size={29} color={colors.surface} />
       </Pressable>
     </View>
   );
@@ -212,24 +208,24 @@ export default function ListaPacientes({ navigation }: Props) {
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
     padding: 16,
   },
   centrado: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   buscador: {
     height: 44,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     fontSize: 16,
     marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   accesosRapidos: {
     flexDirection: 'row',
@@ -245,22 +241,18 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 6,
     paddingVertical: 9,
-    borderRadius: 16,
-    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   botonAccesoPresionado: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
   },
   tituloAcceso: {
-    color: '#334155',
+    color: colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
@@ -276,17 +268,13 @@ const styles = StyleSheet.create({
   tarjeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 9,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   tarjetaPresionada: {
     opacity: 0.7,
@@ -294,14 +282,14 @@ const styles = StyleSheet.create({
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E0F2FE',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarTexto: {
-    color: '#0284C7',
+    color: colors.primary,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -317,32 +305,32 @@ const styles = StyleSheet.create({
   nombre: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    color: colors.textPrimary,
     flex: 1,
     flexShrink: 1,
   },
   detalle: {
     fontSize: 13,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginTop: 2,
     flexShrink: 1,
   },
   badgeEdad: {
-    backgroundColor: '#DCFCE7',
-    borderRadius: 10,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
     paddingVertical: 3,
     flexShrink: 0,
   },
   textoEdad: {
-    color: '#047857',
+    color: colors.primary,
     fontSize: 11,
     fontWeight: '700',
   },
   cajaMotivo: {
     alignSelf: 'stretch',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
+    backgroundColor: colors.primaryLight,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
     paddingVertical: 6,
     marginTop: 7,
@@ -350,12 +338,12 @@ const styles = StyleSheet.create({
   motivo: {
     fontSize: 12,
     lineHeight: 16,
-    color: '#475569',
+    color: colors.textSecondary,
     flexShrink: 1,
   },
   sinResultados: {
     textAlign: 'center',
-    color: '#90A4AE',
+    color: colors.textSecondary,
     marginTop: 40,
     fontSize: 15,
   },
@@ -365,15 +353,11 @@ const styles = StyleSheet.create({
     bottom: 24,
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0284C7',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    ...shadows.md,
   },
   botonFlotantePresionado: {
     opacity: 0.7,
@@ -384,7 +368,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   textoRestablecer: {
-    color: '#DC2626',
+    color: colors.danger,
     fontSize: 13,
     fontWeight: '700',
   },

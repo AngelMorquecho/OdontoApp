@@ -1,6 +1,7 @@
 import React from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { borderRadius, colors, shadows } from '../constants/theme';
 
 interface Opcion<T extends string> {
   valor: T;
@@ -44,7 +45,7 @@ export default function SegmentedControl<T extends string>({
               <MaterialCommunityIcons
                 name={opcion.icono}
                 size={16}
-                color={activo ? '#fff' : '#475569'}
+                color={activo ? colors.surface : colors.textSecondary}
               />
             )}
             <Text
@@ -74,27 +75,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     marginRight: 8,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   segmentoActivo: {
-    backgroundColor: '#0284C7',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    ...shadows.sm,
   },
   texto: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#475569',
+    color: colors.textSecondary,
     flexShrink: 0,
   },
   textoActivo: {
-    color: '#fff',
+    color: colors.surface,
   },
   presionado: {
     opacity: 0.7,

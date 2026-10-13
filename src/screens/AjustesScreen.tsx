@@ -13,6 +13,7 @@ import { usePacientes } from '../context/PacientesContext';
 import PanelRespaldo from '../components/PanelRespaldo';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { borderRadius, colors, shadows } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Ajustes'>;
 
@@ -197,20 +198,28 @@ function Campo({
   multiline = false,
   keyboardType = 'default',
 }: CampoProps) {
+  const [enfocado, setEnfocado] = useState(false);
+
   return (
     <View style={styles.campo}>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
       <TextInput
-        style={[styles.input, multiline && styles.inputMultiline]}
+        style={[
+          styles.input,
+          enfocado && styles.inputEnfocado,
+          multiline && styles.inputMultiline,
+        ]}
         value={valor}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#90A4AE"
+        placeholderTextColor={colors.textSecondary}
         autoCapitalize="sentences"
         autoCorrect={false}
         multiline={multiline}
         keyboardType={keyboardType}
         textAlignVertical={multiline ? 'top' : 'center'}
+        onFocus={() => setEnfocado(true)}
+        onBlur={() => setEnfocado(false)}
       />
     </View>
   );
@@ -219,26 +228,27 @@ function Campo({
 const styles = StyleSheet.create({
   pantalla: {
     flex: 1,
-    backgroundColor: '#F5F7F8',
+    backgroundColor: colors.background,
   },
   contenido: {
     padding: 16,
     paddingBottom: 32,
   },
   introduccion: {
-    color: '#546E7A',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 14,
   },
   seccion: {
     padding: 16,
-    borderRadius: 14,
-    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
     marginBottom: 14,
+    ...shadows.sm,
   },
   tituloSeccion: {
-    color: '#263238',
+    color: colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 14,
@@ -247,7 +257,7 @@ const styles = StyleSheet.create({
     marginBottom: 13,
   },
   etiqueta: {
-    color: '#455A64',
+    color: colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -255,12 +265,16 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 46,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
-    borderRadius: 9,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 12,
-    color: '#263238',
+    color: colors.textPrimary,
     fontSize: 15,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
+  },
+  inputEnfocado: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   inputMultiline: {
     minHeight: 82,
@@ -271,8 +285,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    backgroundColor: '#0284C7',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
     marginTop: 4,
   },
   botonDeshabilitado: {
@@ -282,7 +296,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   textoBotonGuardar: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '700',
   },

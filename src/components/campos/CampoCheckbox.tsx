@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { borderRadius, colors } from '../../constants/theme';
 
 interface Props {
   etiqueta: string;
@@ -34,25 +35,26 @@ const styles = StyleSheet.create({
   caja: {
     width: 22,
     height: 22,
-    borderRadius: 5,
+    borderRadius: borderRadius.sm,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   cajaMarcada: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   check: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '700',
   },
   etiqueta: {
     fontSize: 14,
-    color: '#475569',
+    color: colors.textPrimary,
   },
   presionado: {
     opacity: 0.7,

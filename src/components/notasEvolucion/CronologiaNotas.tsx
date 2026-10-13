@@ -1,15 +1,16 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { NotaEvolucion } from '../../types/paciente';
+import { borderRadius, colors, shadows } from '../../constants/theme';
 
 interface Props {
   notas: NotaEvolucion[];
 }
 
 const COLOR_PRONOSTICO: Record<NotaEvolucion['pronostico'], string> = {
-  Favorable: '#2E7D32',
+  Favorable: colors.success,
   Reservado: '#EF6C00',
-  Desfavorable: '#C62828',
+  Desfavorable: colors.danger,
 };
 
 function etiquetasEstudios(estudios: NotaEvolucion['estudios']): string {
@@ -97,16 +98,17 @@ const styles = StyleSheet.create({
   },
   vacioTexto: {
     textAlign: 'center',
-    color: '#90A4AE',
+    color: colors.textSecondary,
     fontSize: 15,
   },
   tarjeta: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#ECEFF1',
+    borderColor: colors.border,
     padding: 14,
     marginBottom: 12,
+    ...shadows.sm,
   },
   encabezado: {
     flexDirection: 'row',
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
   fecha: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#263238',
+    color: colors.textPrimary,
   },
   pronostico: {
     fontSize: 13,
@@ -125,28 +127,28 @@ const styles = StyleSheet.create({
   region: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1E88E5',
+    color: colors.primary,
     marginBottom: 4,
   },
   texto: {
     fontSize: 14,
-    color: '#37474F',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   detalle: {
     fontSize: 13,
-    color: '#607D8B',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   proximaCita: {
     fontSize: 13,
-    color: '#1E88E5',
+    color: colors.primary,
     fontWeight: '600',
     marginTop: 6,
   },
   tratante: {
     fontSize: 12,
-    color: '#90A4AE',
+    color: colors.textSecondary,
     marginTop: 4,
     fontStyle: 'italic',
   },

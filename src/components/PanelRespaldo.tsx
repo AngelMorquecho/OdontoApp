@@ -7,6 +7,7 @@ import * as Sharing from 'expo-sharing';
 import { DatosConsultorio } from '../context/ConsultorioContext';
 import { Paciente } from '../types/paciente';
 import { crearRespaldoJson, leerRespaldoJson } from '../utils/respaldoDatos';
+import { borderRadius, colors } from '../constants/theme';
 
 interface Props {
   pacientes: Paciente[];
@@ -136,7 +137,11 @@ export default function PanelRespaldo({
             pressed && styles.botonPresionado,
           ]}
         >
-          <Ionicons name="cloud-download-outline" size={18} color={compacto ? '#0284C7' : '#fff'} />
+          <Ionicons
+            name="cloud-download-outline"
+            size={18}
+            color={compacto ? colors.primary : colors.surface}
+          />
           <Text style={[styles.textoBoton, compacto && styles.textoBotonCompacto]}>
             Exportar JSON
           </Text>
@@ -153,7 +158,7 @@ export default function PanelRespaldo({
             pressed && styles.botonPresionado,
           ]}
         >
-          <Ionicons name="cloud-upload-outline" size={18} color="#0284C7" />
+          <Ionicons name="cloud-upload-outline" size={18} color={colors.primary} />
           <Text style={[styles.textoBoton, styles.textoImportar, compacto && styles.textoBotonCompacto]}>
             Importar JSON
           </Text>
@@ -171,12 +176,12 @@ export default function PanelRespaldo({
 
 const styles = StyleSheet.create({
   panel: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   panelCompacto: {
     padding: 0,
@@ -185,12 +190,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   titulo: {
-    color: '#0F172A',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
   descripcion: {
-    color: '#64748B',
+    color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
@@ -207,19 +212,19 @@ const styles = StyleSheet.create({
     gap: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: borderRadius.full,
     paddingHorizontal: 10,
-    backgroundColor: '#0284C7',
+    backgroundColor: colors.primary,
   },
   botonCompacto: {
     minHeight: 40,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: borderRadius.full,
   },
   botonImportar: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#BAE6FD',
+    borderColor: colors.border,
   },
   botonPresionado: {
     opacity: 0.7,
@@ -228,21 +233,21 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   textoBoton: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
     textAlign: 'center',
   },
   textoBotonCompacto: {
-    color: '#0369A1',
+    color: colors.primary,
     fontSize: 11,
   },
   textoImportar: {
-    color: '#0369A1',
+    color: colors.primary,
   },
   nota: {
-    color: '#64748B',
+    color: colors.textSecondary,
     fontSize: 11,
     lineHeight: 16,
     marginTop: 10,

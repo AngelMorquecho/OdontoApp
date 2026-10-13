@@ -7,6 +7,7 @@ import SeccionMedicos from './SeccionMedicos';
 import SeccionExploracion from './SeccionExploracion';
 import SeccionDiagnostico from './SeccionDiagnostico';
 import { HistoriaClinica } from '../../types/paciente';
+import { borderRadius, colors } from '../../constants/theme';
 
 interface Props {
   historiaClinica: HistoriaClinica;
@@ -84,26 +85,26 @@ const styles = StyleSheet.create({
   barraGuardar: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    backgroundColor: '#fff',
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
   avisoCambios: {
     textAlign: 'center',
-    color: '#EF6C00',
+    color: colors.danger,
     fontSize: 12,
     marginBottom: 8,
   },
   boton: {
-    backgroundColor: '#0284C7',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   botonPresionado: {
-    backgroundColor: '#1669AC',
+    opacity: 0.7,
   },
   botonTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },

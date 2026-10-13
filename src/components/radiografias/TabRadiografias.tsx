@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Radiografia, TipoRadiografia } from '../../types/paciente';
+import { borderRadius, colors } from '../../constants/theme';
 
 interface Props {
   radiografias: Radiografia[];
@@ -228,33 +229,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginHorizontal: 16,
     marginBottom: 8,
-    borderRadius: 10,
-    backgroundColor: '#E3F2FD',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#BBDEFB',
+    borderColor: colors.primaryLight,
   },
   botonAnalizarTexto: {
-    color: '#0D47A1',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
   botonAccion: {
     flex: 1,
-    backgroundColor: '#1E88E5',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: 12,
     alignItems: 'center',
     marginRight: 8,
   },
   botonAccionSecundario: {
-    backgroundColor: '#455A64',
+    backgroundColor: colors.secondary,
     marginRight: 0,
   },
   botonPresionado: {
     opacity: 0.7,
   },
   botonAccionTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
   },
   vacioTexto: {
     textAlign: 'center',
-    color: '#90A4AE',
+    color: colors.textSecondary,
     fontSize: 15,
   },
   lista: {
@@ -275,17 +276,17 @@ const styles = StyleSheet.create({
   tarjeta: {
     flex: 1,
     margin: 4,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#ECEFF1',
+    borderColor: colors.border,
     overflow: 'hidden',
     paddingBottom: 8,
   },
   miniatura: {
     width: '100%',
     height: 140,
-    backgroundColor: '#ECEFF1',
+    backgroundColor: colors.border,
   },
   etiquetaTipo: {
     position: 'absolute',
@@ -297,19 +298,19 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   etiquetaTipoTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 11,
     fontWeight: '700',
   },
   fechaItem: {
     fontSize: 12,
-    color: '#607D8B',
+    color: colors.textSecondary,
     marginTop: 6,
     marginHorizontal: 8,
   },
   descripcionItem: {
     fontSize: 12,
-    color: '#455A64',
+    color: colors.textPrimary,
     marginTop: 2,
     marginHorizontal: 8,
   },
@@ -320,21 +321,21 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContenido: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     padding: 16,
   },
   previsualizacion: {
     width: '100%',
     height: 180,
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
     marginBottom: 12,
-    backgroundColor: '#ECEFF1',
+    backgroundColor: colors.border,
   },
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#455A64',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   filaTipos: {
@@ -344,31 +345,31 @@ const styles = StyleSheet.create({
   chipTipo: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
     marginRight: 8,
   },
   chipTipoSeleccionado: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipTipoTexto: {
     fontSize: 13,
-    color: '#455A64',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   chipTipoTextoSeleccionado: {
-    color: '#fff',
+    color: colors.surface,
   },
   input: {
     height: 44,
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     fontSize: 15,
-    backgroundColor: '#F5F7F8',
+    backgroundColor: colors.surface,
     marginBottom: 16,
   },
   filaBotonesModal: {
@@ -376,23 +377,23 @@ const styles = StyleSheet.create({
   },
   botonModal: {
     flex: 1,
-    backgroundColor: '#1E88E5',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: 12,
     alignItems: 'center',
     marginLeft: 8,
   },
   botonModalSecundario: {
-    backgroundColor: '#ECEFF1',
+    backgroundColor: colors.background,
     marginLeft: 0,
   },
   botonModalTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 15,
     fontWeight: '700',
   },
   botonModalSecundarioTexto: {
-    color: '#455A64',
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '700',
   },

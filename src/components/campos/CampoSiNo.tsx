@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { borderRadius, colors } from '../../constants/theme';
 import { SiNo } from '../../types/paciente';
 
 interface Props {
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
   },
   etiqueta: {
     fontSize: 14,
-    color: '#475569',
+    color: colors.textPrimary,
     flex: 1,
     paddingRight: 8,
   },
@@ -61,22 +62,23 @@ const styles = StyleSheet.create({
   boton: {
     paddingVertical: 6,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: colors.border,
     marginLeft: 8,
+    backgroundColor: colors.surface,
   },
   botonSeleccionado: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   botonTexto: {
     fontSize: 14,
-    color: '#475569',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   botonTextoSeleccionado: {
-    color: '#fff',
+    color: colors.surface,
   },
   presionado: {
     opacity: 0.7,

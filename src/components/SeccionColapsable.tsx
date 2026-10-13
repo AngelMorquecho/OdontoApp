@@ -8,6 +8,7 @@ import {
   UIManager,
   View,
 } from 'react-native';
+import { borderRadius, colors, shadows } from '../constants/theme';
 
 if (
   Platform.OS === 'android' &&
@@ -55,11 +56,11 @@ export default function SeccionColapsable({
 const styles = StyleSheet.create({
   contenedor: {
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
     marginBottom: 12,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    ...shadows.sm,
   },
   encabezado: {
     flexDirection: 'row',
@@ -67,18 +68,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
+    borderTopLeftRadius: borderRadius.md,
+    borderTopRightRadius: borderRadius.md,
   },
   titulo: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
+    color: colors.textPrimary,
     flexShrink: 1,
   },
   icono: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0284C7',
+    color: colors.primary,
     width: 20,
     textAlign: 'center',
   },

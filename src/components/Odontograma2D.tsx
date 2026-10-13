@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import { ScrollView } from "react-native";
 import Svg, { G, Polygon, Rect, Text as SvgText } from "react-native-svg";
+import { colors } from "../constants/theme";
 import {
   CaraDental,
   EstadoCara,
@@ -12,11 +13,11 @@ import {
 
 // ---------- Configuración visual ----------
 const COLORES: Record<EstadoCara, string> = {
-  sana: "#FFFFFF",
-  caries: "#E53935",
-  obturacion: "#1E88E5",
+  sana: colors.surface,
+  caries: colors.danger,
+  obturacion: colors.primary,
 };
-const TRAZO = "#37474F";
+const TRAZO = colors.textPrimary;
 const TAM = 36; // tamaño de cada diente
 const INT = 11; // margen del cuadrado central
 const SEP = 8; // separación entre dientes
@@ -156,7 +157,7 @@ export default function Odontograma2D({
           y={4}
           width={1}
           height={ALTO - 8}
-          fill="#B0BEC5"
+          fill={colors.border}
         />
       </Svg>
     </ScrollView>

@@ -11,6 +11,7 @@ import AgregarPaciente from './src/screens/AgregarPaciente';
 import { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
+import { colors } from './src/constants/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -23,11 +24,11 @@ export default function App() {
           <Stack.Navigator
             initialRouteName="ListaPacientes"
             screenOptions={{
-              headerStyle: { backgroundColor: '#FFFFFF' },
-              headerTintColor: '#0284C7',
-              headerTitleStyle: { color: '#0F172A', fontWeight: '700' },
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.primary,
+              headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
               headerShadowVisible: false,
-              contentStyle: { backgroundColor: '#F8FAFC' },
+              contentStyle: { backgroundColor: colors.background },
             }}
           >
             <Stack.Screen

@@ -20,6 +20,7 @@ import {
   TODOS_LOS_DIENTES,
 } from '../components/types/odontograma';
 import { usePacientes } from '../context/PacientesContext';
+import { borderRadius, colors } from '../constants/theme';
 import {
   HallazgoIa,
   analizarImagenDental,
@@ -500,23 +501,23 @@ function OverlayHallazgos({ hallazgos }: { hallazgos: HallazgoIa[] }) {
                 cx={posicion.x}
                 cy={posicion.y}
                 r="7"
-                fill="rgba(229,57,53,0.18)"
-                stroke="#C62828"
+                fill="rgba(239,68,68,0.18)"
+                stroke={colors.danger}
                 strokeWidth="0.8"
               />
-              <Circle cx={posicion.x} cy={posicion.y} r="1.3" fill="#C62828" />
+              <Circle cx={posicion.x} cy={posicion.y} r="1.3" fill={colors.danger} />
               <Line
                 x1={posicion.x + 5}
                 y1={posicion.y - 5}
                 x2={posicion.x + 13}
                 y2={posicion.y - 12}
-                stroke="#C62828"
+                stroke={colors.danger}
                 strokeWidth="0.8"
               />
               <SvgText
                 x={posicion.x + 13}
                 y={posicion.y - 13}
-                fill="#fff"
+                fill={colors.surface}
                 stroke="#7F0000"
                 strokeWidth="0.3"
                 fontSize="4"
@@ -535,7 +536,7 @@ function OverlayHallazgos({ hallazgos }: { hallazgos: HallazgoIa[] }) {
 const styles = StyleSheet.create({
   pantalla: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   contenido: {
     padding: 16,
@@ -546,11 +547,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   avisoDemo: {
     padding: 14,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     backgroundColor: '#FFF3E0',
     borderWidth: 1,
     borderColor: '#FFCC80',
@@ -568,7 +569,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   tituloSeccion: {
-    color: '#263238',
+    color: colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 10,
@@ -585,11 +586,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#BBDEFB',
-    backgroundColor: '#F2F8FE',
+    borderColor: colors.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   textoBotonSecundario: {
-    color: '#1565C0',
+    color: colors.primary,
     fontWeight: '700',
     fontSize: 13,
   },
@@ -600,28 +601,29 @@ const styles = StyleSheet.create({
   tarjetaImagen: {
     width: 116,
     padding: 5,
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   tarjetaImagenSeleccionada: {
-    borderColor: '#1E88E5',
+    borderColor: colors.primary,
     borderWidth: 2,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.primaryLight,
   },
   miniatura: {
     width: '100%',
     height: 76,
     borderRadius: 7,
-    backgroundColor: '#ECEFF1',
+    backgroundColor: colors.border,
   },
   etiquetaImagen: {
-    color: '#455A64',
+    color: colors.textSecondary,
     fontSize: 10,
     marginTop: 4,
   },
   textoVacio: {
-    color: '#78909C',
+    color: colors.textSecondary,
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -630,8 +632,8 @@ const styles = StyleSheet.create({
     height: 260,
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: 12,
-    backgroundColor: '#17212B',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.textPrimary,
     marginTop: 6,
     marginBottom: 14,
   },
@@ -643,7 +645,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 8,
     bottom: 8,
-    color: '#fff',
+    color: colors.surface,
     backgroundColor: 'rgba(38,50,56,0.82)',
     borderRadius: 6,
     paddingHorizontal: 8,
@@ -655,9 +657,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 50,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: 12,
-    backgroundColor: '#0284C7',
+    backgroundColor: colors.primary,
     marginTop: 4,
   },
   botonDeshabilitado: {
@@ -672,7 +674,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   textoBotonPrincipal: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -680,18 +682,18 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   resumen: {
-    color: '#546E7A',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 10,
   },
   tarjetaHallazgo: {
     borderWidth: 1,
-    borderColor: '#E4EAEE',
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
     padding: 12,
     marginBottom: 9,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   filaHallazgo: {
     flexDirection: 'row',
@@ -702,35 +704,35 @@ const styles = StyleSheet.create({
     height: 23,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#90A4AE',
+    borderColor: colors.border,
     marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxActivo: {
-    backgroundColor: '#1976D2',
-    borderColor: '#1976D2',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   check: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: '700',
   },
   infoHallazgo: {
     flex: 1,
   },
   tituloHallazgo: {
-    color: '#263238',
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '700',
   },
   descripcionHallazgo: {
-    color: '#546E7A',
+    color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 3,
   },
   confianza: {
-    color: '#1565C0',
+    color: colors.primary,
     fontSize: 12,
     fontWeight: '700',
     marginTop: 5,
@@ -739,10 +741,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#ECEFF1',
+    borderTopColor: colors.border,
   },
   etiquetaCara: {
-    color: '#455A64',
+    color: colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 7,
@@ -755,33 +757,33 @@ const styles = StyleSheet.create({
   chipCara: {
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
     paddingHorizontal: 9,
     paddingVertical: 6,
   },
   chipCaraActivo: {
-    borderColor: '#1976D2',
-    backgroundColor: '#E3F2FD',
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   textoCara: {
-    color: '#546E7A',
+    color: colors.textSecondary,
     fontSize: 11,
   },
   textoCaraActivo: {
-    color: '#0D47A1',
+    color: colors.primary,
     fontWeight: '700',
   },
   ayudaCara: {
-    color: '#78909C',
+    color: colors.textSecondary,
     fontSize: 11,
     marginTop: 6,
   },
   sugerencia: {
-    color: '#455A64',
+    color: colors.textPrimary,
     fontSize: 13,
     lineHeight: 19,
-    backgroundColor: '#F5F7F8',
-    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
     padding: 12,
     marginVertical: 8,
   },
@@ -791,12 +793,12 @@ const styles = StyleSheet.create({
   botonAplicar: {
     alignItems: 'center',
     padding: 14,
-    borderRadius: 10,
-    backgroundColor: '#2E7D32',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.secondary,
     marginTop: 8,
   },
   textoBotonAplicar: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
@@ -806,16 +808,16 @@ const styles = StyleSheet.create({
     padding: 13,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#1E88E5',
+    borderColor: colors.primary,
     marginTop: 9,
   },
   textoBotonNota: {
-    color: '#1565C0',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
   notaRegistro: {
-    color: '#78909C',
+    color: colors.textSecondary,
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { borderRadius, colors, shadows } from '../constants/theme';
 import {
   CategoriaEducativa,
   TEMAS_EDUCACION_PACIENTE,
@@ -95,7 +96,7 @@ export default function EducacionPacienteScreen() {
           accessibilityLabel="Buscar temas educativos"
           style={styles.buscador}
           placeholder="Buscar temas..."
-          placeholderTextColor="#78909C"
+          placeholderTextColor={colors.textSecondary}
           value={busqueda}
           onChangeText={setBusqueda}
           autoCorrect={false}
@@ -121,7 +122,7 @@ export default function EducacionPacienteScreen() {
             <Ionicons
               name={ICONOS_CATEGORIA.Todos}
               size={15}
-              color={categoriaSeleccionada === null ? '#fff' : '#475569'}
+              color={categoriaSeleccionada === null ? colors.surface : colors.textSecondary}
             />
             <Text
               numberOfLines={1}
@@ -150,7 +151,7 @@ export default function EducacionPacienteScreen() {
                 <Ionicons
                   name={ICONOS_CATEGORIA[categoria]}
                   size={15}
-                  color={activo ? '#fff' : '#475569'}
+                  color={activo ? colors.surface : colors.textSecondary}
                 />
                 <Text
                   numberOfLines={1}
@@ -256,10 +257,10 @@ export default function EducacionPacienteScreen() {
 const styles = StyleSheet.create({
   pantalla: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   introduccion: {
-    color: '#475569',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: 16,
@@ -273,11 +274,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
     paddingHorizontal: 14,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#fff',
-    color: '#0F172A',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.textPrimary,
     fontSize: 16,
   },
   listaCategorias: {
@@ -290,28 +291,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 18,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   chipActivo: {
-    backgroundColor: '#0284C7',
-    borderColor: '#0284C7',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipPresionado: {
     opacity: 0.7,
   },
   textoChip: {
-    color: '#475569',
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     flexShrink: 1,
   },
   textoChipActivo: {
-    color: '#fff',
+    color: colors.surface,
   },
   listaTemas: {
     flex: 1,
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   tituloGrupo: {
-    color: '#0F172A',
+    color: colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 10,
@@ -343,15 +344,11 @@ const styles = StyleSheet.create({
     flexBasis: '48%',
     minHeight: 215,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
     padding: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    backgroundColor: colors.surface,
+    ...shadows.sm,
   },
   tarjetaPresionada: {
     opacity: 0.7,
@@ -359,47 +356,47 @@ const styles = StyleSheet.create({
   miniIlustracion: {
     height: 94,
     overflow: 'hidden',
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
     marginBottom: 10,
     padding: 4,
   },
   badgeCategoria: {
     alignSelf: 'flex-start',
     maxWidth: '100%',
-    borderRadius: 10,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 7,
     paddingVertical: 4,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: colors.primaryLight,
     marginBottom: 6,
   },
   categoriaTarjeta: {
-    color: '#0369A1',
+    color: colors.primary,
     fontSize: 9,
     fontWeight: '700',
     flexShrink: 1,
   },
   tituloTarjeta: {
-    color: '#0F172A',
+    color: colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
     flexShrink: 1,
   },
   descripcionTarjeta: {
-    color: '#64748B',
+    color: colors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 4,
     flex: 1,
   },
   enlaceDetalle: {
-    color: '#0284C7',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '700',
     marginTop: 8,
   },
   sinResultados: {
-    color: '#64748B',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 36,
     lineHeight: 22,
@@ -413,7 +410,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: colors.border,
     paddingHorizontal: 18,
     paddingBottom: 14,
   },
@@ -422,13 +419,13 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   categoriaDetalle: {
-    color: '#64748B',
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 3,
   },
   tituloDetalle: {
-    color: '#0F172A',
+    color: colors.textPrimary,
     fontSize: 21,
     fontWeight: '700',
   },
@@ -440,7 +437,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   textoCerrar: {
-    color: '#0284C7',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -450,20 +447,20 @@ const styles = StyleSheet.create({
   ilustracionDetalle: {
     width: '100%',
     height: 155,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    backgroundColor: '#F2F8FE',
+    backgroundColor: colors.primaryLight,
     marginBottom: 16,
   },
   tituloSeccion: {
-    color: '#0F172A',
+    color: colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginTop: 12,
     marginBottom: 8,
   },
   textoDetalle: {
-    color: '#475569',
+    color: colors.textSecondary,
     fontSize: 15,
     lineHeight: 23,
   },
@@ -475,20 +472,20 @@ const styles = StyleSheet.create({
   numeroPaso: {
     width: 27,
     height: 27,
-    borderRadius: 14,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.primaryLight,
     marginRight: 10,
   },
   textoNumeroPaso: {
-    color: '#0284C7',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '700',
   },
   textoPaso: {
     flex: 1,
-    color: '#475569',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     paddingTop: 2,
@@ -499,20 +496,20 @@ const styles = StyleSheet.create({
     marginBottom: 9,
   },
   vineta: {
-    color: '#1E88E5',
+    color: colors.primary,
     fontSize: 20,
     lineHeight: 22,
     marginRight: 9,
   },
   textoRecomendacion: {
     flex: 1,
-    color: '#475569',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
   },
   aviso: {
     backgroundColor: '#FFF8E1',
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: 13,
     marginTop: 18,
   },

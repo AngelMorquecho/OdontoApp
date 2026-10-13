@@ -12,6 +12,7 @@ import { useConsultorio } from '../context/ConsultorioContext';
 import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaForm';
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
 import TabRadiografias from '../components/radiografias/TabRadiografias';
+import { borderRadius, colors } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetallePaciente'>;
 
@@ -116,51 +117,53 @@ export default function DetallePaciente({ route, navigation }: Props) {
 
   return (
     <View style={styles.flex}>
-      <View style={styles.encabezado}>
-        <Text style={styles.nombre}>{paciente.nombre}</Text>
-        <Text style={styles.detalle}>
-          {paciente.edad} años · {paciente.telefono}
-        </Text>
-        <Text style={styles.motivo}>
-          Motivo de consulta: {paciente.motivoConsulta}
-        </Text>
-      </View>
+      <View style={styles.encabezadoYPestanas}>
+        <View style={styles.encabezado}>
+          <Text style={styles.nombre}>{paciente.nombre}</Text>
+          <Text style={styles.detalle}>
+            {paciente.edad} años · {paciente.telefono}
+          </Text>
+          <Text style={styles.motivo}>
+            Motivo de consulta: {paciente.motivoConsulta}
+          </Text>
+        </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listaPestanas}
-      >
-        {OPCIONES_PESTANAS.map((opcion) => {
-          const activa = pestana === opcion.valor;
-          return (
-            <Pressable
-              key={opcion.valor}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: activa }}
-              onPress={() => setPestana(opcion.valor)}
-              style={({ pressed }) => [
-                styles.chipPestana,
-                activa && styles.chipPestanaActivo,
-                pressed && styles.chipPestanaPresionado,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={opcion.icono}
-                size={16}
-                color={activa ? '#fff' : '#475569'}
-              />
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit={true}
-                style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listaPestanas}
+        >
+          {OPCIONES_PESTANAS.map((opcion) => {
+            const activa = pestana === opcion.valor;
+            return (
+              <Pressable
+                key={opcion.valor}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activa }}
+                onPress={() => setPestana(opcion.valor)}
+                style={({ pressed }) => [
+                  styles.chipPestana,
+                  activa && styles.chipPestanaActivo,
+                  pressed && styles.chipPestanaPresionado,
+                ]}
               >
-                {opcion.etiqueta}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <MaterialCommunityIcons
+                  name={opcion.icono}
+                  size={16}
+                  color={activa ? colors.surface : colors.textSecondary}
+                />
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
+                >
+                  {opcion.etiqueta}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={styles.contenidoPestana}>
         {pestana === 'odontograma' && (
@@ -204,7 +207,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   centrado: {
     flex: 1,
@@ -215,29 +218,34 @@ const styles = StyleSheet.create({
   encabezado: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
+    paddingBottom: 0,
+    backgroundColor: colors.surface,
+  },
+  encabezadoYPestanas: {
+    flexGrow: 0,
+    paddingBottom: 0,
+    backgroundColor: colors.surface,
   },
   nombre: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#0F172A',
+    color: colors.textPrimary,
     flexShrink: 1,
   },
   detalle: {
     fontSize: 13,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginTop: 4,
     flexShrink: 1,
   },
   motivo: {
     fontSize: 13,
-    color: '#475569',
+    color: colors.textSecondary,
     marginTop: 6,
     flexShrink: 1,
   },
   botonExportarPdf: {
-    color: '#0284C7',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '600',
     flexShrink: 1,
@@ -249,6 +257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 0,
     alignItems: 'center',
+    flexGrow: 0,
   },
   chipPestana: {
     flexDirection: 'row',
@@ -258,32 +267,30 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#E2E8F0',
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   chipPestanaActivo: {
-    backgroundColor: '#0284C7',
-    shadowColor: '#0284C7',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipPestanaPresionado: {
     opacity: 0.7,
   },
   textoPestana: {
-    color: '#334155',
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
     flexShrink: 1,
   },
   textoPestanaActivo: {
-    color: '#fff',
+    color: colors.surface,
   },
   contenidoPestana: {
     flex: 1,
-    marginTop: 8,
+    marginTop: 0,
   },
   contenidoOdontograma: {
     paddingHorizontal: 16,
@@ -293,6 +300,6 @@ const styles = StyleSheet.create({
   },
   ayuda: {
     marginTop: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
 });

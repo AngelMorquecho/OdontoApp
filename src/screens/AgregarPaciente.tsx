@@ -12,6 +12,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { usePacientes } from '../context/PacientesContext';
+import { borderRadius, colors } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AgregarPaciente'>;
 
@@ -122,24 +123,24 @@ const styles = StyleSheet.create({
   },
   contenedor: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     flexGrow: 1,
   },
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#455A64',
+    color: colors.textPrimary,
     marginBottom: 6,
     marginTop: 14,
   },
   input: {
     height: 44,
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#CFD8DC',
+    borderColor: colors.border,
     paddingHorizontal: 14,
     fontSize: 16,
-    backgroundColor: '#F5F7F8',
+    backgroundColor: colors.surface,
   },
   inputMultilinea: {
     height: 90,
@@ -148,19 +149,19 @@ const styles = StyleSheet.create({
   },
   boton: {
     marginTop: 28,
-    backgroundColor: '#1E88E5',
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   botonPresionado: {
-    backgroundColor: '#1669AC',
+    opacity: 0.7,
   },
   botonDeshabilitado: {
     opacity: 0.6,
   },
   botonTexto: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },
