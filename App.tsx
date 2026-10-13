@@ -18,6 +18,7 @@ import AgendaCitasScreen from './src/screens/AgendaCitasScreen';
 import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
 import ModalCrearReceta from './src/screens/ModalCrearReceta';
 import PortalPacienteScreen from './src/screens/paciente/PortalPacienteScreen';
+import LoginScreen from './src/screens/LoginScreen';
 import type { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
@@ -92,7 +93,7 @@ export default function App() {
 }
 
 function AppNavegacion() {
-  const { user, cargandoAuth } = useAuth();
+  const { user, isAuthenticated, cargandoAuth } = useAuth();
   const esPaciente = user.rol === 'paciente';
 
   if (cargandoAuth) {
@@ -104,10 +105,18 @@ function AppNavegacion() {
   }
 
   return (
-    <NavigationContainer key={`${user.rol}:${user.pacienteId ?? ''}`}>
+    <NavigationContainer
+      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user.rol}:${user.pacienteId ?? ''}`}
+    >
       <StatusBar barStyle="dark-content" />
       <Stack.Navigator
-        initialRouteName={esPaciente ? 'PortalPaciente' : 'ListaPacientes'}
+        initialRouteName={
+          !isAuthenticated
+            ? 'Login'
+            : esPaciente
+              ? 'PortalPaciente'
+              : 'ListaPacientes'
+        }
         screenOptions={{
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
@@ -116,7 +125,13 @@ function AppNavegacion() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {esPaciente ? (
+        {!isAuthenticated ? (
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ title: '', headerShown: false }}
+          />
+        ) : esPaciente ? (
           <>
             <Stack.Screen
               name="PortalPaciente"

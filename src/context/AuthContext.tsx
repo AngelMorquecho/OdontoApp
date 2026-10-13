@@ -14,16 +14,29 @@ import { CLAVES_DATOS } from '../utils/seedData';
 
 interface AuthContextValue {
   user: Usuario;
+  isAuthenticated: boolean;
   cargandoAuth: boolean;
+  iniciarSesion: (email: string, password: string) => Promise<boolean>;
+  iniciarComoDoctor: () => Promise<boolean>;
+  iniciarComoPaciente: () => Promise<boolean>;
+  cerrarSesion: () => void;
   seleccionarRolDoctor: () => Promise<void>;
   seleccionarPaciente: (paciente: Paciente) => Promise<void>;
 }
 
 const USUARIO_DOCTOR_DEMO: Usuario = {
-  id: 'doctor-demo',
-  nombre: 'Doctor (modo de prueba)',
-  email: 'doctor@odontoapp.local',
+  id: 'doctor-demo-alejandro',
+  nombre: 'Dr. Alejandro Morales',
+  email: 'doctor@dental.com',
   rol: 'doctor',
+};
+
+const USUARIO_PACIENTE_DEMO: Usuario = {
+  id: 'paciente-001',
+  nombre: 'María López',
+  email: 'maria.lopez@email.com',
+  rol: 'paciente',
+  pacienteId: 'paciente-001',
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -34,6 +47,7 @@ interface Props {
 
 export function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<Usuario>(USUARIO_DOCTOR_DEMO);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [cargandoAuth, setCargandoAuth] = useState(true);
 
   useEffect(() => {
@@ -56,20 +70,54 @@ export function AuthProvider({ children }: Props) {
     };
   }, []);
 
-  const guardarUsuario = useCallback(async (usuario: Usuario) => {
+  const guardarUsuario = useCallback(async (usuario: Usuario): Promise<boolean> => {
     try {
       await AsyncStorage.setItem(CLAVES_DATOS.usuarioActual, JSON.stringify(usuario));
       setUser(usuario);
+      setIsAuthenticated(true);
+      return true;
     } catch (error) {
       Alert.alert(
         'No se pudo cambiar la vista',
         error instanceof Error ? error.message : 'No se pudo guardar la sesión de prueba.',
       );
+      return false;
     }
   }, []);
 
-  const seleccionarRolDoctor = useCallback(
+  const iniciarComoDoctor = useCallback(
     () => guardarUsuario(USUARIO_DOCTOR_DEMO),
+    [guardarUsuario],
+  );
+
+  const iniciarComoPaciente = useCallback(
+    () => guardarUsuario(USUARIO_PACIENTE_DEMO),
+    [guardarUsuario],
+  );
+
+  const iniciarSesion = useCallback(async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    if (!password.trim()) return false;
+    const correo = email.trim().toLowerCase();
+    if (correo === USUARIO_DOCTOR_DEMO.email) {
+      return iniciarComoDoctor();
+    }
+    if (correo === USUARIO_PACIENTE_DEMO.email) {
+      return iniciarComoPaciente();
+    }
+    return false;
+  }, [iniciarComoDoctor, iniciarComoPaciente]);
+
+  const cerrarSesion = useCallback(() => {
+    setIsAuthenticated(false);
+  }, []);
+
+  const seleccionarRolDoctor = useCallback(
+    async () => {
+      await guardarUsuario(USUARIO_DOCTOR_DEMO);
+    },
     [guardarUsuario],
   );
 
@@ -81,12 +129,32 @@ export function AuthProvider({ children }: Props) {
       rol: 'paciente',
       pacienteId: paciente.id,
     };
-    return guardarUsuario(usuario);
+    return guardarUsuario(usuario).then(() => undefined);
   }, [guardarUsuario]);
 
   const value = useMemo(
-    () => ({ user, cargandoAuth, seleccionarRolDoctor, seleccionarPaciente }),
-    [user, cargandoAuth, seleccionarRolDoctor, seleccionarPaciente],
+    () => ({
+      user,
+      isAuthenticated,
+      cargandoAuth,
+      iniciarSesion,
+      iniciarComoDoctor,
+      iniciarComoPaciente,
+      cerrarSesion,
+      seleccionarRolDoctor,
+      seleccionarPaciente,
+    }),
+    [
+      user,
+      isAuthenticated,
+      cargandoAuth,
+      iniciarSesion,
+      iniciarComoDoctor,
+      iniciarComoPaciente,
+      cerrarSesion,
+      seleccionarRolDoctor,
+      seleccionarPaciente,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
