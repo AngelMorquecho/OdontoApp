@@ -20,6 +20,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OdontoApp necesita acceso a tus fotos para adjuntar radiografías e imágenes al expediente del paciente.",
+          "cameraPermission": "OdontoApp necesita acceso a la cámara para tomar fotos intraorales y radiografías."
+        }
+      ],
+      "expo-sharing"
+    ]
   }
 }
