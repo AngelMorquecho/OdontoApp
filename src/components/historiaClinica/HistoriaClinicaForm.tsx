@@ -84,6 +84,9 @@ const styles = StyleSheet.create({
   },
   barraGuardar: {
     padding: 16,
+    marginTop: 20,
+    marginBottom: 24,
+    gap: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,

@@ -128,41 +128,43 @@ export default function DetallePaciente({ route, navigation }: Props) {
           </Text>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listaPestanas}
-        >
-          {OPCIONES_PESTANAS.map((opcion) => {
-            const activa = pestana === opcion.valor;
-            return (
-              <Pressable
-                key={opcion.valor}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: activa }}
-                onPress={() => setPestana(opcion.valor)}
-                style={({ pressed }) => [
-                  styles.chipPestana,
-                  activa && styles.chipPestanaActivo,
-                  pressed && styles.chipPestanaPresionado,
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name={opcion.icono}
-                  size={16}
-                  color={activa ? colors.surface : colors.textSecondary}
-                />
-                <Text
-                  numberOfLines={1}
-                  adjustsFontSizeToFit={true}
-                  style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
+        <View style={styles.barraPestanas}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.listaPestanas}
+          >
+            {OPCIONES_PESTANAS.map((opcion) => {
+              const activa = pestana === opcion.valor;
+              return (
+                <Pressable
+                  key={opcion.valor}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: activa }}
+                  onPress={() => setPestana(opcion.valor)}
+                  style={({ pressed }) => [
+                    styles.chipPestana,
+                    activa && styles.chipPestanaActivo,
+                    pressed && styles.chipPestanaPresionado,
+                  ]}
                 >
-                  {opcion.etiqueta}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                  <MaterialCommunityIcons
+                    name={opcion.icono}
+                    size={16}
+                    color={activa ? colors.surface : colors.textSecondary}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
+                  >
+                    {opcion.etiqueta}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
       </View>
 
       <View style={styles.contenidoPestana}>
@@ -219,12 +221,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 0,
+    marginBottom: 12,
     backgroundColor: colors.surface,
   },
   encabezadoYPestanas: {
     flexGrow: 0,
     paddingBottom: 0,
     backgroundColor: colors.surface,
+  },
+  barraPestanas: {
+    marginTop: 8,
+    marginBottom: 16,
   },
   nombre: {
     fontSize: 22,
@@ -290,7 +297,7 @@ const styles = StyleSheet.create({
   },
   contenidoPestana: {
     flex: 1,
-    marginTop: 0,
+    paddingTop: 12,
   },
   contenidoOdontograma: {
     paddingHorizontal: 16,

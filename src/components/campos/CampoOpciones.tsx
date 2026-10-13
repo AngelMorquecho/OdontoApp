@@ -55,17 +55,20 @@ export default function CampoOpciones<T extends string>({
 
 const styles = StyleSheet.create({
   contenedor: {
-    marginBottom: 14,
+    marginBottom: 12,
   },
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#334155',
+    marginTop: 14,
     marginBottom: 6,
   },
   opciones: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: 8,
+    marginBottom: 12,
   },
   chip: {
     paddingVertical: 8,

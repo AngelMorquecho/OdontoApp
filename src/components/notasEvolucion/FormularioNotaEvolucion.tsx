@@ -210,17 +210,19 @@ const styles = StyleSheet.create({
   },
   contenedor: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
   },
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 8,
+    color: '#334155',
+    marginTop: 14,
+    marginBottom: 6,
   },
   chipsDientes: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: 8,
     marginBottom: 12,
   },
   chipDiente: {
@@ -254,7 +256,9 @@ const styles = StyleSheet.create({
   },
   filaBotones: {
     flexDirection: 'row',
-    marginTop: 16,
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 24,
   },
   boton: {
     flex: 1,
@@ -262,7 +266,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
-    marginLeft: 8,
   },
   botonSecundario: {
     backgroundColor: colors.background,

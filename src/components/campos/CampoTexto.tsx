@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { borderRadius, colors } from '../../constants/theme';
+import { colors } from '../../constants/theme';
 
 interface Props extends Omit<TextInputProps, 'style'> {
   etiqueta: string;
@@ -37,22 +37,23 @@ export default function CampoTexto({ etiqueta, ...resto }: Props) {
 
 const styles = StyleSheet.create({
   contenedor: {
-    marginBottom: 14,
+    marginBottom: 12,
   },
   etiqueta: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#334155',
+    marginTop: 14,
     marginBottom: 6,
   },
   input: {
-    height: 44,
-    borderRadius: borderRadius.md,
+    minHeight: 44,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     fontSize: 15,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     color: colors.textPrimary,
   },
   inputEnfocado: {

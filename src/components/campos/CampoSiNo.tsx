@@ -45,19 +45,19 @@ export default function CampoSiNo({ etiqueta, valor, onChange }: Props) {
 
 const styles = StyleSheet.create({
   contenedor: {
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   etiqueta: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    flex: 1,
-    paddingRight: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+    marginTop: 14,
+    marginBottom: 6,
   },
   opciones: {
     flexDirection: 'row',
+    marginTop: 8,
+    marginBottom: 12,
   },
   boton: {
     paddingVertical: 6,
