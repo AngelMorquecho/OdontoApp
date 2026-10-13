@@ -3,6 +3,7 @@ export type RootStackParamList = {
   ListaPacientes: undefined;
   EducacionPaciente: undefined;
   DiagnosticoIa: { pacienteId: string };
+  Ajustes: { seccion?: 'respaldo' } | undefined;
   DetallePaciente: { pacienteId: string };
   AgregarPaciente: undefined;
 };

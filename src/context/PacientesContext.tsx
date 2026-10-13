@@ -7,7 +7,13 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { crearOdontogramaVacio, Odontograma } from '../components/types/odontograma';
+import {
+  CARAS,
+  CaraDental,
+  crearOdontogramaVacio,
+  Odontograma,
+  TODOS_LOS_DIENTES,
+} from '../components/types/odontograma';
 import {
   crearHistoriaClinicaVacia,
   HistoriaClinica,
@@ -30,30 +36,117 @@ function sanearHistoriaClinica(
 ): HistoriaClinica {
   const base = crearHistoriaClinicaVacia();
   if (!historiaClinica) return base;
-  // Merge superficial por sección + fallback de notasEvolucion como arreglo,
-  // por si el objeto persistido viene de un esquema previo incompleto.
+  const factores = historiaClinica.factoresRiesgo;
+  const antecedentesMedicos = historiaClinica.antecedentesMedicos;
+  const exploracion = historiaClinica.exploracionClinica;
+  const notas = Array.isArray(historiaClinica.notasEvolucion)
+    ? historiaClinica.notasEvolucion.filter(esNotaEvolucionValida)
+    : [];
+  // Completa tanto secciones como objetos anidados para sanear respaldos previos o incompletos.
   return {
     identificacion: { ...base.identificacion, ...historiaClinica.identificacion },
-    factoresRiesgo: { ...base.factoresRiesgo, ...historiaClinica.factoresRiesgo },
+    factoresRiesgo: {
+      ...base.factoresRiesgo,
+      ...factores,
+      tabaquismo: { ...base.factoresRiesgo.tabaquismo, ...factores?.tabaquismo },
+      alcohol: { ...base.factoresRiesgo.alcohol, ...factores?.alcohol },
+      drogas: { ...base.factoresRiesgo.drogas, ...factores?.drogas },
+      higieneOral: { ...base.factoresRiesgo.higieneOral, ...factores?.higieneOral },
+    },
     antecedentesHeredofamiliares: {
       ...base.antecedentesHeredofamiliares,
       ...historiaClinica.antecedentesHeredofamiliares,
     },
-    antecedentesMedicos: { ...base.antecedentesMedicos, ...historiaClinica.antecedentesMedicos },
+    antecedentesMedicos: {
+      ...base.antecedentesMedicos,
+      ...antecedentesMedicos,
+      alergias: { ...base.antecedentesMedicos.alergias, ...antecedentesMedicos?.alergias },
+    },
     ginecoObstetricos: { ...base.ginecoObstetricos, ...historiaClinica.ginecoObstetricos },
     antecedentesOdontologicos: {
       ...base.antecedentesOdontologicos,
       ...historiaClinica.antecedentesOdontologicos,
     },
     signosVitales: { ...base.signosVitales, ...historiaClinica.signosVitales },
-    exploracionClinica: { ...base.exploracionClinica, ...historiaClinica.exploracionClinica },
+    exploracionClinica: {
+      ...base.exploracionClinica,
+      ...exploracion,
+      extraoral: { ...base.exploracionClinica.extraoral, ...exploracion?.extraoral },
+      intraoral: { ...base.exploracionClinica.intraoral, ...exploracion?.intraoral },
+    },
     evaluacionPeriodontal: {
       ...base.evaluacionPeriodontal,
       ...historiaClinica.evaluacionPeriodontal,
     },
     diagnosticoPlan: { ...base.diagnosticoPlan, ...historiaClinica.diagnosticoPlan },
-    notasEvolucion: historiaClinica.notasEvolucion ?? [],
+    notasEvolucion: notas,
   };
+}
+
+function esNotaEvolucionValida(valor: unknown): valor is NotaEvolucion {
+  if (!valor || typeof valor !== 'object') return false;
+  const nota = valor as Partial<NotaEvolucion>;
+  const estudios = nota.estudios;
+  return (
+    typeof nota.id === 'string' &&
+    typeof nota.fecha === 'string' &&
+    typeof nota.hora === 'string' &&
+    typeof nota.regionOD === 'string' &&
+    typeof nota.evolucionProcedimiento === 'string' &&
+    typeof nota.dx === 'string' &&
+    (nota.pronostico === 'Favorable' ||
+      nota.pronostico === 'Reservado' ||
+      nota.pronostico === 'Desfavorable') &&
+    typeof nota.plan === 'string' &&
+    (nota.anestesia === 'si' || nota.anestesia === 'no') &&
+    typeof nota.receta === 'string' &&
+    typeof nota.indicaciones === 'string' &&
+    typeof nota.proximaCita === 'string' &&
+    typeof nota.tratante === 'string' &&
+    !!estudios &&
+    typeof estudios.rx === 'boolean' &&
+    typeof estudios.fotos === 'boolean' &&
+    typeof estudios.escaneo === 'boolean' &&
+    typeof estudios.cbct === 'boolean'
+  );
+}
+
+function sanearOdontograma(
+  odontograma: Partial<Odontograma> | undefined,
+  pacienteId: string,
+): Odontograma {
+  const base = crearOdontogramaVacio(pacienteId);
+  const dientes = odontograma?.dientes;
+  for (const numero of TODOS_LOS_DIENTES) {
+    const diente = dientes?.[numero];
+    if (!diente || typeof diente !== 'object') continue;
+    const carasRecibidas = diente.caras;
+    const caras: Partial<Record<CaraDental, unknown>> =
+      carasRecibidas && typeof carasRecibidas === 'object' ? carasRecibidas : {};
+    for (const cara of CARAS as readonly CaraDental[]) {
+      const estado = caras[cara];
+      if (estado === 'sana' || estado === 'caries' || estado === 'obturacion') {
+        base.dientes[numero].caras[cara] = estado;
+      }
+    }
+  }
+  return {
+    ...base,
+    fecha: typeof odontograma?.fecha === 'string' ? odontograma.fecha : base.fecha,
+    dientes: base.dientes,
+  };
+}
+
+function esRadiografiaValida(valor: unknown): valor is Radiografia {
+  if (!valor || typeof valor !== 'object') return false;
+  const radiografia = valor as Partial<Radiografia>;
+  return (
+    typeof radiografia.id === 'string' &&
+    typeof radiografia.uri === 'string' &&
+    (radiografia.tipo === 'rx' || radiografia.tipo === 'foto') &&
+    typeof radiografia.fecha === 'string' &&
+    typeof radiografia.descripcion === 'string'
+  );
 }
 
 function sanearPaciente(paciente: Partial<Paciente> & { id: string }): Paciente {
@@ -63,9 +156,11 @@ function sanearPaciente(paciente: Partial<Paciente> & { id: string }): Paciente 
     edad: paciente.edad ?? 0,
     telefono: paciente.telefono ?? '',
     motivoConsulta: paciente.motivoConsulta ?? '',
-    odontograma: paciente.odontograma ?? crearOdontogramaVacio(paciente.id),
+    odontograma: sanearOdontograma(paciente.odontograma, paciente.id),
     historiaClinica: sanearHistoriaClinica(paciente.historiaClinica),
-    radiografias: paciente.radiografias ?? [],
+    radiografias: Array.isArray(paciente.radiografias)
+      ? paciente.radiografias.filter(esRadiografiaValida)
+      : [],
   };
 }
 
@@ -101,6 +196,7 @@ interface PacientesContextValor {
     pacienteId: string,
     nuevaRadiografia: Radiografia,
   ) => void;
+  reemplazarPacientes: (pacientesImportados: Paciente[]) => Promise<void>;
   /** Borra por completo la lista de pacientes del dispositivo y reinicia con el mock. */
   limpiarAlmacenamiento: () => Promise<void>;
 }
@@ -250,6 +346,18 @@ export function PacientesProvider({ children }: Props) {
     [],
   );
 
+  const reemplazarPacientes = useCallback(
+    async (pacientesImportados: Paciente[]) => {
+      const pacientesSaneados = sanearPacientes(pacientesImportados);
+      await AsyncStorage.setItem(
+        CLAVE_ALMACENAMIENTO,
+        JSON.stringify(pacientesSaneados),
+      );
+      setPacientes(pacientesSaneados);
+    },
+    [],
+  );
+
   const limpiarAlmacenamiento = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(CLAVE_ALMACENAMIENTO);
@@ -271,6 +379,7 @@ export function PacientesProvider({ children }: Props) {
         actualizarHistoriaClinica,
         agregarNotaEvolucion,
         agregarRadiografia,
+        reemplazarPacientes,
         limpiarAlmacenamiento,
       }}
     >

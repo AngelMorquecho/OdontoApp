@@ -11,9 +11,10 @@ import {
   SUPERIOR,
 } from '../components/types/odontograma';
 import { NotaEvolucion, Paciente, SiNo } from '../types/paciente';
-
-const DOCTOR_1 = 'Dr. Luis Morquecho García';
-const DOCTOR_2 = 'Dra. Jacqueline Rodríguez Enríquez';
+import {
+  DATOS_CONSULTORIO_INICIALES,
+  DatosConsultorio,
+} from '../context/ConsultorioContext';
 
 /** Escapa caracteres especiales para incrustar texto de usuario en HTML de forma segura. */
 function escaparHtml(texto: string | undefined | null): string {
@@ -78,7 +79,10 @@ function obtenerCarasOdontograma(odontograma: Odontograma): RegistroCaraDental[]
   return registros;
 }
 
-function seccionEncabezadoConsultorio(paciente: Paciente): string {
+function seccionEncabezadoConsultorio(
+  paciente: Paciente,
+  consultorio: DatosConsultorio,
+): string {
   const fechaEmision = new Date().toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',
@@ -86,8 +90,12 @@ function seccionEncabezadoConsultorio(paciente: Paciente): string {
   });
   return `
     <div class="encabezado-consultorio">
+      ${consultorio.nombreClinica ? `<p class="nombre-clinica">${escaparHtml(consultorio.nombreClinica)}</p>` : ''}
       <h1>Expediente Clínico Odontológico</h1>
-      <p class="doctores">${DOCTOR_1} &middot; ${DOCTOR_2}</p>
+      <p class="doctores">${textoOGuion(consultorio.nombreDoctor)}</p>
+      ${consultorio.cedula ? `<p class="datos-consultorio">Cédula profesional: ${escaparHtml(consultorio.cedula)}</p>` : ''}
+      ${consultorio.direccion ? `<p class="datos-consultorio">${escaparHtml(consultorio.direccion)}</p>` : ''}
+      ${consultorio.telefono ? `<p class="datos-consultorio">Tel. ${escaparHtml(consultorio.telefono)}</p>` : ''}
       <p class="fecha-emision">Fecha de emisión: ${escaparHtml(fechaEmision)}</p>
     </div>
     <div class="ficha-paciente">
@@ -338,6 +346,17 @@ const ESTILOS_CSS = `
     font-weight: 600;
     margin: 0 0 4px;
   }
+  .nombre-clinica {
+    font-size: 15px;
+    font-weight: 700;
+    color: #455A64;
+    margin: 0 0 4px;
+  }
+  .datos-consultorio {
+    font-size: 11px;
+    color: #455A64;
+    margin: 2px 0;
+  }
   .fecha-emision {
     font-size: 11px;
     color: #607D8B;
@@ -431,7 +450,10 @@ const ESTILOS_CSS = `
 `;
 
 /** Construye el documento HTML completo del expediente clínico de un paciente. */
-export function construirHtmlExpediente(paciente: Paciente): string {
+export function construirHtmlExpediente(
+  paciente: Paciente,
+  consultorio: DatosConsultorio = DATOS_CONSULTORIO_INICIALES,
+): string {
   return `
     <!DOCTYPE html>
     <html lang="es">
@@ -442,7 +464,7 @@ export function construirHtmlExpediente(paciente: Paciente): string {
         <style>${ESTILOS_CSS}</style>
       </head>
       <body>
-        ${seccionEncabezadoConsultorio(paciente)}
+        ${seccionEncabezadoConsultorio(paciente, consultorio)}
         ${seccionDatosPersonales(paciente)}
         ${seccionAntecedentesMedicos(paciente)}
         ${seccionAntecedentesGinecoObstetricos(paciente)}
@@ -459,12 +481,15 @@ export function construirHtmlExpediente(paciente: Paciente): string {
  * Genera el PDF del expediente clínico completo de un paciente y abre el
  * menú nativo de compartir para enviarlo o guardarlo.
  */
-export async function generarYCompartirPdfExpediente(paciente: Paciente): Promise<void> {
+export async function generarYCompartirPdfExpediente(
+  paciente: Paciente,
+  consultorio: DatosConsultorio = DATOS_CONSULTORIO_INICIALES,
+): Promise<void> {
   if (Platform.OS === 'web') {
     throw new Error('Compartir un PDF local no está disponible en la versión web. Usa la aplicación móvil.');
   }
 
-  const html = construirHtmlExpediente(paciente);
+  const html = construirHtmlExpediente(paciente, consultorio);
   const { uri } = await Print.printToFileAsync({ html, base64: false });
 
   const disponible = await Sharing.isAvailableAsync();

@@ -13,12 +13,20 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
+import { useConsultorio } from '../context/ConsultorioContext';
+import PanelRespaldo from '../components/PanelRespaldo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
 
 export default function ListaPacientes({ navigation }: Props) {
   const [busqueda, setBusqueda] = useState('');
-  const { pacientes, cargando, limpiarAlmacenamiento } = usePacientes();
+  const {
+    pacientes,
+    cargando,
+    limpiarAlmacenamiento,
+    reemplazarPacientes,
+  } = usePacientes();
+  const { consultorio, cargandoConsultorio, restaurarConsultorio } = useConsultorio();
 
   const confirmarRestablecer = () => {
     Alert.alert(
@@ -81,21 +89,62 @@ export default function ListaPacientes({ navigation }: Props) {
         clearButtonMode="while-editing"
       />
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => navigation.navigate('EducacionPaciente')}
-        style={({ pressed }) => [
-          styles.botonEducacion,
-          pressed && styles.botonEducacionPresionado,
-        ]}
-      >
-        <Text style={styles.iconoEducacion}>📚</Text>
-        <View style={styles.textoEducacionContenedor}>
-          <Text style={styles.tituloEducacion}>Educación al Paciente</Text>
-          <Text style={styles.detalleEducacion}>Explora temas y cuidados dentales</Text>
-        </View>
-        <Text style={styles.flechaEducacion}>›</Text>
-      </Pressable>
+      <View style={styles.accesosRapidos}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('EducacionPaciente')}
+          style={({ pressed }) => [
+            styles.botonAcceso,
+            pressed && styles.botonEducacionPresionado,
+          ]}
+        >
+          <Text style={styles.iconoEducacion}>📚</Text>
+          <Text style={styles.tituloAcceso}>Educación</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('Ajustes')}
+          style={({ pressed }) => [
+            styles.botonAcceso,
+            pressed && styles.botonEducacionPresionado,
+          ]}
+        >
+          <Text style={styles.iconoEducacion}>⚙️</Text>
+          <Text style={styles.tituloAcceso}>Ajustes</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('Ajustes', { seccion: 'respaldo' })}
+          style={({ pressed }) => [
+            styles.botonAcceso,
+            pressed && styles.botonEducacionPresionado,
+          ]}
+        >
+          <Text style={styles.iconoEducacion}>💾</Text>
+          <Text style={styles.tituloAcceso}>Respaldo</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.panelRespaldo}>
+        <PanelRespaldo
+          compacto
+          deshabilitado={cargandoConsultorio}
+          pacientes={pacientes}
+          consultorio={consultorio}
+          onRestaurar={async (pacientesImportados, consultorioImportado) => {
+            try {
+              await restaurarConsultorio(consultorioImportado);
+              await reemplazarPacientes(pacientesImportados);
+            } catch (error) {
+              await Promise.all([
+                restaurarConsultorio(consultorio),
+                reemplazarPacientes(pacientes),
+              ]);
+              throw error;
+            }
+          }}
+        />
+      </View>
 
       <FlatList
         data={pacientesFiltrados}
@@ -170,14 +219,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#F5F7F8',
   },
-  botonEducacion: {
+  accesosRapidos: {
     flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 60,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    gap: 8,
     marginBottom: 12,
-    borderRadius: 12,
+  },
+  botonAcceso: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 62,
+    paddingHorizontal: 5,
+    paddingVertical: 7,
+    borderRadius: 10,
     backgroundColor: '#E3F2FD',
     borderWidth: 1,
     borderColor: '#BBDEFB',
@@ -186,27 +240,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#D5EAFB',
   },
   iconoEducacion: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 19,
   },
-  textoEducacionContenedor: {
-    flex: 1,
-  },
-  tituloEducacion: {
+  tituloAcceso: {
     color: '#0D47A1',
-    fontSize: 15,
+    fontSize: 11,
     fontWeight: '700',
+    marginTop: 3,
   },
-  detalleEducacion: {
-    color: '#455A64',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  flechaEducacion: {
-    color: '#1565C0',
-    fontSize: 27,
-    lineHeight: 30,
-    marginLeft: 8,
+  panelRespaldo: {
+    marginBottom: 8,
   },
   lista: {
     paddingBottom: 24,

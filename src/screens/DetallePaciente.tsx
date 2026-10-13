@@ -7,6 +7,7 @@ import { Odontograma } from '../components/types/odontograma';
 import { usePacientes } from '../context/PacientesContext';
 import { crearHistoriaClinicaVacia, HistoriaClinica, NotaEvolucion, Radiografia } from '../types/paciente';
 import { generarYCompartirPdfExpediente } from '../utils/generarPdfExpediente';
+import { useConsultorio } from '../context/ConsultorioContext';
 import SegmentedControl from '../components/SegmentedControl';
 import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaForm';
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
@@ -33,6 +34,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
     agregarRadiografia,
   } = usePacientes();
   const paciente = obtenerPaciente(pacienteId);
+  const { consultorio, cargandoConsultorio } = useConsultorio();
   const [pestana, setPestana] = useState<Pestana>('odontograma');
   const [exportandoPdf, setExportandoPdf] = useState(false);
   const exportacionEnCurso = useRef(false);
@@ -43,7 +45,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
     exportacionEnCurso.current = true;
     setExportandoPdf(true);
     try {
-      await generarYCompartirPdfExpediente(paciente);
+      await generarYCompartirPdfExpediente(paciente, consultorio);
     } catch (error) {
       const mensaje =
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
@@ -52,7 +54,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
       exportacionEnCurso.current = false;
       setExportandoPdf(false);
     }
-  }, [paciente]);
+  }, [consultorio, paciente]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -63,20 +65,24 @@ export default function DetallePaciente({ route, navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Exportar expediente en PDF"
               accessibilityState={{ disabled: exportandoPdf, busy: exportandoPdf }}
-              disabled={exportandoPdf}
+              disabled={exportandoPdf || cargandoConsultorio}
               hitSlop={8}
               onPress={() => {
                 void alExportarPdf();
               }}
             >
               <Text style={styles.botonExportarPdf}>
-                {exportandoPdf ? 'Preparando…' : 'Exportar PDF'}
+                {cargandoConsultorio
+                  ? 'Cargando…'
+                  : exportandoPdf
+                    ? 'Preparando…'
+                    : 'Exportar PDF'}
               </Text>
             </Pressable>
           )
         : undefined,
     });
-  }, [alExportarPdf, exportandoPdf, navigation, paciente]);
+  }, [alExportarPdf, cargandoConsultorio, exportandoPdf, navigation, paciente]);
 
   if (!paciente) {
     return (
