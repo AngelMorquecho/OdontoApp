@@ -152,6 +152,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
               />
               <Text
                 numberOfLines={1}
+                adjustsFontSizeToFit={true}
                 style={[styles.textoPestana, activa && styles.textoPestanaActivo]}
               >
                 {opcion.etiqueta}
@@ -161,39 +162,41 @@ export default function DetallePaciente({ route, navigation }: Props) {
         })}
       </ScrollView>
 
-      {pestana === 'odontograma' && (
-        <ScrollView contentContainerStyle={styles.contenidoOdontograma}>
-          <Odontograma2D
-            odontograma={paciente.odontograma}
-            onChange={alCambiarOdontograma}
+      <View style={styles.contenidoPestana}>
+        {pestana === 'odontograma' && (
+          <ScrollView contentContainerStyle={styles.contenidoOdontograma}>
+            <Odontograma2D
+              odontograma={paciente.odontograma}
+              onChange={alCambiarOdontograma}
+            />
+            <Text style={styles.ayuda}>
+              Toca una cara: sana → caries → obturación → sana
+            </Text>
+          </ScrollView>
+        )}
+
+        {pestana === 'historia' && (
+          <HistoriaClinicaForm
+            historiaClinica={paciente.historiaClinica ?? crearHistoriaClinicaVacia()}
+            onGuardar={alGuardarHistoriaClinica}
           />
-          <Text style={styles.ayuda}>
-            Toca una cara: sana → caries → obturación → sana
-          </Text>
-        </ScrollView>
-      )}
+        )}
 
-      {pestana === 'historia' && (
-        <HistoriaClinicaForm
-          historiaClinica={paciente.historiaClinica ?? crearHistoriaClinicaVacia()}
-          onGuardar={alGuardarHistoriaClinica}
-        />
-      )}
+        {pestana === 'notas' && (
+          <TabNotasEvolucion
+            notas={paciente.historiaClinica?.notasEvolucion ?? []}
+            onAgregarNota={alAgregarNota}
+          />
+        )}
 
-      {pestana === 'notas' && (
-        <TabNotasEvolucion
-          notas={paciente.historiaClinica?.notasEvolucion ?? []}
-          onAgregarNota={alAgregarNota}
-        />
-      )}
-
-      {pestana === 'radiografias' && (
-        <TabRadiografias
-          radiografias={paciente.radiografias ?? []}
-          onAgregar={alAgregarRadiografia}
-          onAnalizar={() => navigation.navigate('DiagnosticoIa', { pacienteId })}
-        />
-      )}
+        {pestana === 'radiografias' && (
+          <TabRadiografias
+            radiografias={paciente.radiografias ?? []}
+            onAgregar={alAgregarRadiografia}
+            onAnalizar={() => navigation.navigate('DiagnosticoIa', { pacienteId })}
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -244,18 +247,17 @@ const styles = StyleSheet.create({
   },
   listaPestanas: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 0,
     alignItems: 'center',
-    gap: 8,
   },
   chipPestana: {
-    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     maxWidth: 210,
     paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
+    marginRight: 8,
     borderRadius: 20,
     backgroundColor: '#E2E8F0',
   },
@@ -278,6 +280,10 @@ const styles = StyleSheet.create({
   },
   textoPestanaActivo: {
     color: '#fff',
+  },
+  contenidoPestana: {
+    flex: 1,
+    marginTop: 12,
   },
   contenidoOdontograma: {
     padding: 16,

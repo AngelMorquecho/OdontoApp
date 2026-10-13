@@ -47,7 +47,11 @@ export default function SegmentedControl<T extends string>({
                 color={activo ? '#fff' : '#475569'}
               />
             )}
-            <Text style={[styles.texto, activo && styles.textoActivo]}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              style={[styles.texto, activo && styles.textoActivo]}
+            >
               {opcion.etiqueta}
             </Text>
           </Pressable>
@@ -61,16 +65,15 @@ const styles = StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 0,
     alignItems: 'center',
-    gap: 8,
   },
   segmento: {
-    height: 38,
     flexDirection: 'row',
     gap: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 6,
+    marginRight: 8,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
