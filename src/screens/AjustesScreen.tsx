@@ -16,11 +16,15 @@ import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { borderRadius, colors, shadows } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
+import type { Usuario } from '../types';
+import type { Paciente } from '../types/paciente';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Ajustes'>;
 
 export default function AjustesScreen({ route, navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
+  const { user, seleccionarRolDoctor, seleccionarPaciente } = useAuth();
   const {
     consultorio,
     cargandoConsultorio,
@@ -46,6 +50,36 @@ export default function AjustesScreen({ route, navigation }: Props) {
     }
   };
 
+  if (user.rol === 'paciente') {
+    return (
+      <View style={styles.root}>
+        <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
+          <PerfilPaciente
+            user={user}
+            pacientes={pacientes}
+            seleccionarRolDoctor={seleccionarRolDoctor}
+            seleccionarPaciente={seleccionarPaciente}
+            onVolver={(seccion) =>
+              navigation.navigate('PortalPaciente', { seccion })
+            }
+          />
+        </BlurTargetView>
+        <FloatingTabBar
+          rutaActiva="Ajustes"
+          onNavegar={(ruta) => {
+            if (ruta === 'AgendaCitas') {
+              navigation.navigate('PortalPaciente', { seccion: 'citas' });
+            } else if (ruta === 'ListaPacientes') {
+              navigation.navigate('PortalPaciente', { seccion: 'tratamiento' });
+            }
+          }}
+          blurTarget={blurTarget}
+          modoPaciente
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.root}>
       <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
@@ -58,6 +92,9 @@ export default function AjustesScreen({ route, navigation }: Props) {
           restaurarConsultorio={restaurarConsultorio}
           pacientes={pacientes}
           reemplazarPacientes={reemplazarPacientes}
+          user={user}
+          seleccionarRolDoctor={seleccionarRolDoctor}
+          seleccionarPaciente={seleccionarPaciente}
         />
       </BlurTargetView>
       <FloatingTabBar
@@ -77,6 +114,9 @@ interface FormularioAjustesProps {
   restaurarConsultorio: (datos: DatosConsultorio) => Promise<void>;
   pacientes: ReturnType<typeof usePacientes>['pacientes'];
   reemplazarPacientes: ReturnType<typeof usePacientes>['reemplazarPacientes'];
+  user: Usuario;
+  seleccionarRolDoctor: () => void;
+  seleccionarPaciente: (paciente: Paciente) => void;
 }
 
 function FormularioAjustes({
@@ -87,6 +127,9 @@ function FormularioAjustes({
   restaurarConsultorio,
   pacientes,
   reemplazarPacientes,
+  user,
+  seleccionarRolDoctor,
+  seleccionarPaciente,
 }: FormularioAjustesProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [offsetRespaldo, setOffsetRespaldo] = useState(0);
@@ -125,6 +168,56 @@ function FormularioAjustes({
       contentContainerStyle={styles.contenido}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Simulador de roles</Text>
+        <Text style={styles.textoSimulador}>
+          Prueba la experiencia del doctor o entra al portal como un paciente.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: user.rol === 'doctor' }}
+          onPress={seleccionarRolDoctor}
+          style={({ pressed }) => [
+            styles.opcionRol,
+            styles.opcionRolSeleccionada,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoOpcionSeleccionada}>Vista Doctor</Text>
+          <Text style={styles.textoRolSecundario}>Interfaz administrativa completa</Text>
+        </Pressable>
+        <Text style={styles.etiquetaPaciente}>Vista Paciente</Text>
+        {pacientes.length === 0 ? (
+          <Text style={styles.textoSimulador}>No hay pacientes para probar el portal.</Text>
+        ) : (
+          pacientes.map((paciente) => (
+            <Pressable
+              key={paciente.id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: user.pacienteId === paciente.id }}
+              onPress={() => seleccionarPaciente(paciente)}
+              style={({ pressed }) => [
+                styles.opcionRol,
+                user.pacienteId === paciente.id && styles.opcionRolSeleccionada,
+                pressed && styles.botonPresionado,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.textoOpcionRol,
+                  user.pacienteId === paciente.id && styles.textoOpcionSeleccionada,
+                ]}
+              >
+                {paciente.nombre}
+              </Text>
+              <Text style={styles.textoRolSecundario}>
+                {paciente.correo ?? 'Perfil de prueba'}
+              </Text>
+            </Pressable>
+          ))
+        )}
+      </View>
+
       <Text style={styles.introduccion}>
         Estos datos aparecerán en el membrete de los expedientes clínicos exportados.
       </Text>
@@ -203,8 +296,100 @@ function FormularioAjustes({
               ]);
               throw error;
             }
+
           }}
         />
+      </View>
+    </ScrollView>
+  );
+}
+
+interface PerfilPacienteProps {
+  user: Usuario;
+  pacientes: ReturnType<typeof usePacientes>['pacientes'];
+  seleccionarRolDoctor: () => void;
+  seleccionarPaciente: (paciente: Paciente) => void;
+  onVolver: (seccion: 'citas' | 'tratamiento') => void;
+}
+
+function PerfilPaciente({
+  user,
+  pacientes,
+  seleccionarRolDoctor,
+  seleccionarPaciente,
+  onVolver,
+}: PerfilPacienteProps) {
+  return (
+    <ScrollView
+      style={styles.pantalla}
+      contentContainerStyle={styles.contenido}
+    >
+      <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Mi perfil</Text>
+        <Text style={styles.nombrePerfil}>{user.nombre}</Text>
+        <Text style={styles.textoSimulador}>{user.email}</Text>
+      </View>
+      <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Cambiar vista de prueba</Text>
+        <Text style={styles.textoSimulador}>
+          El simulador permite revisar ambos portales en este dispositivo.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={seleccionarRolDoctor}
+          style={({ pressed }) => [
+            styles.botonRolDoctor,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoBotonRol}>Cambiar a Vista Doctor</Text>
+        </Pressable>
+        <Text style={styles.etiquetaPaciente}>Cambiar paciente de prueba</Text>
+        {pacientes.map((paciente) => (
+          <Pressable
+            key={paciente.id}
+            accessibilityRole="button"
+            accessibilityState={{ selected: user.pacienteId === paciente.id }}
+            onPress={() => seleccionarPaciente(paciente)}
+            style={({ pressed }) => [
+              styles.opcionRol,
+              user.pacienteId === paciente.id && styles.opcionRolSeleccionada,
+              pressed && styles.botonPresionado,
+            ]}
+          >
+            <Text
+              style={[
+                styles.textoOpcionRol,
+                user.pacienteId === paciente.id && styles.textoOpcionSeleccionada,
+              ]}
+            >
+              {paciente.nombre}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Acceso rápido</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onVolver('citas')}
+          style={({ pressed }) => [
+            styles.opcionAcceso,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoOpcionRol}>Mis Citas</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onVolver('tratamiento')}
+          style={({ pressed }) => [
+            styles.opcionAcceso,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoOpcionRol}>Tratamiento y Recetas</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -330,5 +515,71 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: 14,
     fontWeight: '700',
+  },
+  textoSimulador: {
+    marginBottom: 10,
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  etiquetaPaciente: {
+    marginTop: 10,
+    marginBottom: 7,
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  opcionRol: {
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    marginBottom: 7,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
+  },
+  opcionRolSeleccionada: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  textoOpcionRol: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  textoOpcionSeleccionada: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  textoRolSecundario: {
+    marginTop: 3,
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  nombrePerfil: {
+    color: colors.textPrimary,
+    fontSize: 19,
+    fontWeight: '700',
+  },
+  botonRolDoctor: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 8,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+  },
+  textoBotonRol: {
+    color: colors.surface,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  opcionAcceso: {
+    padding: 12,
+    marginTop: 7,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
   },
 });

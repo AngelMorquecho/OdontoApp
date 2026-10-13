@@ -1,6 +1,7 @@
 /** Lista de rutas del stack principal y los parámetros que recibe cada una. */
 export type RootStackParamList = {
   ListaPacientes: undefined;
+  PortalPaciente: { seccion?: 'citas' | 'tratamiento' } | undefined;
   EducacionPaciente: undefined;
   DiagnosticoIa: { pacienteId: string };
   AgendaCitas: undefined;

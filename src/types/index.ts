@@ -2,6 +2,7 @@ export * from './paciente';
 
 export type EstatusCita =
   | 'programada'
+  | 'confirmada'
   | 'pospuesta'
   | 'completada'
   | 'cancelada';
@@ -37,4 +38,14 @@ export interface Receta {
   medicamentos: Medicamento[];
   indicacionesGenerales: string;
   estadoTratamiento: EstadoTratamiento;
+}
+
+export type RolUsuario = 'doctor' | 'paciente';
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: RolUsuario;
+  pacienteId?: string;
 }

@@ -22,6 +22,7 @@ interface Props {
   rutaActiva: FloatingTabRoute;
   onNavegar: (ruta: FloatingTabRoute) => void;
   blurTarget?: RefObject<View | null>;
+  modoPaciente?: boolean;
 }
 
 const OPCIONES: TabOption[] = [
@@ -55,7 +56,30 @@ export default function FloatingTabBar({
   rutaActiva,
   onNavegar,
   blurTarget,
+  modoPaciente = false,
 }: Props) {
+  const opciones = modoPaciente
+    ? [
+        {
+          ruta: 'AgendaCitas' as const,
+          etiqueta: 'Mis Citas',
+          iconoActivo: 'calendar' as const,
+          iconoInactivo: 'calendar-outline' as const,
+        },
+        {
+          ruta: 'ListaPacientes' as const,
+          etiqueta: 'Tratamiento y Recetas',
+          iconoActivo: 'medkit' as const,
+          iconoInactivo: 'medkit-outline' as const,
+        },
+        {
+          ruta: 'Ajustes' as const,
+          etiqueta: 'Ajustes / Perfil',
+          iconoActivo: 'person-circle' as const,
+          iconoInactivo: 'person-circle-outline' as const,
+        },
+      ]
+    : OPCIONES;
   return (
     <BlurView
       blurTarget={blurTarget}
@@ -65,7 +89,7 @@ export default function FloatingTabBar({
       style={styles.barra}
     >
       <View style={styles.fondoCristal}>
-        {OPCIONES.map((opcion) => {
+        {opciones.map((opcion) => {
           const activa = opcion.ruta === rutaActiva;
           return (
             <Pressable
@@ -86,7 +110,11 @@ export default function FloatingTabBar({
               />
               <Text
                 numberOfLines={1}
-                style={[styles.etiqueta, activa && styles.etiquetaActiva]}
+                style={[
+                  styles.etiqueta,
+                  modoPaciente && styles.etiquetaPaciente,
+                  activa && styles.etiquetaActiva,
+                ]}
               >
                 {opcion.etiqueta}
               </Text>
@@ -139,6 +167,9 @@ const styles = StyleSheet.create({
   etiquetaActiva: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  etiquetaPaciente: {
+    fontSize: 8,
   },
   indicador: {
     width: 4,

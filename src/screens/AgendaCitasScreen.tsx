@@ -67,7 +67,11 @@ export default function AgendaCitasScreen({ navigation }: Props) {
   const citasFiltradas = useMemo(
     () =>
       citas
-        .filter((cita) => cita.estatus === estatusActivo)
+        .filter((cita) =>
+          estatusActivo === 'programada'
+            ? cita.estatus === 'programada' || cita.estatus === 'confirmada'
+            : cita.estatus === estatusActivo,
+        )
         .sort((a, b) => `${a.fecha}T${a.hora}`.localeCompare(`${b.fecha}T${b.hora}`)),
     [citas, estatusActivo],
   );
@@ -131,7 +135,14 @@ export default function AgendaCitasScreen({ navigation }: Props) {
           )
         }
         renderItem={({ item }) => {
-          const estiloEstado = ESTATUS.find((estado) => estado.valor === item.estatus) ?? ESTATUS[0];
+          const estiloBase = ESTATUS.find((estado) =>
+            item.estatus === 'confirmada'
+              ? estado.valor === 'programada'
+              : estado.valor === item.estatus,
+          ) ?? ESTATUS[0];
+          const estiloEstado = item.estatus === 'confirmada'
+            ? { ...estiloBase, etiqueta: 'Confirmada' }
+            : estiloBase;
           const pacienteExiste = Boolean(obtenerPaciente(item.pacienteId));
           return (
             <View style={styles.tarjeta}>

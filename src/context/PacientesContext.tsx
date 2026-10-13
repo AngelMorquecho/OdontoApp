@@ -613,6 +613,7 @@ function esCitaValida(valor: unknown): valor is Cita {
     typeof cita.motivoConsulta === 'string' &&
     typeof cita.tratamientoPrevisto === 'string' &&
     (cita.estatus === 'programada' ||
+      cita.estatus === 'confirmada' ||
       cita.estatus === 'pospuesta' ||
       cita.estatus === 'completada' ||
       cita.estatus === 'cancelada') &&

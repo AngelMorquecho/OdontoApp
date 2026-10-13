@@ -11,29 +11,59 @@ import AgregarPaciente from './src/screens/AgregarPaciente';
 import AgendaCitasScreen from './src/screens/AgendaCitasScreen';
 import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
 import ModalCrearReceta from './src/screens/ModalCrearReceta';
-import { RootStackParamList } from './src/navigation/types';
+import PortalPacienteScreen from './src/screens/paciente/PortalPacienteScreen';
+import type { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { colors } from './src/constants/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <PacientesProvider>
-      <ConsultorioProvider>
-        <NavigationContainer>
-          <StatusBar barStyle="dark-content" />
-          <Stack.Navigator
-            initialRouteName="ListaPacientes"
-            screenOptions={{
-              headerStyle: { backgroundColor: colors.surface },
-              headerTintColor: colors.primary,
-              headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
-              headerShadowVisible: false,
-              contentStyle: { backgroundColor: colors.background },
-            }}
-          >
+    <AuthProvider>
+      <PacientesProvider>
+        <ConsultorioProvider>
+          <AppNavegacion />
+        </ConsultorioProvider>
+      </PacientesProvider>
+    </AuthProvider>
+  );
+}
+
+function AppNavegacion() {
+  const { user } = useAuth();
+  const esPaciente = user.rol === 'paciente';
+
+  return (
+    <NavigationContainer key={`${user.rol}:${user.pacienteId ?? ''}`}>
+      <StatusBar barStyle="dark-content" />
+      <Stack.Navigator
+        initialRouteName={esPaciente ? 'PortalPaciente' : 'ListaPacientes'}
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.primary,
+          headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        {esPaciente ? (
+          <>
+            <Stack.Screen
+              name="PortalPaciente"
+              component={PortalPacienteScreen}
+              options={{ title: 'Portal Paciente', headerLeft: () => null }}
+            />
+            <Stack.Screen
+              name="Ajustes"
+              component={AjustesScreen}
+              options={{ title: 'Perfil y acceso' }}
+            />
+          </>
+        ) : (
+          <>
             <Stack.Screen
               name="ListaPacientes"
               component={ListaPacientes}
@@ -47,18 +77,12 @@ export default function App() {
             <Stack.Screen
               name="AgendarCita"
               component={AgendarCitaScreen}
-              options={{
-                title: 'Agendar Cita',
-                presentation: 'modal',
-              }}
+              options={{ title: 'Agendar Cita', presentation: 'modal' }}
             />
             <Stack.Screen
               name="CrearReceta"
               component={ModalCrearReceta}
-              options={{
-                title: 'Crear nueva receta',
-                presentation: 'modal',
-              }}
+              options={{ title: 'Crear nueva receta', presentation: 'modal' }}
             />
             <Stack.Screen
               name="EducacionPaciente"
@@ -88,9 +112,9 @@ export default function App() {
               component={AjustesScreen}
               options={{ title: 'Ajustes del consultorio', headerLeft: () => null }}
             />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </ConsultorioProvider>
-    </PacientesProvider>
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
