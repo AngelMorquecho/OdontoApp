@@ -36,12 +36,12 @@ export default function App() {
             <Stack.Screen
               name="ListaPacientes"
               component={ListaPacientes}
-              options={{ title: 'Pacientes' }}
+              options={{ title: 'Pacientes', headerLeft: () => null }}
             />
             <Stack.Screen
               name="AgendaCitas"
               component={AgendaCitasScreen}
-              options={{ title: 'Agenda de Citas' }}
+              options={{ title: 'Agenda de Citas', headerLeft: () => null }}
             />
             <Stack.Screen
               name="AgendarCita"
@@ -54,7 +54,7 @@ export default function App() {
             <Stack.Screen
               name="EducacionPaciente"
               component={EducacionPacienteScreen}
-              options={{ title: 'Educación al Paciente' }}
+              options={{ title: 'Educación al Paciente', headerLeft: () => null }}
             />
             <Stack.Screen
               name="DiagnosticoIa"
@@ -77,7 +77,7 @@ export default function App() {
             <Stack.Screen
               name="Ajustes"
               component={AjustesScreen}
-              options={{ title: 'Ajustes del consultorio' }}
+              options={{ title: 'Ajustes del consultorio', headerLeft: () => null }}
             />
           </Stack.Navigator>
         </NavigationContainer>

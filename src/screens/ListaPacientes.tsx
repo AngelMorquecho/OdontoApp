@@ -124,40 +124,15 @@ export default function ListaPacientes({ navigation }: Props) {
         clearButtonMode="while-editing"
       />
 
-      <View style={styles.accesosRapidos}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('AgendarCita', undefined)}
-          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
-        >
-          <Ionicons name="calendar-outline" size={23} color={colors.primary} />
-          <Text numberOfLines={1} style={styles.tituloAcceso}>Agendar cita</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('EducacionPaciente')}
-          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
-        >
-          <Ionicons name="book-outline" size={23} color={colors.primary} />
-          <Text numberOfLines={1} style={styles.tituloAcceso}>Educación</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Ajustes')}
-          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
-        >
-          <Ionicons name="settings-outline" size={23} color={colors.primary} />
-          <Text numberOfLines={1} style={styles.tituloAcceso}>Ajustes</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Ajustes', { seccion: 'respaldo' })}
-          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
-        >
-          <Ionicons name="cloud-download-outline" size={23} color={colors.primary} />
-          <Text numberOfLines={1} style={styles.tituloAcceso}>Respaldo</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => navigation.navigate('AgendarCita', undefined)}
+        style={({ pressed }) => [styles.botonAgendar, pressed && styles.botonAccesoPresionado]}
+      >
+        <Ionicons name="calendar-outline" size={19} color={colors.primary} />
+        <Text numberOfLines={1} style={styles.textoAgendar}>Agendar cita</Text>
+        <Ionicons name="chevron-forward" size={17} color={colors.textSecondary} />
+      </Pressable>
 
       <View style={styles.panelRespaldo}>
         <PanelRespaldo
@@ -265,37 +240,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: colors.surface,
   },
-  accesosRapidos: {
+  botonAgendar: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  botonAcceso: {
-    flex: 1,
-    aspectRatio: 1,
-    maxHeight: 82,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingHorizontal: 6,
-    paddingVertical: 9,
-    borderRadius: borderRadius.lg,
+    gap: 8,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     ...shadows.sm,
   },
+  textoAgendar: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   botonAccesoPresionado: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
-  },
-  tituloAcceso: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-    flexShrink: 1,
-    textAlign: 'center',
-    maxWidth: '100%',
   },
   panelRespaldo: {
     marginBottom: 8,

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -116,101 +117,113 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.introduccion}>
-          Registra la fecha, hora y plan previsto para la consulta.
+          Registra la información para organizar y preparar la consulta.
         </Text>
 
-        <Text style={styles.etiqueta}>Paciente *</Text>
-        {route.params?.pacienteId ? (
-          <View style={styles.pacienteSeleccionado}>
-            <Text style={styles.nombrePaciente}>{paciente?.nombre ?? 'Paciente no encontrado'}</Text>
-          </View>
-        ) : (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setMostrarPacientes((visible) => !visible)}
-              style={({ pressed }) => [styles.selectorPaciente, pressed && styles.presionado]}
-            >
-              <Text style={paciente ? styles.valorSelector : styles.placeholder}>
-                {paciente?.nombre ?? 'Selecciona un paciente'}
+        <View style={styles.tarjetaFormulario}>
+          <Text style={styles.tituloSeccion}>Datos de la Consulta</Text>
+          <Text style={styles.etiqueta}>Paciente *</Text>
+          {route.params?.pacienteId ? (
+            <View style={styles.pacienteSeleccionado}>
+              <Text style={styles.nombrePaciente}>
+                {paciente?.nombre ?? 'Paciente no encontrado'}
               </Text>
-              <Text style={styles.flecha}>{mostrarPacientes ? '⌃' : '⌄'}</Text>
-            </Pressable>
-            {mostrarPacientes && (
-              <View style={styles.listaPacientes}>
-                {pacientes.map((opcion) => (
-                  <Pressable
-                    key={opcion.id}
-                    accessibilityRole="button"
-                    onPress={() => {
-                      setPacienteId(opcion.id);
-                      setMotivoConsulta(opcion.motivoConsulta);
-                      setMostrarPacientes(false);
-                    }}
-                    style={({ pressed }) => [styles.opcionPaciente, pressed && styles.presionado]}
-                  >
-                    <Text style={styles.valorSelector}>{opcion.nombre}</Text>
-                    <Text numberOfLines={1} style={styles.detallePaciente}>
-                      {opcion.motivoConsulta}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </>
-        )}
+            </View>
+          ) : (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setMostrarPacientes((visible) => !visible)}
+                style={({ pressed }) => [styles.selectorPaciente, pressed && styles.presionado]}
+              >
+                <Text style={paciente ? styles.valorSelector : styles.placeholder}>
+                  {paciente?.nombre ?? 'Selecciona un paciente'}
+                </Text>
+                <Ionicons
+                  name={mostrarPacientes ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              </Pressable>
+              {mostrarPacientes && (
+                <View style={styles.listaPacientes}>
+                  {pacientes.map((opcion) => (
+                    <Pressable
+                      key={opcion.id}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        setPacienteId(opcion.id);
+                        setMotivoConsulta(opcion.motivoConsulta);
+                        setMostrarPacientes(false);
+                      }}
+                      style={({ pressed }) => [styles.opcionPaciente, pressed && styles.presionado]}
+                    >
+                      <Text style={styles.valorSelector}>{opcion.nombre}</Text>
+                      <Text numberOfLines={1} style={styles.detallePaciente}>
+                        {opcion.motivoConsulta}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
 
-        <Text style={styles.etiqueta}>Fecha * (AAAA-MM-DD)</Text>
-        <TextInput
-          style={styles.input}
-          value={fecha}
-          onChangeText={setFecha}
-          placeholder="2026-10-13"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numbers-and-punctuation"
-          maxLength={10}
-        />
+          <Text style={styles.etiqueta}>Fecha * (AAAA-MM-DD)</Text>
+          <TextInput
+            style={styles.input}
+            value={fecha}
+            onChangeText={setFecha}
+            placeholder="2026-10-13"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numbers-and-punctuation"
+            maxLength={10}
+          />
 
-        <Text style={styles.etiqueta}>Hora * (24 horas)</Text>
-        <TextInput
-          style={styles.input}
-          value={hora}
-          onChangeText={setHora}
-          placeholder="09:30"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-        />
+          <Text style={styles.etiqueta}>Hora * (24 horas)</Text>
+          <TextInput
+            style={styles.input}
+            value={hora}
+            onChangeText={setHora}
+            placeholder="09:30"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numbers-and-punctuation"
+            maxLength={5}
+          />
+        </View>
 
-        <Text style={styles.etiqueta}>Motivo de consulta *</Text>
-        <TextInput
-          style={[styles.input, styles.multilinea]}
-          value={motivoConsulta}
-          onChangeText={setMotivoConsulta}
-          placeholder="Describe el motivo de la consulta"
-          placeholderTextColor={colors.textSecondary}
-          multiline
-        />
+        <View style={styles.tarjetaFormulario}>
+          <Text style={styles.tituloSeccion}>Detalles Clínicos</Text>
+          <Text style={styles.etiqueta}>Motivo de consulta *</Text>
+          <TextInput
+            style={[styles.input, styles.multilinea]}
+            value={motivoConsulta}
+            onChangeText={setMotivoConsulta}
+            placeholder="Describe el motivo de la consulta"
+            placeholderTextColor={colors.textSecondary}
+            multiline
+          />
 
-        <Text style={styles.etiqueta}>Tratamiento previsto *</Text>
-        <TextInput
-          style={[styles.input, styles.multilinea]}
-          value={tratamientoPrevisto}
-          onChangeText={setTratamientoPrevisto}
-          placeholder="Indica el tratamiento planeado"
-          placeholderTextColor={colors.textSecondary}
-          multiline
-        />
+          <Text style={styles.etiqueta}>Tratamiento previsto *</Text>
+          <TextInput
+            style={[styles.input, styles.multilinea]}
+            value={tratamientoPrevisto}
+            onChangeText={setTratamientoPrevisto}
+            placeholder="Indica el tratamiento planeado"
+            placeholderTextColor={colors.textSecondary}
+            multiline
+          />
 
-        <Text style={styles.etiqueta}>Notas de agenda (opcional)</Text>
-        <TextInput
-          style={[styles.input, styles.multilinea]}
-          value={notasAgenda}
-          onChangeText={setNotasAgenda}
-          placeholder="Indicaciones adicionales"
-          placeholderTextColor={colors.textSecondary}
-          multiline
-        />
+          <Text style={styles.etiqueta}>Notas de agenda (opcional)</Text>
+          <TextInput
+            style={[styles.input, styles.multilinea]}
+            value={notasAgenda}
+            onChangeText={setNotasAgenda}
+            placeholder="Indicaciones adicionales"
+            placeholderTextColor={colors.textSecondary}
+            multiline
+          />
+        </View>
 
         <Pressable
           accessibilityRole="button"
@@ -223,7 +236,7 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
           ]}
         >
           <Text style={styles.textoBoton}>
-            {cargandoCitas ? 'Cargando agenda…' : guardando ? 'Guardando…' : 'Agendar cita'}
+            {cargandoCitas ? 'Cargando agenda…' : guardando ? 'Guardando…' : 'Agendar Cita'}
           </Text>
         </Pressable>
       </ScrollView>
@@ -240,9 +253,28 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   introduccion: {
-    marginBottom: 8,
+    marginBottom: 12,
     color: colors.textSecondary,
     fontSize: 14,
+  },
+  tarjetaFormulario: {
+    marginBottom: 14,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  tituloSeccion: {
+    marginBottom: 4,
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
   },
   etiqueta: {
     marginTop: 14,
@@ -258,7 +290,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: '#F8FAFC',
     color: colors.textPrimary,
     fontSize: 15,
   },
@@ -272,7 +304,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: '#F8FAFC',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -287,7 +319,6 @@ const styles = StyleSheet.create({
   nombrePaciente: { color: colors.primary, fontSize: 15, fontWeight: '700' },
   valorSelector: { color: colors.textPrimary, fontSize: 14, fontWeight: '600' },
   placeholder: { color: colors.textSecondary, fontSize: 14 },
-  flecha: { color: colors.textSecondary, fontSize: 20 },
   listaPacientes: {
     marginTop: 6,
     borderWidth: 1,
@@ -304,12 +335,13 @@ const styles = StyleSheet.create({
   },
   detallePaciente: { marginTop: 3, color: colors.textSecondary, fontSize: 12 },
   botonGuardar: {
-    minHeight: 48,
-    marginTop: 24,
+    width: '100%',
+    paddingVertical: 14,
+    marginTop: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
+    borderRadius: 12,
+    backgroundColor: '#0284C7',
     ...shadows.sm,
   },
   textoBoton: { color: colors.surface, fontSize: 15, fontWeight: '700' },

@@ -104,11 +104,6 @@ export default function AgendaCitasScreen({ navigation }: Props) {
   return (
     <View style={styles.pantalla}>
       <BlurTargetView ref={blurTarget} style={styles.contenedor}>
-      <View style={styles.encabezado}>
-        <Text style={styles.titulo}>Agenda de Citas</Text>
-        <Text style={styles.subtitulo}>Consulta y actualiza el estado de tus citas.</Text>
-      </View>
-
       <SegmentedControl
         opciones={ESTATUS.map(({ valor, etiqueta, icono }) => ({ valor, etiqueta, icono }))}
         valorSeleccionado={estatusActivo}
@@ -241,10 +236,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1 },
-  contenedor: { flex: 1, backgroundColor: colors.background },
-  encabezado: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
-  titulo: { color: colors.textPrimary, fontSize: 21, fontWeight: '700' },
-  subtitulo: { marginTop: 4, color: colors.textSecondary, fontSize: 13 },
+  contenedor: { flex: 1, paddingBottom: 100, backgroundColor: colors.background },
   lista: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100, flexGrow: 1 },
   tarjeta: {
     marginBottom: 12,
