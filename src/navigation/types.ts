@@ -5,6 +5,7 @@ export type RootStackParamList = {
   DiagnosticoIa: { pacienteId: string };
   AgendaCitas: undefined;
   AgendarCita: { pacienteId?: string } | undefined;
+  CrearReceta: { pacienteId: string };
   Ajustes: { seccion?: 'respaldo' } | undefined;
   DetallePaciente: { pacienteId: string };
   AgregarPaciente: undefined;

@@ -18,6 +18,7 @@ interface Props {
   paciente: Paciente;
   consultorio: DatosConsultorio;
   onGuardar: (receta: Receta) => Promise<void>;
+  onCompletada?: () => void;
   deshabilitado?: boolean;
 }
 
@@ -54,6 +55,7 @@ export default function FormularioReceta({
   paciente,
   consultorio,
   onGuardar,
+  onCompletada,
   deshabilitado = false,
 }: Props) {
   const [diagnostico, setDiagnostico] = useState('');
@@ -115,7 +117,11 @@ export default function FormularioReceta({
       setMedicamentos([nuevoMedicamento()]);
       setIndicacionesGenerales('');
       await generarYCompartirPdfReceta(receta, paciente, consultorio);
-      Alert.alert('Receta guardada', 'El PDF está listo para compartir o guardar.');
+      if (onCompletada) {
+        onCompletada();
+      } else {
+        Alert.alert('Receta guardada', 'El PDF está listo para compartir o guardar.');
+      }
     } catch (error) {
       const mensaje =
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.';

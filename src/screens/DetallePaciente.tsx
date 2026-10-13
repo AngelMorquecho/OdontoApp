@@ -218,6 +218,9 @@ export default function DetallePaciente({ route, navigation }: Props) {
           <TabRecetasTratamiento
             paciente={paciente}
             consultorio={consultorio}
+            onNuevaReceta={() =>
+              navigation.navigate('CrearReceta', { pacienteId })
+            }
           />
         )}
       </View>

@@ -14,16 +14,12 @@ import { DatosConsultorio } from '../../context/ConsultorioContext';
 import { usePacientes } from '../../context/PacientesContext';
 import { EstadoTratamiento, Receta } from '../../types';
 import { Paciente } from '../../types/paciente';
-import {
-  compartirPdfReceta,
-  compartirResumenRecetaPorWhatsApp,
-  generarPdfReceta,
-} from '../../services/pdfRecetaService';
-import FormularioReceta from './FormularioReceta';
+import { compartirPdfReceta, generarPdfReceta } from '../../services/pdfRecetaService';
 
 interface Props {
   paciente: Paciente;
   consultorio: DatosConsultorio;
+  onNuevaReceta: () => void;
 }
 
 function fechaLegible(fecha: string): string {
@@ -36,10 +32,13 @@ function fechaLegible(fecha: string): string {
   });
 }
 
-export default function TabRecetasTratamiento({ paciente, consultorio }: Props) {
+export default function TabRecetasTratamiento({
+  paciente,
+  consultorio,
+  onNuevaReceta,
+}: Props) {
   const {
     getRecetasPaciente,
-    crearReceta,
     actualizarEstadoTratamiento,
     cargandoRecetas,
   } = usePacientes();
@@ -55,20 +54,6 @@ export default function TabRecetasTratamiento({ paciente, consultorio }: Props) 
     } catch (error) {
       Alert.alert(
         'No se pudo compartir la receta',
-        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
-      );
-    } finally {
-      setAccionEnCurso(null);
-    }
-  };
-
-  const compartirWhatsApp = async (receta: Receta) => {
-    setAccionEnCurso(`whatsapp-${receta.id}`);
-    try {
-      await compartirResumenRecetaPorWhatsApp(receta, paciente);
-    } catch (error) {
-      Alert.alert(
-        'No se pudo abrir WhatsApp',
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
       );
     } finally {
@@ -93,12 +78,17 @@ export default function TabRecetasTratamiento({ paciente, consultorio }: Props) 
       contentContainerStyle={styles.contenido}
       keyboardShouldPersistTaps="handled"
     >
-      <FormularioReceta
-        paciente={paciente}
-        consultorio={consultorio}
-        onGuardar={crearReceta}
-        deshabilitado={cargandoRecetas}
-      />
+      <Pressable
+        accessibilityRole="button"
+        onPress={onNuevaReceta}
+        style={({ pressed }) => [
+          styles.botonNuevaReceta,
+          pressed && styles.presionado,
+        ]}
+      >
+        <MaterialCommunityIcons name="plus-circle-outline" size={21} color={colors.surface} />
+        <Text style={styles.textoNuevaReceta}>Nueva Receta</Text>
+      </Pressable>
 
       <View style={styles.encabezadoSeccion}>
         <MaterialCommunityIcons name="pill" size={21} color={colors.primary} />
@@ -257,27 +247,7 @@ export default function TabRecetasTratamiento({ paciente, consultorio }: Props) 
                     color={colors.primary}
                   />
                 )}
-                <Text style={styles.textoAccion}>Ver / compartir PDF</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                disabled={accionEnCurso !== null}
-                onPress={() => void compartirWhatsApp(receta)}
-                style={({ pressed }) => [
-                  styles.botonAccionWhatsApp,
-                  pressed && styles.presionado,
-                ]}
-              >
-                {accionEnCurso === `whatsapp-${receta.id}` ? (
-                  <ActivityIndicator size="small" color="#16A34A" />
-                ) : (
-                  <MaterialCommunityIcons
-                    name="whatsapp"
-                    size={17}
-                    color="#16A34A"
-                  />
-                )}
-                <Text style={styles.textoAccionWhatsApp}>WhatsApp</Text>
+                <Text style={styles.textoAccion}>Ver PDF / Compartir</Text>
               </Pressable>
             </View>
           </View>
@@ -295,6 +265,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 100,
+  },
+  botonNuevaReceta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 48,
+    marginBottom: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    ...shadows.sm,
+  },
+  textoNuevaReceta: {
+    color: colors.surface,
+    fontSize: 15,
+    fontWeight: '700',
   },
   encabezadoSeccion: {
     flexDirection: 'row',
@@ -487,20 +475,6 @@ const styles = StyleSheet.create({
   },
   textoAccion: {
     color: colors.primary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  botonAccionWhatsApp: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
-    backgroundColor: '#DCFCE7',
-  },
-  textoAccionWhatsApp: {
-    color: '#15803D',
     fontSize: 12,
     fontWeight: '700',
   },

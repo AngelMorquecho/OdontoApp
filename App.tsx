@@ -10,6 +10,7 @@ import DetallePaciente from './src/screens/DetallePaciente';
 import AgregarPaciente from './src/screens/AgregarPaciente';
 import AgendaCitasScreen from './src/screens/AgendaCitasScreen';
 import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
+import ModalCrearReceta from './src/screens/ModalCrearReceta';
 import { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
@@ -48,6 +49,14 @@ export default function App() {
               component={AgendarCitaScreen}
               options={{
                 title: 'Agendar Cita',
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen
+              name="CrearReceta"
+              component={ModalCrearReceta}
+              options={{
+                title: 'Crear nueva receta',
                 presentation: 'modal',
               }}
             />
