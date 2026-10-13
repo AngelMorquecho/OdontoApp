@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -86,6 +87,28 @@ export default function ListaPacientes({ navigation }: Props) {
       .slice(0, 2)
       .map((parte) => parte.charAt(0).toLocaleUpperCase('es'))
       .join('');
+
+  const contactar = async (telefono: string, canal: 'llamada' | 'whatsapp') => {
+    const numeroLimpio = telefono.replace(/\D/g, '');
+    const url =
+      canal === 'llamada'
+        ? `tel:${telefono}`
+        : `https://wa.me/${numeroLimpio}`;
+
+    if (canal === 'whatsapp' && !numeroLimpio) {
+      Alert.alert('Número no válido', 'El paciente no tiene un teléfono válido para WhatsApp.');
+      return;
+    }
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        canal === 'llamada' ? 'No se pudo iniciar la llamada' : 'No se pudo abrir WhatsApp',
+        'Verifica que el dispositivo tenga una aplicación compatible y que el teléfono sea válido.',
+      );
+    }
+  };
 
   if (cargando) {
     return (
@@ -187,7 +210,43 @@ export default function ListaPacientes({ navigation }: Props) {
                   <Text style={styles.textoEdad} numberOfLines={1}>{item.edad} años</Text>
                 </View>
               </View>
-              <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
+              <View style={styles.filaContacto}>
+                <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
+                <View style={styles.accionesContacto}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Llamar a ${item.nombre}`}
+                    hitSlop={6}
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      void contactar(item.telefono, 'llamada');
+                    }}
+                    style={({ pressed }) => [
+                      styles.botonContacto,
+                      styles.botonLlamada,
+                      pressed && styles.contactoPresionado,
+                    ]}
+                  >
+                    <Ionicons name="call-outline" size={16} color={colors.primary} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Contactar a ${item.nombre} por WhatsApp`}
+                    hitSlop={6}
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      void contactar(item.telefono, 'whatsapp');
+                    }}
+                    style={({ pressed }) => [
+                      styles.botonContacto,
+                      styles.botonWhatsApp,
+                      pressed && styles.contactoPresionado,
+                    ]}
+                  >
+                    <Ionicons name="logo-whatsapp" size={17} color="#25D366" />
+                  </Pressable>
+                </View>
+              </View>
               <View style={styles.cajaMotivo}>
                 <Text style={styles.motivo} numberOfLines={2}>
                   {obtenerUltimaCitaPaciente(item.id, citas)?.motivoConsulta ?? 'Sin citas registradas'}
@@ -322,6 +381,33 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
     flexShrink: 1,
+  },
+  filaContacto: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  accionesContacto: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  botonContacto: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.full,
+  },
+  botonLlamada: {
+    backgroundColor: colors.primaryLight,
+  },
+  botonWhatsApp: {
+    backgroundColor: '#E8F9EF',
+  },
+  contactoPresionado: {
+    opacity: 0.65,
+    transform: [{ scale: 0.94 }],
   },
   badgeEdad: {
     backgroundColor: colors.primaryLight,
