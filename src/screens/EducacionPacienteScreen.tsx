@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurTargetView } from 'expo-blur';
 import {
   FlatList,
   Modal,
@@ -12,6 +13,9 @@ import {
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
+import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
 import {
   CategoriaEducativa,
@@ -34,7 +38,10 @@ const ICONOS_CATEGORIA: Record<CategoriaEducativa | 'Todos', keyof typeof Ionico
   'Encías y periodoncia': 'leaf-outline',
 };
 
-export default function EducacionPacienteScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'EducacionPaciente'>;
+
+export default function EducacionPacienteScreen({ navigation }: Props) {
+  const blurTarget = useRef<View | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaEducativa | null>(
     null,
@@ -63,6 +70,23 @@ export default function EducacionPacienteScreen() {
     [temasFiltrados],
   );
 
+  const navegar = (ruta: FloatingTabRoute) => {
+    switch (ruta) {
+      case 'ListaPacientes':
+        navigation.navigate('ListaPacientes');
+        break;
+      case 'AgendaCitas':
+        navigation.navigate('AgendaCitas');
+        break;
+      case 'EducacionPaciente':
+        navigation.navigate('EducacionPaciente');
+        break;
+      case 'Ajustes':
+        navigation.navigate('Ajustes');
+        break;
+    }
+  };
+
   const renderTema = (tema: TemaEducativo) => (
     <Pressable
       key={tema.id}
@@ -86,7 +110,11 @@ export default function EducacionPacienteScreen() {
   );
 
   return (
-    <View style={[styles.pantalla, { paddingTop: Math.max(insets.top, 12) }]}>
+    <View style={styles.root}>
+    <BlurTargetView
+      ref={blurTarget}
+      style={[styles.pantalla, { paddingTop: Math.max(insets.top, 12) }]}
+    >
       <View style={styles.filtros}>
         <Text style={styles.introduccion}>
           Información clara para conocer los tratamientos y cuidar tu salud bucal.
@@ -210,7 +238,7 @@ export default function EducacionPacienteScreen() {
             <ScrollView
               contentContainerStyle={[
                 styles.contenidoDetalle,
-                { paddingBottom: Math.max(insets.bottom, 24) },
+                { paddingBottom: Math.max(insets.bottom, 120) },
               ]}
             >
               <View style={styles.ilustracionDetalle}>
@@ -250,11 +278,18 @@ export default function EducacionPacienteScreen() {
           </View>
         )}
       </Modal>
+    </BlurTargetView>
+    <FloatingTabBar
+      rutaActiva="EducacionPaciente"
+      onNavegar={navegar}
+      blurTarget={blurTarget}
+    />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,
@@ -319,7 +354,7 @@ const styles = StyleSheet.create({
   },
   contenidoLista: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 120,
   },
   grupo: {
     marginTop: 16,

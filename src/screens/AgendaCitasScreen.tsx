@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurTargetView } from 'expo-blur';
 import {
   ActivityIndicator,
   Alert,
@@ -10,7 +12,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import NavegacionPrincipal from '../components/NavegacionPrincipal';
+import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import SegmentedControl from '../components/SegmentedControl';
 import { usePacientes } from '../context/PacientesContext';
 import { EstatusCita } from '../types';
@@ -57,6 +59,7 @@ function fechaLegible(fecha: string): string {
 }
 
 export default function AgendaCitasScreen({ navigation }: Props) {
+  const blurTarget = useRef<View | null>(null);
   const { citas, cambiarEstatusCita, obtenerPaciente, cargandoCitas } = usePacientes();
   const [estatusActivo, setEstatusActivo] = useState<EstatusCita>('programada');
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
@@ -81,14 +84,26 @@ export default function AgendaCitasScreen({ navigation }: Props) {
     }
   };
 
+  const navegar = (ruta: FloatingTabRoute) => {
+    switch (ruta) {
+      case 'ListaPacientes':
+        navigation.navigate('ListaPacientes');
+        break;
+      case 'AgendaCitas':
+        navigation.navigate('AgendaCitas');
+        break;
+      case 'EducacionPaciente':
+        navigation.navigate('EducacionPaciente');
+        break;
+      case 'Ajustes':
+        navigation.navigate('Ajustes');
+        break;
+    }
+  };
+
   return (
-    <View style={styles.contenedor}>
-      <NavegacionPrincipal
-        seccion="agenda"
-        onSeleccionar={(seccion) => {
-          if (seccion === 'pacientes') navigation.navigate('ListaPacientes');
-        }}
-      />
+    <View style={styles.pantalla}>
+      <BlurTargetView ref={blurTarget} style={styles.contenedor}>
       <View style={styles.encabezado}>
         <Text style={styles.titulo}>Agenda de Citas</Text>
         <Text style={styles.subtitulo}>Consulta y actualiza el estado de tus citas.</Text>
@@ -112,7 +127,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
             </View>
           ) : (
             <View style={styles.vacio}>
-              <Text style={styles.iconoVacio}>📅</Text>
+              <Ionicons name="calendar-outline" size={36} color={colors.primary} />
               <Text style={styles.tituloVacio}>Sin citas {estatusActivo === 'programada' ? 'programadas' : ESTATUS.find((item) => item.valor === estatusActivo)?.etiqueta.toLowerCase()}</Text>
               <Text style={styles.detalleVacio}>Las citas de este estado aparecerán aquí.</Text>
             </View>
@@ -212,13 +227,20 @@ export default function AgendaCitasScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('AgendarCita', undefined)}
         style={({ pressed }) => [styles.botonFlotante, pressed && styles.presionado]}
       >
-        <Text style={styles.iconoBotonFlotante}>＋</Text>
+        <Ionicons name="add" size={29} color={colors.surface} />
       </Pressable>
+      </BlurTargetView>
+      <FloatingTabBar
+        rutaActiva="AgendaCitas"
+        onNavegar={navegar}
+        blurTarget={blurTarget}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pantalla: { flex: 1 },
   contenedor: { flex: 1, backgroundColor: colors.background },
   encabezado: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   titulo: { color: colors.textPrimary, fontSize: 21, fontWeight: '700' },
@@ -287,7 +309,7 @@ const styles = StyleSheet.create({
   botonFlotante: {
     position: 'absolute',
     right: 20,
-    bottom: 24,
+    bottom: 104,
     width: 56,
     height: 56,
     borderRadius: borderRadius.full,
@@ -296,7 +318,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     ...shadows.md,
   },
-  iconoBotonFlotante: { color: colors.surface, fontSize: 30, lineHeight: 34 },
   presionado: { opacity: 0.7 },
   deshabilitado: { opacity: 0.5 },
 });

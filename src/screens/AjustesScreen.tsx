@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { BlurTargetView } from 'expo-blur';
 import {
   Alert,
   Pressable,
@@ -11,13 +12,15 @@ import {
 import { DatosConsultorio, useConsultorio } from '../context/ConsultorioContext';
 import { usePacientes } from '../context/PacientesContext';
 import PanelRespaldo from '../components/PanelRespaldo';
+import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { borderRadius, colors, shadows } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Ajustes'>;
 
-export default function AjustesScreen({ route }: Props) {
+export default function AjustesScreen({ route, navigation }: Props) {
+  const blurTarget = useRef<View | null>(null);
   const {
     consultorio,
     cargandoConsultorio,
@@ -26,17 +29,43 @@ export default function AjustesScreen({ route }: Props) {
   } = useConsultorio();
   const { pacientes, reemplazarPacientes } = usePacientes();
 
+  const navegar = (ruta: FloatingTabRoute) => {
+    switch (ruta) {
+      case 'ListaPacientes':
+        navigation.navigate('ListaPacientes');
+        break;
+      case 'AgendaCitas':
+        navigation.navigate('AgendaCitas');
+        break;
+      case 'EducacionPaciente':
+        navigation.navigate('EducacionPaciente');
+        break;
+      case 'Ajustes':
+        navigation.navigate('Ajustes');
+        break;
+    }
+  };
+
   return (
-    <FormularioAjustes
-      key={JSON.stringify(consultorio)}
-      route={route}
-      consultorio={consultorio}
-      cargandoConsultorio={cargandoConsultorio}
-      actualizarConsultorio={actualizarConsultorio}
-      restaurarConsultorio={restaurarConsultorio}
-      pacientes={pacientes}
-      reemplazarPacientes={reemplazarPacientes}
-    />
+    <View style={styles.root}>
+      <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
+        <FormularioAjustes
+          key={JSON.stringify(consultorio)}
+          route={route}
+          consultorio={consultorio}
+          cargandoConsultorio={cargandoConsultorio}
+          actualizarConsultorio={actualizarConsultorio}
+          restaurarConsultorio={restaurarConsultorio}
+          pacientes={pacientes}
+          reemplazarPacientes={reemplazarPacientes}
+        />
+      </BlurTargetView>
+      <FloatingTabBar
+        rutaActiva="Ajustes"
+        onNavegar={navegar}
+        blurTarget={blurTarget}
+      />
+    </View>
   );
 }
 
@@ -226,13 +255,15 @@ function Campo({
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  destinoBlur: { flex: 1 },
   pantalla: {
     flex: 1,
     backgroundColor: colors.background,
   },
   contenido: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   introduccion: {
     color: colors.textSecondary,

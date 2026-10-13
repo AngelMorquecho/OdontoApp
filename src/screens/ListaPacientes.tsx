@@ -1,5 +1,6 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurTargetView } from 'expo-blur';
 import {
   ActivityIndicator,
   Alert,
@@ -16,12 +17,13 @@ import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
 import { useConsultorio } from '../context/ConsultorioContext';
 import PanelRespaldo from '../components/PanelRespaldo';
-import NavegacionPrincipal from '../components/NavegacionPrincipal';
+import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
 
 export default function ListaPacientes({ navigation }: Props) {
+  const blurTarget = useRef<View | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const {
     pacientes,
@@ -91,14 +93,26 @@ export default function ListaPacientes({ navigation }: Props) {
     );
   }
 
+  const navegar = (ruta: FloatingTabRoute) => {
+    switch (ruta) {
+      case 'ListaPacientes':
+        navigation.navigate('ListaPacientes');
+        break;
+      case 'AgendaCitas':
+        navigation.navigate('AgendaCitas');
+        break;
+      case 'EducacionPaciente':
+        navigation.navigate('EducacionPaciente');
+        break;
+      case 'Ajustes':
+        navigation.navigate('Ajustes');
+        break;
+    }
+  };
+
   return (
-    <View style={styles.contenedor}>
-      <NavegacionPrincipal
-        seccion="pacientes"
-        onSeleccionar={(seccion) => {
-          if (seccion === 'agenda') navigation.navigate('AgendaCitas');
-        }}
-      />
+    <View style={styles.pantalla}>
+      <BlurTargetView ref={blurTarget} style={styles.contenedor}>
       <TextInput
         style={styles.buscador}
         placeholder="Buscar paciente por nombre..."
@@ -216,11 +230,20 @@ export default function ListaPacientes({ navigation }: Props) {
       >
         <Ionicons name="add" size={29} color={colors.surface} />
       </Pressable>
+      </BlurTargetView>
+      <FloatingTabBar
+        rutaActiva="ListaPacientes"
+        onNavegar={navegar}
+        blurTarget={blurTarget}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pantalla: {
+    flex: 1,
+  },
   contenedor: {
     flex: 1,
     backgroundColor: colors.background,
@@ -278,7 +301,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   lista: {
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   tarjeta: {
     flexDirection: 'row',
@@ -365,7 +388,7 @@ const styles = StyleSheet.create({
   botonFlotante: {
     position: 'absolute',
     right: 20,
-    bottom: 24,
+    bottom: 104,
     width: 56,
     height: 56,
     borderRadius: borderRadius.full,

@@ -207,6 +207,8 @@ const styles = StyleSheet.create({
   },
   boton: {
     flex: 1,
+    flexBasis: 0,
+    minWidth: 0,
     minHeight: 44,
     flexDirection: 'row',
     gap: 7,
@@ -220,6 +222,9 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: 8,
     borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   botonImportar: {
     backgroundColor: colors.surface,
