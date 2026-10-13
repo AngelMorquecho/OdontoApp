@@ -86,81 +86,83 @@ export default function EducacionPacienteScreen() {
 
   return (
     <View style={[styles.pantalla, { paddingTop: Math.max(insets.top, 12) }]}>
-      <Text style={styles.introduccion}>
-        Información clara para conocer los tratamientos y cuidar tu salud bucal.
-      </Text>
+      <View style={styles.filtros}>
+        <Text style={styles.introduccion}>
+          Información clara para conocer los tratamientos y cuidar tu salud bucal.
+        </Text>
 
-      <TextInput
-        accessibilityLabel="Buscar temas educativos"
-        style={styles.buscador}
-        placeholder="Buscar temas..."
-        placeholderTextColor="#78909C"
-        value={busqueda}
-        onChangeText={setBusqueda}
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-      />
+        <TextInput
+          accessibilityLabel="Buscar temas educativos"
+          style={styles.buscador}
+          placeholder="Buscar temas..."
+          placeholderTextColor="#78909C"
+          value={busqueda}
+          onChangeText={setBusqueda}
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listaCategorias}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: categoriaSeleccionada === null }}
-          onPress={() => setCategoriaSeleccionada(null)}
-          style={({ pressed }) => [
-            styles.chipCategoria,
-            categoriaSeleccionada === null && styles.chipActivo,
-            pressed && styles.chipPresionado,
-          ]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listaCategorias}
+          keyboardShouldPersistTaps="handled"
         >
-          <Ionicons
-            name={ICONOS_CATEGORIA.Todos}
-            size={15}
-            color={categoriaSeleccionada === null ? '#fff' : '#475569'}
-          />
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.textoChip,
-              categoriaSeleccionada === null && styles.textoChipActivo,
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: categoriaSeleccionada === null }}
+            onPress={() => setCategoriaSeleccionada(null)}
+            style={({ pressed }) => [
+              styles.chipCategoria,
+              categoriaSeleccionada === null && styles.chipActivo,
+              pressed && styles.chipPresionado,
             ]}
           >
-            Todos
-          </Text>
-        </Pressable>
-        {CATEGORIAS.map((categoria) => {
-          const activo = categoriaSeleccionada === categoria;
-          return (
-            <Pressable
-              key={categoria}
-              accessibilityRole="button"
-              accessibilityState={{ selected: activo }}
-              onPress={() => setCategoriaSeleccionada(activo ? null : categoria)}
-              style={({ pressed }) => [
-                styles.chipCategoria,
-                activo && styles.chipActivo,
-                pressed && styles.chipPresionado,
+            <Ionicons
+              name={ICONOS_CATEGORIA.Todos}
+              size={15}
+              color={categoriaSeleccionada === null ? '#fff' : '#475569'}
+            />
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.textoChip,
+                categoriaSeleccionada === null && styles.textoChipActivo,
               ]}
             >
-              <Ionicons
-                name={ICONOS_CATEGORIA[categoria]}
-                size={15}
-                color={activo ? '#fff' : '#475569'}
-              />
-              <Text
-                numberOfLines={1}
-                style={[styles.textoChip, activo && styles.textoChipActivo]}
+              Todos
+            </Text>
+          </Pressable>
+          {CATEGORIAS.map((categoria) => {
+            const activo = categoriaSeleccionada === categoria;
+            return (
+              <Pressable
+                key={categoria}
+                accessibilityRole="button"
+                accessibilityState={{ selected: activo }}
+                onPress={() => setCategoriaSeleccionada(activo ? null : categoria)}
+                style={({ pressed }) => [
+                  styles.chipCategoria,
+                  activo && styles.chipActivo,
+                  pressed && styles.chipPresionado,
+                ]}
               >
-                {categoria}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <Ionicons
+                  name={ICONOS_CATEGORIA[categoria]}
+                  size={15}
+                  color={activo ? '#fff' : '#475569'}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.textoChip, activo && styles.textoChipActivo]}
+                >
+                  {categoria}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <FlatList
         style={styles.listaTemas}
@@ -173,8 +175,8 @@ export default function EducacionPacienteScreen() {
             No encontramos temas con esos filtros. Prueba otra búsqueda.
           </Text>
         }
-        renderItem={({ item: grupo }) => (
-          <View style={styles.grupo}>
+        renderItem={({ item: grupo, index }) => (
+          <View style={[styles.grupo, index === 0 && styles.primerGrupo]}>
             <Text style={styles.tituloGrupo}>{grupo.categoria}</Text>
             <View style={styles.gridTemas}>{grupo.temas.map(renderTema)}</View>
           </View>
@@ -261,12 +263,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  filtros: {
     marginBottom: 12,
   },
   buscador: {
     height: 46,
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 8,
     paddingHorizontal: 14,
     borderRadius: 14,
     borderWidth: 1,
@@ -277,7 +282,7 @@ const styles = StyleSheet.create({
   },
   listaCategorias: {
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 0,
     gap: 8,
   },
   chipCategoria: {
@@ -316,7 +321,10 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   grupo: {
-    marginTop: 18,
+    marginTop: 16,
+  },
+  primerGrupo: {
+    marginTop: 0,
   },
   tituloGrupo: {
     color: '#0F172A',
@@ -332,6 +340,7 @@ const styles = StyleSheet.create({
   },
   tarjetaTema: {
     width: '48%',
+    flexBasis: '48%',
     minHeight: 215,
     borderWidth: 1,
     borderColor: '#E2E8F0',
