@@ -43,7 +43,7 @@ function fechaLegible(fecha: string): string {
 
 export default function PortalPacienteScreen({ route, navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const {
     citas,
     cargandoCitas,
@@ -58,21 +58,22 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
   );
   const seccion = route.params?.seccion ?? seccionLocal;
   const [accionEnCurso, setAccionEnCurso] = useState<string | null>(null);
-  const paciente = user.pacienteId ? obtenerPaciente(user.pacienteId) : undefined;
+  const pacienteId = user?.pacienteId;
+  const paciente = pacienteId ? obtenerPaciente(pacienteId) : undefined;
 
   const citasProximas = useMemo(
     () =>
       citas
         .filter(
           (cita) =>
-            cita.pacienteId === user.pacienteId &&
+            cita.pacienteId === pacienteId &&
             cita.fecha >= fechaHoy() &&
             (cita.estatus === 'programada' || cita.estatus === 'confirmada'),
         )
         .sort((a, b) => `${a.fecha}T${a.hora}`.localeCompare(`${b.fecha}T${b.hora}`)),
-    [citas, user.pacienteId],
+    [citas, pacienteId],
   );
-  const recetasPaciente = user.pacienteId ? getRecetasPaciente(user.pacienteId) : [];
+  const recetasPaciente = pacienteId ? getRecetasPaciente(pacienteId) : [];
   const tratamientosActivos = recetasPaciente.filter(
     (receta) => receta.estadoTratamiento === 'activo',
   );
@@ -125,7 +126,21 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.encabezado}>
-            <Text style={styles.saludo}>Hola, {user.nombre}</Text>
+            <View style={styles.filaSaludo}>
+              <Text style={styles.saludo}>Hola, {user?.nombre ?? 'Paciente'}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar sesión"
+                hitSlop={8}
+                onPress={() => void logout()}
+                style={({ pressed }) => [
+                  styles.botonLogout,
+                  pressed && styles.presionado,
+                ]}
+              >
+                <Ionicons name="log-out-outline" size={21} color={colors.danger} />
+              </Pressable>
+            </View>
             <Text style={styles.subtitulo}>
               {seccion === 'citas'
                 ? 'Consulta tus próximas citas.'
@@ -411,10 +426,25 @@ const styles = StyleSheet.create({
   encabezado: {
     marginBottom: 20,
   },
+  filaSaludo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   saludo: {
+    flex: 1,
     color: colors.textPrimary,
     fontSize: 22,
     fontWeight: '700',
+  },
+  botonLogout: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.full,
+    backgroundColor: '#FEF2F2',
   },
   subtitulo: {
     marginTop: 5,

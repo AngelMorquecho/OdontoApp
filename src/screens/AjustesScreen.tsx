@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DatosConsultorio, useConsultorio } from '../context/ConsultorioContext';
 import { usePacientes } from '../context/PacientesContext';
 import PanelRespaldo from '../components/PanelRespaldo';
@@ -24,7 +25,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Ajustes'>;
 
 export default function AjustesScreen({ route, navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
-  const { user, seleccionarRolDoctor, seleccionarPaciente } = useAuth();
+  const { user, logout, seleccionarRolDoctor, seleccionarPaciente } = useAuth();
   const {
     consultorio,
     cargandoConsultorio,
@@ -32,6 +33,8 @@ export default function AjustesScreen({ route, navigation }: Props) {
     restaurarConsultorio,
   } = useConsultorio();
   const { pacientes, reemplazarPacientes, restablecerDatosPrueba } = usePacientes();
+
+  if (!user) return null;
 
   const navegar = (ruta: FloatingTabRoute) => {
     switch (ruta) {
@@ -59,6 +62,7 @@ export default function AjustesScreen({ route, navigation }: Props) {
             pacientes={pacientes}
             seleccionarRolDoctor={seleccionarRolDoctor}
             seleccionarPaciente={seleccionarPaciente}
+            onLogout={() => void logout()}
             onRestablecer={() =>
               solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
             }
@@ -98,6 +102,7 @@ export default function AjustesScreen({ route, navigation }: Props) {
           user={user}
           seleccionarRolDoctor={seleccionarRolDoctor}
           seleccionarPaciente={seleccionarPaciente}
+          onLogout={() => void logout()}
           onRestablecer={() =>
             solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
           }
@@ -123,6 +128,7 @@ interface FormularioAjustesProps {
   user: Usuario;
   seleccionarRolDoctor: () => void;
   seleccionarPaciente: (paciente: Paciente) => void;
+  onLogout: () => void;
   onRestablecer: () => void;
 }
 
@@ -137,6 +143,7 @@ function FormularioAjustes({
   user,
   seleccionarRolDoctor,
   seleccionarPaciente,
+  onLogout,
   onRestablecer,
 }: FormularioAjustesProps) {
   const scrollRef = useRef<ScrollView>(null);
@@ -325,6 +332,7 @@ function FormularioAjustes({
           }}
         />
       </View>
+      <BotonCerrarSesion onPress={onLogout} />
     </ScrollView>
   );
 }
@@ -334,6 +342,7 @@ interface PerfilPacienteProps {
   pacientes: ReturnType<typeof usePacientes>['pacientes'];
   seleccionarRolDoctor: () => void;
   seleccionarPaciente: (paciente: Paciente) => void;
+  onLogout: () => void;
   onVolver: (seccion: 'citas' | 'tratamiento') => void;
   onRestablecer: () => void;
 }
@@ -343,6 +352,7 @@ function PerfilPaciente({
   pacientes,
   seleccionarRolDoctor,
   seleccionarPaciente,
+  onLogout,
   onVolver,
   onRestablecer,
 }: PerfilPacienteProps) {
@@ -434,7 +444,25 @@ function PerfilPaciente({
           <Text style={styles.textoOpcionRol}>Tratamiento y Recetas</Text>
         </Pressable>
       </View>
+      <BotonCerrarSesion onPress={onLogout} />
     </ScrollView>
+  );
+}
+
+function BotonCerrarSesion({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Cerrar sesión"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.botonCerrarSesion,
+        pressed && styles.botonPresionado,
+      ]}
+    >
+      <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+      <Text style={styles.textoCerrarSesion}>Cerrar sesión</Text>
+    </Pressable>
   );
 }
 
@@ -668,5 +696,21 @@ const styles = StyleSheet.create({
     marginTop: 7,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background,
+  },
+  botonCerrarSesion: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#FEF2F2',
+  },
+  textoCerrarSesion: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -13,13 +13,13 @@ import { RolUsuario, Usuario } from '../types';
 import { CLAVES_DATOS } from '../utils/seedData';
 
 interface AuthContextValue {
-  user: Usuario;
+  user: Usuario | null;
   isAuthenticated: boolean;
   cargandoAuth: boolean;
   iniciarSesion: (email: string, password: string) => Promise<boolean>;
   iniciarComoDoctor: () => Promise<boolean>;
   iniciarComoPaciente: () => Promise<boolean>;
-  cerrarSesion: () => void;
+  logout: () => Promise<boolean>;
   seleccionarRolDoctor: () => Promise<void>;
   seleccionarPaciente: (paciente: Paciente) => Promise<void>;
 }
@@ -46,7 +46,7 @@ interface Props {
 }
 
 export function AuthProvider({ children }: Props) {
-  const [user, setUser] = useState<Usuario>(USUARIO_DOCTOR_DEMO);
+  const [user, setUser] = useState<Usuario | null>(USUARIO_DOCTOR_DEMO);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [cargandoAuth, setCargandoAuth] = useState(true);
 
@@ -110,8 +110,19 @@ export function AuthProvider({ children }: Props) {
     return false;
   }, [iniciarComoDoctor, iniciarComoPaciente]);
 
-  const cerrarSesion = useCallback(() => {
-    setIsAuthenticated(false);
+  const logout = useCallback(async (): Promise<boolean> => {
+    try {
+      await AsyncStorage.removeItem(CLAVES_DATOS.usuarioActual);
+      setUser(null);
+      setIsAuthenticated(false);
+      return true;
+    } catch (error) {
+      Alert.alert(
+        'No se pudo cerrar sesión',
+        error instanceof Error ? error.message : 'No se pudo borrar la sesión guardada.',
+      );
+      return false;
+    }
   }, []);
 
   const seleccionarRolDoctor = useCallback(
@@ -140,7 +151,7 @@ export function AuthProvider({ children }: Props) {
       iniciarSesion,
       iniciarComoDoctor,
       iniciarComoPaciente,
-      cerrarSesion,
+      logout,
       seleccionarRolDoctor,
       seleccionarPaciente,
     }),
@@ -151,7 +162,7 @@ export function AuthProvider({ children }: Props) {
       iniciarSesion,
       iniciarComoDoctor,
       iniciarComoPaciente,
-      cerrarSesion,
+      logout,
       seleccionarRolDoctor,
       seleccionarPaciente,
     ],

@@ -94,7 +94,7 @@ export default function App() {
 
 function AppNavegacion() {
   const { user, isAuthenticated, cargandoAuth } = useAuth();
-  const esPaciente = user.rol === 'paciente';
+  const esPaciente = user?.rol === 'paciente';
 
   if (cargandoAuth) {
     return (
@@ -106,7 +106,7 @@ function AppNavegacion() {
 
   return (
     <NavigationContainer
-      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user.rol}:${user.pacienteId ?? ''}`}
+      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user?.rol ?? 'none'}:${user?.pacienteId ?? ''}`}
     >
       <StatusBar barStyle="dark-content" />
       <Stack.Navigator
