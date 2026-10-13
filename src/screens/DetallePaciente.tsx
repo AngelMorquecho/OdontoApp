@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   encabezado: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    paddingBottom: 15,
+    paddingBottom: 8,
     backgroundColor: '#fff',
   },
   nombre: {
@@ -283,10 +283,12 @@ const styles = StyleSheet.create({
   },
   contenidoPestana: {
     flex: 1,
-    marginTop: 12,
+    marginTop: 8,
   },
   contenidoOdontograma: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
     flexGrow: 1,
   },
   ayuda: {
