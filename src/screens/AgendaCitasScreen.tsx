@@ -104,11 +104,13 @@ export default function AgendaCitasScreen({ navigation }: Props) {
   return (
     <View style={styles.pantalla}>
       <BlurTargetView ref={blurTarget} style={styles.contenedor}>
-      <SegmentedControl
-        opciones={ESTATUS.map(({ valor, etiqueta, icono }) => ({ valor, etiqueta, icono }))}
-        valorSeleccionado={estatusActivo}
-        onSeleccionar={setEstatusActivo}
-      />
+        <View style={styles.filtros}>
+          <SegmentedControl
+            opciones={ESTATUS.map(({ valor, etiqueta, icono }) => ({ valor, etiqueta, icono }))}
+            valorSeleccionado={estatusActivo}
+            onSeleccionar={setEstatusActivo}
+          />
+        </View>
 
       <FlatList
         data={citasFiltradas}
@@ -236,8 +238,21 @@ export default function AgendaCitasScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1 },
-  contenedor: { flex: 1, paddingBottom: 100, backgroundColor: colors.background },
-  lista: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100, flexGrow: 1 },
+  contenedor: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 12,
+    paddingBottom: 100,
+    backgroundColor: colors.background,
+  },
+  filtros: { marginTop: 8 },
+  lista: {
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 100,
+  },
   tarjeta: {
     marginBottom: 12,
     padding: 14,
@@ -294,7 +309,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
   },
   textoOpcionEstado: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-  vacio: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  vacio: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: 24,
+    paddingHorizontal: 24,
+  },
   iconoVacio: { fontSize: 36 },
   tituloVacio: { marginTop: 12, color: colors.textPrimary, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   detalleVacio: { marginTop: 6, color: colors.textSecondary, fontSize: 13, textAlign: 'center' },
