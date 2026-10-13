@@ -12,12 +12,13 @@ import { useConsultorio } from '../context/ConsultorioContext';
 import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaForm';
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
 import TabRadiografias from '../components/radiografias/TabRadiografias';
+import TabRecetasTratamiento from '../components/recetas/TabRecetasTratamiento';
 import { borderRadius, colors } from '../constants/theme';
 import { obtenerUltimaCitaPaciente } from '../utils/citas';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetallePaciente'>;
 
-type Pestana = 'odontograma' | 'historia' | 'notas' | 'radiografias';
+type Pestana = 'odontograma' | 'historia' | 'notas' | 'radiografias' | 'recetas';
 
 const OPCIONES_PESTANAS: {
   valor: Pestana;
@@ -28,6 +29,7 @@ const OPCIONES_PESTANAS: {
   { valor: 'historia', etiqueta: 'Historia Clínica', icono: 'clipboard-text-outline' },
   { valor: 'notas', etiqueta: 'Notas de Evolución', icono: 'note-text-outline' },
   { valor: 'radiografias', etiqueta: 'Radiografías / Galería', icono: 'image-multiple-outline' },
+  { valor: 'recetas', etiqueta: 'Recetas y Tratamiento', icono: 'pill' },
 ];
 
 export default function DetallePaciente({ route, navigation }: Props) {
@@ -209,6 +211,13 @@ export default function DetallePaciente({ route, navigation }: Props) {
             radiografias={paciente.radiografias ?? []}
             onAgregar={alAgregarRadiografia}
             onAnalizar={() => navigation.navigate('DiagnosticoIa', { pacienteId })}
+          />
+        )}
+
+        {pestana === 'recetas' && (
+          <TabRecetasTratamiento
+            paciente={paciente}
+            consultorio={consultorio}
           />
         )}
       </View>

@@ -22,10 +22,17 @@ import {
   Radiografia,
   PACIENTES_INICIALES,
 } from '../types/paciente';
-import { Cita, EstatusCita } from '../types';
+import {
+  Cita,
+  EstatusCita,
+  EstadoTratamiento,
+  Medicamento,
+  Receta,
+} from '../types';
 
 const CLAVE_ALMACENAMIENTO = '@OdontoApp:pacientes';
 const CLAVE_CITAS = '@OdontoApp:citas';
+const CLAVE_RECETAS = '@OdontoApp:recetas';
 
 /**
  * Completa campos que pudieran faltar en pacientes guardados con una versión
@@ -182,12 +189,20 @@ export type NuevoPaciente = Pick<
 interface PacientesContextValor {
   pacientes: Paciente[];
   citas: Cita[];
+  recetas: Receta[];
   cargandoCitas: boolean;
+  cargandoRecetas: boolean;
   /** true mientras se recupera la lista guardada en AsyncStorage. */
   cargando: boolean;
   getCitas: () => Cita[];
   crearCita: (cita: Cita) => Promise<void>;
   cambiarEstatusCita: (id: string, nuevoEstatus: EstatusCita) => Promise<void>;
+  getRecetasPaciente: (pacienteId: string) => Receta[];
+  crearReceta: (receta: Receta) => Promise<void>;
+  actualizarEstadoTratamiento: (
+    recetaId: string,
+    estado: EstadoTratamiento,
+  ) => Promise<void>;
   obtenerPaciente: (id: string) => Paciente | undefined;
   agregarPaciente: (datos: NuevoPaciente) => Promise<Paciente>;
   actualizarOdontograma: (
@@ -223,9 +238,13 @@ export function PacientesProvider({ children }: Props) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [cargandoCitas, setCargandoCitas] = useState(true);
+  const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [cargandoRecetas, setCargandoRecetas] = useState(true);
   const [cargando, setCargando] = useState(true);
   const citasRef = useRef<Cita[]>([]);
+  const recetasRef = useRef<Receta[]>([]);
   const citasInicialesCompletas = useRef(false);
+  const recetasInicialesCompletas = useRef(false);
   // Evita que el efecto de guardado se dispare con el array vacío inicial,
   // antes de que termine de leerse el valor persistido.
   const cargaInicialCompleta = useRef(false);
@@ -262,6 +281,34 @@ export function PacientesProvider({ children }: Props) {
         if (activo) {
           cargaInicialCompleta.current = true;
           setCargando(false);
+        }
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let activo = true;
+    (async () => {
+      try {
+        const guardado = await AsyncStorage.getItem(CLAVE_RECETAS);
+        if (!activo) return;
+        if (guardado) {
+          const recibidas: unknown = JSON.parse(guardado);
+          if (!Array.isArray(recibidas) || !recibidas.every(esRecetaValida)) {
+            throw new Error('El almacenamiento de recetas tiene un formato no válido.');
+          }
+          recetasRef.current = recibidas;
+          setRecetas(recibidas);
+        }
+      } catch (error) {
+        console.warn('No se pudieron leer las recetas desde el almacenamiento local', error);
+      } finally {
+        if (activo) {
+          recetasInicialesCompletas.current = true;
+          setCargandoRecetas(false);
         }
       }
     })();
@@ -331,6 +378,50 @@ export function PacientesProvider({ children }: Props) {
     );
     await guardarCitas(nuevasCitas);
   }, [guardarCitas]);
+
+  const guardarRecetas = useCallback(async (nuevasRecetas: Receta[]) => {
+    await AsyncStorage.setItem(CLAVE_RECETAS, JSON.stringify(nuevasRecetas));
+    recetasRef.current = nuevasRecetas;
+    setRecetas(nuevasRecetas);
+  }, []);
+
+  const getRecetasPaciente = useCallback(
+    (pacienteId: string) =>
+      recetasRef.current
+        .filter((receta) => receta.pacienteId === pacienteId)
+        .sort((a, b) => b.fechaEmision.localeCompare(a.fechaEmision)),
+    [],
+  );
+
+  const crearReceta = useCallback(async (receta: Receta) => {
+    if (!recetasInicialesCompletas.current) {
+      throw new Error('Espera a que termine de cargar el historial de recetas.');
+    }
+    if (recetasRef.current.some((existente) => existente.id === receta.id)) {
+      throw new Error('Ya existe una receta con ese identificador.');
+    }
+    if (!receta.medicamentos.every(esMedicamentoValido)) {
+      throw new Error('La receta contiene un medicamento con datos no válidos.');
+    }
+    await guardarRecetas([receta, ...recetasRef.current]);
+  }, [guardarRecetas]);
+
+  const actualizarEstadoTratamiento = useCallback(async (
+    recetaId: string,
+    estado: EstadoTratamiento,
+  ) => {
+    if (!recetasInicialesCompletas.current) {
+      throw new Error('Espera a que termine de cargar el historial de recetas.');
+    }
+    if (!recetasRef.current.some((receta) => receta.id === recetaId)) {
+      throw new Error('No se encontró la receta seleccionada.');
+    }
+    await guardarRecetas(
+      recetasRef.current.map((receta) =>
+        receta.id === recetaId ? { ...receta, estadoTratamiento: estado } : receta,
+      ),
+    );
+  }, [guardarRecetas]);
 
   useEffect(() => {
     if (!cargaInicialCompleta.current) return;
@@ -439,6 +530,7 @@ export function PacientesProvider({ children }: Props) {
       await Promise.all([
         AsyncStorage.removeItem(CLAVE_ALMACENAMIENTO),
         AsyncStorage.removeItem(CLAVE_CITAS),
+        AsyncStorage.removeItem(CLAVE_RECETAS),
       ]);
     } catch (error) {
       console.warn('No se pudo limpiar el almacenamiento local', error);
@@ -446,6 +538,8 @@ export function PacientesProvider({ children }: Props) {
       setPacientes(PACIENTES_INICIALES);
       citasRef.current = [];
       setCitas([]);
+      recetasRef.current = [];
+      setRecetas([]);
     }
   }, []);
 
@@ -454,11 +548,16 @@ export function PacientesProvider({ children }: Props) {
       value={{
         pacientes,
         citas,
+        recetas,
+        cargandoRecetas,
         cargandoCitas,
         cargando,
         getCitas: () => citas,
         crearCita,
         cambiarEstatusCita,
+        getRecetasPaciente,
+        crearReceta,
+        actualizarEstadoTratamiento,
         obtenerPaciente,
         agregarPaciente,
         actualizarOdontograma,
@@ -471,6 +570,34 @@ export function PacientesProvider({ children }: Props) {
     >
       {children}
     </PacientesContext.Provider>
+  );
+}
+
+function esMedicamentoValido(valor: unknown): valor is Medicamento {
+  if (!valor || typeof valor !== 'object') return false;
+  const medicamento = valor as Partial<Medicamento>;
+  return (
+    typeof medicamento.id === 'string' &&
+    typeof medicamento.nombre === 'string' &&
+    typeof medicamento.dosis === 'string' &&
+    typeof medicamento.frecuencia === 'string' &&
+    typeof medicamento.duracion === 'string' &&
+    typeof medicamento.indicaciones === 'string'
+  );
+}
+
+function esRecetaValida(valor: unknown): valor is Receta {
+  if (!valor || typeof valor !== 'object') return false;
+  const receta = valor as Partial<Receta>;
+  return (
+    typeof receta.id === 'string' &&
+    typeof receta.pacienteId === 'string' &&
+    typeof receta.fechaEmision === 'string' &&
+    typeof receta.diagnostico === 'string' &&
+    Array.isArray(receta.medicamentos) &&
+    receta.medicamentos.every(esMedicamentoValido) &&
+    typeof receta.indicacionesGenerales === 'string' &&
+    (receta.estadoTratamiento === 'activo' || receta.estadoTratamiento === 'completado')
   );
 }
 
