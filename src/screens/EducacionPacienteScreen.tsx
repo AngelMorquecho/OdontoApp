@@ -281,14 +281,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chipCategoria: {
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: '#fff',
   },
   chipActivo: {

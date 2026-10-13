@@ -147,7 +147,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
             >
               <MaterialCommunityIcons
                 name={opcion.icono}
-                size={17}
+                size={16}
                 color={activa ? '#fff' : '#475569'}
               />
               <Text
@@ -243,18 +243,20 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   listaPestanas: {
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
     gap: 8,
   },
   chipPestana: {
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 6,
     maxWidth: 210,
-    paddingVertical: 10,
-    paddingHorizontal: 13,
-    borderRadius: 22,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     backgroundColor: '#E2E8F0',
   },
   chipPestanaActivo: {

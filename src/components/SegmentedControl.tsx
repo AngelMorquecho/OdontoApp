@@ -1,9 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 interface Opcion<T extends string> {
   valor: T;
   etiqueta: string;
+  icono?: keyof typeof MaterialCommunityIcons.glyphMap;
 }
 
 interface Props<T extends string> {
@@ -19,7 +21,11 @@ export default function SegmentedControl<T extends string>({
   onSeleccionar,
 }: Props<T>) {
   return (
-    <View style={styles.contenedor}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.contenedor}
+    >
       {opciones.map((opcion) => {
         const activo = opcion.valor === valorSeleccionado;
         return (
@@ -34,33 +40,44 @@ export default function SegmentedControl<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: activo }}
           >
+            {opcion.icono && (
+              <MaterialCommunityIcons
+                name={opcion.icono}
+                size={16}
+                color={activo ? '#fff' : '#475569'}
+              />
+            )}
             <Text style={[styles.texto, activo && styles.textoActivo]}>
               {opcion.etiqueta}
             </Text>
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   contenedor: {
     flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 14,
-    padding: 4,
-    margin: 16,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+    gap: 8,
   },
   segmento: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+    height: 38,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E2E8F0',
   },
   segmentoActivo: {
-    backgroundColor: '#fff',
+    backgroundColor: '#0284C7',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -71,9 +88,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#475569',
+    flexShrink: 0,
   },
   textoActivo: {
-    color: '#0284C7',
+    color: '#fff',
   },
   presionado: {
     opacity: 0.7,
