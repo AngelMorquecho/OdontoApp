@@ -31,7 +31,7 @@ export default function AjustesScreen({ route, navigation }: Props) {
     actualizarConsultorio,
     restaurarConsultorio,
   } = useConsultorio();
-  const { pacientes, reemplazarPacientes } = usePacientes();
+  const { pacientes, reemplazarPacientes, restablecerDatosPrueba } = usePacientes();
 
   const navegar = (ruta: FloatingTabRoute) => {
     switch (ruta) {
@@ -59,6 +59,9 @@ export default function AjustesScreen({ route, navigation }: Props) {
             pacientes={pacientes}
             seleccionarRolDoctor={seleccionarRolDoctor}
             seleccionarPaciente={seleccionarPaciente}
+            onRestablecer={() =>
+              solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
+            }
             onVolver={(seccion) =>
               navigation.navigate('PortalPaciente', { seccion })
             }
@@ -95,6 +98,9 @@ export default function AjustesScreen({ route, navigation }: Props) {
           user={user}
           seleccionarRolDoctor={seleccionarRolDoctor}
           seleccionarPaciente={seleccionarPaciente}
+          onRestablecer={() =>
+            solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
+          }
         />
       </BlurTargetView>
       <FloatingTabBar
@@ -117,6 +123,7 @@ interface FormularioAjustesProps {
   user: Usuario;
   seleccionarRolDoctor: () => void;
   seleccionarPaciente: (paciente: Paciente) => void;
+  onRestablecer: () => void;
 }
 
 function FormularioAjustes({
@@ -130,6 +137,7 @@ function FormularioAjustes({
   user,
   seleccionarRolDoctor,
   seleccionarPaciente,
+  onRestablecer,
 }: FormularioAjustesProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [offsetRespaldo, setOffsetRespaldo] = useState(0);
@@ -216,6 +224,23 @@ function FormularioAjustes({
             </Pressable>
           ))
         )}
+      </View>
+
+      <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Datos de prueba</Text>
+        <Text style={styles.textoSimulador}>
+          Restaura pacientes, citas, recetas y la sesión del doctor de prueba.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onRestablecer}
+          style={({ pressed }) => [
+            styles.botonRestablecerDatos,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoBotonRestablecer}>Restablecer datos de prueba</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.introduccion}>
@@ -310,6 +335,7 @@ interface PerfilPacienteProps {
   seleccionarRolDoctor: () => void;
   seleccionarPaciente: (paciente: Paciente) => void;
   onVolver: (seccion: 'citas' | 'tratamiento') => void;
+  onRestablecer: () => void;
 }
 
 function PerfilPaciente({
@@ -318,6 +344,7 @@ function PerfilPaciente({
   seleccionarRolDoctor,
   seleccionarPaciente,
   onVolver,
+  onRestablecer,
 }: PerfilPacienteProps) {
   return (
     <ScrollView
@@ -369,6 +396,22 @@ function PerfilPaciente({
         ))}
       </View>
       <View style={styles.seccion}>
+        <Text style={styles.tituloSeccion}>Datos de prueba</Text>
+        <Text style={styles.textoSimulador}>
+          Restablece el conjunto de demostración del dispositivo.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onRestablecer}
+          style={({ pressed }) => [
+            styles.botonRestablecerDatos,
+            pressed && styles.botonPresionado,
+          ]}
+        >
+          <Text style={styles.textoBotonRestablecer}>Restablecer datos de prueba</Text>
+        </Pressable>
+      </View>
+      <View style={styles.seccion}>
         <Text style={styles.tituloSeccion}>Acceso rápido</Text>
         <Pressable
           accessibilityRole="button"
@@ -392,6 +435,37 @@ function PerfilPaciente({
         </Pressable>
       </View>
     </ScrollView>
+  );
+}
+
+function solicitarRestablecimiento(
+  restablecer: () => Promise<void>,
+  seleccionarDoctor: () => Promise<void>,
+) {
+  Alert.alert(
+    'Restablecer datos de prueba',
+    'Se reemplazarán los datos locales por pacientes, citas y recetas de demostración.',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Restablecer',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            try {
+              await restablecer();
+              await seleccionarDoctor();
+              Alert.alert('Datos de prueba restablecidos correctamente');
+            } catch (error) {
+              Alert.alert(
+                'No se pudieron restablecer los datos',
+                error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+              );
+            }
+          })();
+        },
+      },
+    ],
   );
 }
 
@@ -573,6 +647,19 @@ const styles = StyleSheet.create({
   },
   textoBotonRol: {
     color: colors.surface,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  botonRestablecerDatos: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#FEF2F2',
+  },
+  textoBotonRestablecer: {
+    color: colors.danger,
     fontSize: 13,
     fontWeight: '700',
   },

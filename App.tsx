@@ -1,5 +1,11 @@
-import React from 'react';
-import { StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StatusBar,
+  Text,
+  View,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ListaPacientes from './src/screens/ListaPacientes';
@@ -17,10 +23,63 @@ import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { colors } from './src/constants/theme';
+import { initializeMockData } from './src/utils/seedData';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const [inicializado, setInicializado] = useState(false);
+  const [errorInicializacion, setErrorInicializacion] = useState<string | null>(null);
+  const [intentoInicializacion, setIntentoInicializacion] = useState(0);
+
+  useEffect(() => {
+    let activo = true;
+    initializeMockData()
+      .then(() => {
+        if (activo) setInicializado(true);
+      })
+      .catch((error: unknown) => {
+        if (activo) {
+          setErrorInicializacion(
+            error instanceof Error ? error.message : 'No se pudieron preparar los datos.',
+          );
+        }
+      });
+    return () => {
+      activo = false;
+    };
+  }, [intentoInicializacion]);
+
+  if (errorInicializacion) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <StatusBar barStyle="dark-content" />
+        <Text style={{ color: colors.textPrimary, textAlign: 'center', marginBottom: 12 }}>
+          {errorInicializacion}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setErrorInicializacion(null);
+            setInicializado(false);
+            setIntentoInicializacion((intento) => intento + 1);
+          }}
+          style={{ paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12, backgroundColor: colors.primary }}
+        >
+          <Text style={{ color: colors.surface, fontWeight: '700' }}>Reintentar</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (!inicializado) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar barStyle="dark-content" />
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
       <PacientesProvider>
@@ -33,8 +92,16 @@ export default function App() {
 }
 
 function AppNavegacion() {
-  const { user } = useAuth();
+  const { user, cargandoAuth } = useAuth();
   const esPaciente = user.rol === 'paciente';
+
+  if (cargandoAuth) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer key={`${user.rol}:${user.pacienteId ?? ''}`}>

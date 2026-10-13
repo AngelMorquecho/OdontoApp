@@ -29,10 +29,11 @@ import {
   Medicamento,
   Receta,
 } from '../types';
+import { CLAVES_DATOS, initializeMockData } from '../utils/seedData';
 
-const CLAVE_ALMACENAMIENTO = '@OdontoApp:pacientes';
-const CLAVE_CITAS = '@OdontoApp:citas';
-const CLAVE_RECETAS = '@OdontoApp:recetas';
+const CLAVE_ALMACENAMIENTO = CLAVES_DATOS.pacientes;
+const CLAVE_CITAS = CLAVES_DATOS.citas;
+const CLAVE_RECETAS = CLAVES_DATOS.recetas;
 
 /**
  * Completa campos que pudieran faltar en pacientes guardados con una versión
@@ -223,7 +224,7 @@ interface PacientesContextValor {
   ) => void;
   reemplazarPacientes: (pacientesImportados: Paciente[]) => Promise<void>;
   /** Borra por completo la lista de pacientes del dispositivo y reinicia con el mock. */
-  limpiarAlmacenamiento: () => Promise<void>;
+  restablecerDatosPrueba: () => Promise<void>;
 }
 
 const PacientesContext = createContext<PacientesContextValor | undefined>(
@@ -525,22 +526,20 @@ export function PacientesProvider({ children }: Props) {
     [],
   );
 
-  const limpiarAlmacenamiento = useCallback(async () => {
-    try {
-      await Promise.all([
-        AsyncStorage.removeItem(CLAVE_ALMACENAMIENTO),
-        AsyncStorage.removeItem(CLAVE_CITAS),
-        AsyncStorage.removeItem(CLAVE_RECETAS),
-      ]);
-    } catch (error) {
-      console.warn('No se pudo limpiar el almacenamiento local', error);
-    } finally {
-      setPacientes(PACIENTES_INICIALES);
-      citasRef.current = [];
-      setCitas([]);
-      recetasRef.current = [];
-      setRecetas([]);
-    }
+  const restablecerDatosPrueba = useCallback(async () => {
+    const datos = await initializeMockData(true);
+    if (!datos) throw new Error('No se pudieron crear los datos de prueba.');
+    citasRef.current = datos.citas;
+    recetasRef.current = datos.recetas;
+    citasInicialesCompletas.current = true;
+    recetasInicialesCompletas.current = true;
+    cargaInicialCompleta.current = true;
+    setPacientes(datos.pacientes);
+    setCitas(datos.citas);
+    setRecetas(datos.recetas);
+    setCargando(false);
+    setCargandoCitas(false);
+    setCargandoRecetas(false);
   }, []);
 
   return (
@@ -565,7 +564,7 @@ export function PacientesProvider({ children }: Props) {
         agregarNotaEvolucion,
         agregarRadiografia,
         reemplazarPacientes,
-        limpiarAlmacenamiento,
+        restablecerDatosPrueba,
       }}
     >
       {children}
