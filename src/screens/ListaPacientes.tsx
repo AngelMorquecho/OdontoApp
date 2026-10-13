@@ -16,6 +16,7 @@ import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
 import { useConsultorio } from '../context/ConsultorioContext';
 import PanelRespaldo from '../components/PanelRespaldo';
+import NavegacionPrincipal from '../components/NavegacionPrincipal';
 import { borderRadius, colors, shadows } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
@@ -92,6 +93,12 @@ export default function ListaPacientes({ navigation }: Props) {
 
   return (
     <View style={styles.contenedor}>
+      <NavegacionPrincipal
+        seccion="pacientes"
+        onSeleccionar={(seccion) => {
+          if (seccion === 'agenda') navigation.navigate('AgendaCitas');
+        }}
+      />
       <TextInput
         style={styles.buscador}
         placeholder="Buscar paciente por nombre..."
@@ -104,6 +111,14 @@ export default function ListaPacientes({ navigation }: Props) {
       />
 
       <View style={styles.accesosRapidos}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('AgendarCita', undefined)}
+          style={({ pressed }) => [styles.botonAcceso, pressed && styles.botonAccesoPresionado]}
+        >
+          <Ionicons name="calendar-outline" size={23} color={colors.primary} />
+          <Text numberOfLines={1} style={styles.tituloAcceso}>Agendar cita</Text>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('EducacionPaciente')}

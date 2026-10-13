@@ -126,6 +126,14 @@ export default function DetallePaciente({ route, navigation }: Props) {
           <Text style={styles.motivo}>
             Motivo de consulta: {paciente.motivoConsulta}
           </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('AgendarCita', { pacienteId })}
+            style={({ pressed }) => [styles.botonAgendar, pressed && styles.botonPdfPresionado]}
+          >
+            <MaterialCommunityIcons name="calendar-plus" size={18} color={colors.primary} />
+            <Text style={styles.textoAgendar}>Agendar cita</Text>
+          </Pressable>
         </View>
 
         <View style={styles.barraPestanas}>
@@ -259,6 +267,22 @@ const styles = StyleSheet.create({
   },
   botonPdfPresionado: {
     opacity: 0.7,
+  },
+  botonAgendar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 7,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryLight,
+  },
+  textoAgendar: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '700',
   },
   listaPestanas: {
     paddingHorizontal: 12,

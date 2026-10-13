@@ -8,6 +8,8 @@ import DiagnosticoIaScreen from './src/screens/DiagnosticoIaScreen';
 import AjustesScreen from './src/screens/AjustesScreen';
 import DetallePaciente from './src/screens/DetallePaciente';
 import AgregarPaciente from './src/screens/AgregarPaciente';
+import AgendaCitasScreen from './src/screens/AgendaCitasScreen';
+import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
@@ -35,6 +37,19 @@ export default function App() {
               name="ListaPacientes"
               component={ListaPacientes}
               options={{ title: 'Pacientes' }}
+            />
+            <Stack.Screen
+              name="AgendaCitas"
+              component={AgendaCitasScreen}
+              options={{ title: 'Agenda de Citas' }}
+            />
+            <Stack.Screen
+              name="AgendarCita"
+              component={AgendarCitaScreen}
+              options={{
+                title: 'Agendar Cita',
+                presentation: 'modal',
+              }}
             />
             <Stack.Screen
               name="EducacionPaciente"

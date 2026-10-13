@@ -22,8 +22,10 @@ import {
   Radiografia,
   PACIENTES_INICIALES,
 } from '../types/paciente';
+import { Cita, EstatusCita } from '../types';
 
 const CLAVE_ALMACENAMIENTO = '@OdontoApp:pacientes';
+const CLAVE_CITAS = '@OdontoApp:citas';
 
 /**
  * Completa campos que pudieran faltar en pacientes guardados con una versión
@@ -176,8 +178,13 @@ export type NuevoPaciente = Pick<
 
 interface PacientesContextValor {
   pacientes: Paciente[];
+  citas: Cita[];
+  cargandoCitas: boolean;
   /** true mientras se recupera la lista guardada en AsyncStorage. */
   cargando: boolean;
+  getCitas: () => Cita[];
+  crearCita: (cita: Cita) => Promise<void>;
+  cambiarEstatusCita: (id: string, nuevoEstatus: EstatusCita) => Promise<void>;
   obtenerPaciente: (id: string) => Paciente | undefined;
   agregarPaciente: (datos: NuevoPaciente) => Promise<Paciente>;
   actualizarOdontograma: (
@@ -211,7 +218,11 @@ interface Props {
 
 export function PacientesProvider({ children }: Props) {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [citas, setCitas] = useState<Cita[]>([]);
+  const [cargandoCitas, setCargandoCitas] = useState(true);
   const [cargando, setCargando] = useState(true);
+  const citasRef = useRef<Cita[]>([]);
+  const citasInicialesCompletas = useRef(false);
   // Evita que el efecto de guardado se dispare con el array vacío inicial,
   // antes de que termine de leerse el valor persistido.
   const cargaInicialCompleta = useRef(false);
@@ -255,6 +266,68 @@ export function PacientesProvider({ children }: Props) {
       activo = false;
     };
   }, []);
+
+  useEffect(() => {
+    let activo = true;
+    (async () => {
+      try {
+        const guardado = await AsyncStorage.getItem(CLAVE_CITAS);
+        if (!activo) return;
+        if (guardado) {
+          const citasGuardadas: unknown = JSON.parse(guardado);
+          if (!Array.isArray(citasGuardadas) || !citasGuardadas.every(esCitaValida)) {
+            throw new Error('El almacenamiento de citas tiene un formato no válido.');
+          }
+          citasRef.current = citasGuardadas;
+          setCitas(citasGuardadas);
+        }
+      } catch (error) {
+        console.warn('No se pudieron leer las citas desde el almacenamiento local', error);
+      } finally {
+        if (activo) {
+          citasInicialesCompletas.current = true;
+          setCargandoCitas(false);
+        }
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const guardarCitas = useCallback(async (nuevasCitas: Cita[]) => {
+    await AsyncStorage.setItem(CLAVE_CITAS, JSON.stringify(nuevasCitas));
+    citasRef.current = nuevasCitas;
+    setCitas(nuevasCitas);
+  }, []);
+
+  const crearCita = useCallback(async (cita: Cita) => {
+    if (!citasInicialesCompletas.current) {
+      throw new Error('Espera a que termine de cargar la agenda para crear una cita.');
+    }
+    if (citasRef.current.some((existente) => existente.id === cita.id)) {
+      throw new Error('Ya existe una cita con ese identificador.');
+    }
+    const nuevasCitas = [...citasRef.current, cita].sort(
+      (a, b) => `${a.fecha}T${a.hora}`.localeCompare(`${b.fecha}T${b.hora}`),
+    );
+    await guardarCitas(nuevasCitas);
+  }, [guardarCitas]);
+
+  const cambiarEstatusCita = useCallback(async (
+    id: string,
+    nuevoEstatus: EstatusCita,
+  ) => {
+    if (!citasInicialesCompletas.current) {
+      throw new Error('Espera a que termine de cargar la agenda para actualizar una cita.');
+    }
+    const indice = citasRef.current.findIndex((cita) => cita.id === id);
+    if (indice < 0) throw new Error('No se encontró la cita seleccionada.');
+    const nuevasCitas = citasRef.current.map((cita) =>
+      cita.id === id ? { ...cita, estatus: nuevoEstatus } : cita,
+    );
+    await guardarCitas(nuevasCitas);
+  }, [guardarCitas]);
 
   useEffect(() => {
     if (!cargaInicialCompleta.current) return;
@@ -360,11 +433,16 @@ export function PacientesProvider({ children }: Props) {
 
   const limpiarAlmacenamiento = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem(CLAVE_ALMACENAMIENTO);
+      await Promise.all([
+        AsyncStorage.removeItem(CLAVE_ALMACENAMIENTO),
+        AsyncStorage.removeItem(CLAVE_CITAS),
+      ]);
     } catch (error) {
       console.warn('No se pudo limpiar el almacenamiento local', error);
     } finally {
       setPacientes(PACIENTES_INICIALES);
+      citasRef.current = [];
+      setCitas([]);
     }
   }, []);
 
@@ -372,7 +450,12 @@ export function PacientesProvider({ children }: Props) {
     <PacientesContext.Provider
       value={{
         pacientes,
+        citas,
+        cargandoCitas,
         cargando,
+        getCitas: () => citas,
+        crearCita,
+        cambiarEstatusCita,
         obtenerPaciente,
         agregarPaciente,
         actualizarOdontograma,
@@ -385,6 +468,25 @@ export function PacientesProvider({ children }: Props) {
     >
       {children}
     </PacientesContext.Provider>
+  );
+}
+
+function esCitaValida(valor: unknown): valor is Cita {
+  if (!valor || typeof valor !== 'object') return false;
+  const cita = valor as Partial<Cita>;
+  return (
+    typeof cita.id === 'string' &&
+    typeof cita.pacienteId === 'string' &&
+    typeof cita.nombrePaciente === 'string' &&
+    typeof cita.fecha === 'string' &&
+    typeof cita.hora === 'string' &&
+    typeof cita.motivoConsulta === 'string' &&
+    typeof cita.tratamientoPrevisto === 'string' &&
+    (cita.estatus === 'programada' ||
+      cita.estatus === 'pospuesta' ||
+      cita.estatus === 'completada' ||
+      cita.estatus === 'cancelada') &&
+    (cita.notasAgenda === undefined || typeof cita.notasAgenda === 'string')
   );
 }
 
