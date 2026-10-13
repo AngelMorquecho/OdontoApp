@@ -210,8 +210,13 @@ export default function ListaPacientes({ navigation }: Props) {
                   <Text style={styles.textoEdad} numberOfLines={1}>{item.edad} años</Text>
                 </View>
               </View>
-              <View style={styles.filaContacto}>
-                <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
+              <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
+              <View style={styles.cajaMotivo}>
+                <Text style={styles.motivo} numberOfLines={2}>
+                  {obtenerUltimaCitaPaciente(item.id, citas)?.motivoConsulta ?? 'Sin citas registradas'}
+                </Text>
+              </View>
+              <View style={styles.filaAccionesContacto}>
                 <View style={styles.accionesContacto}>
                   <Pressable
                     accessibilityRole="button"
@@ -227,7 +232,7 @@ export default function ListaPacientes({ navigation }: Props) {
                       pressed && styles.contactoPresionado,
                     ]}
                   >
-                    <Ionicons name="call-outline" size={16} color={colors.primary} />
+                    <Ionicons name="call-outline" size={18} color="#0284C7" />
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
@@ -243,14 +248,9 @@ export default function ListaPacientes({ navigation }: Props) {
                       pressed && styles.contactoPresionado,
                     ]}
                   >
-                    <Ionicons name="logo-whatsapp" size={17} color="#25D366" />
+                    <Ionicons name="logo-whatsapp" size={18} color="#16A34A" />
                   </Pressable>
                 </View>
-              </View>
-              <View style={styles.cajaMotivo}>
-                <Text style={styles.motivo} numberOfLines={2}>
-                  {obtenerUltimaCitaPaciente(item.id, citas)?.motivoConsulta ?? 'Sin citas registradas'}
-                </Text>
               </View>
             </View>
           </Pressable>
@@ -382,28 +382,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
     flexShrink: 1,
   },
-  filaContacto: {
+  filaAccionesContacto: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 2,
+    marginTop: 8,
   },
   accionesContacto: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 10,
   },
   botonContacto: {
-    width: 30,
-    height: 30,
+    padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.full,
+    borderRadius: 20,
   },
   botonLlamada: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: '#E0F2FE',
   },
   botonWhatsApp: {
-    backgroundColor: '#E8F9EF',
+    backgroundColor: '#DCFCE7',
   },
   contactoPresionado: {
     opacity: 0.65,
