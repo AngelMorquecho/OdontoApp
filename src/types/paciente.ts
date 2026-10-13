@@ -195,7 +195,8 @@ export interface Paciente {
   nombre: string;
   edad: number;
   telefono: string;
-  motivoConsulta: string;
+  fechaNacimiento?: string;
+  correo?: string;
   odontograma: Odontograma;
   historiaClinica: HistoriaClinica;
   radiografias: Radiografia[];
@@ -294,7 +295,6 @@ export const PACIENTES_INICIALES: Paciente[] = [
     nombre: 'María López',
     edad: 34,
     telefono: '+52 55 1234 5678',
-    motivoConsulta: 'Dolor agudo en molar inferior derecho',
     odontograma: crearOdontogramaVacio('paciente-001'),
     historiaClinica: crearHistoriaClinicaVacia(),
     radiografias: [],
@@ -304,7 +304,6 @@ export const PACIENTES_INICIALES: Paciente[] = [
     nombre: 'Juan Carlos Pérez',
     edad: 47,
     telefono: '+52 55 2345 6789',
-    motivoConsulta: 'Revisión de rutina y limpieza dental',
     odontograma: crearOdontogramaVacio('paciente-002'),
     historiaClinica: crearHistoriaClinicaVacia(),
     radiografias: [],
@@ -314,7 +313,6 @@ export const PACIENTES_INICIALES: Paciente[] = [
     nombre: 'Ana Sofía Ramírez',
     edad: 22,
     telefono: '+52 55 3456 7890',
-    motivoConsulta: 'Sensibilidad al frío en incisivos superiores',
     odontograma: crearOdontogramaVacio('paciente-003'),
     historiaClinica: crearHistoriaClinicaVacia(),
     radiografias: [],

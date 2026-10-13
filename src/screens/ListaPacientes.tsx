@@ -19,6 +19,7 @@ import { useConsultorio } from '../context/ConsultorioContext';
 import PanelRespaldo from '../components/PanelRespaldo';
 import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
+import { obtenerUltimaCitaPaciente } from '../utils/citas';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
 
@@ -27,6 +28,7 @@ export default function ListaPacientes({ navigation }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const {
     pacientes,
+    citas,
     cargando,
     limpiarAlmacenamiento,
     reemplazarPacientes,
@@ -187,7 +189,9 @@ export default function ListaPacientes({ navigation }: Props) {
               </View>
               <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
               <View style={styles.cajaMotivo}>
-                <Text style={styles.motivo} numberOfLines={2}>{item.motivoConsulta}</Text>
+                <Text style={styles.motivo} numberOfLines={2}>
+                  {obtenerUltimaCitaPaciente(item.id, citas)?.motivoConsulta ?? 'Sin citas registradas'}
+                </Text>
               </View>
             </View>
           </Pressable>

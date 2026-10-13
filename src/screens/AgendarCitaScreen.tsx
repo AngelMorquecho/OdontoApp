@@ -49,9 +49,7 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
     () => pacientes.find((item) => item.id === pacienteId),
     [pacienteId, pacientes],
   );
-  const [motivoConsulta, setMotivoConsulta] = useState(
-    () => pacientes.find((item) => item.id === route.params?.pacienteId)?.motivoConsulta ?? '',
-  );
+  const [motivoConsulta, setMotivoConsulta] = useState('');
   const [tratamientoPrevisto, setTratamientoPrevisto] = useState('');
   const [notasAgenda, setNotasAgenda] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -153,15 +151,11 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
                       accessibilityRole="button"
                       onPress={() => {
                         setPacienteId(opcion.id);
-                        setMotivoConsulta(opcion.motivoConsulta);
                         setMostrarPacientes(false);
                       }}
                       style={({ pressed }) => [styles.opcionPaciente, pressed && styles.presionado]}
                     >
                       <Text style={styles.valorSelector}>{opcion.nombre}</Text>
-                      <Text numberOfLines={1} style={styles.detallePaciente}>
-                        {opcion.motivoConsulta}
-                      </Text>
                     </Pressable>
                   ))}
                 </View>

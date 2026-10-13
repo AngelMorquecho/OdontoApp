@@ -13,6 +13,7 @@ import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaFo
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
 import TabRadiografias from '../components/radiografias/TabRadiografias';
 import { borderRadius, colors } from '../constants/theme';
+import { obtenerUltimaCitaPaciente } from '../utils/citas';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetallePaciente'>;
 
@@ -33,6 +34,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
   const { pacienteId } = route.params;
   const {
     obtenerPaciente,
+    citas,
     actualizarOdontograma,
     actualizarHistoriaClinica,
     agregarNotaEvolucion,
@@ -124,7 +126,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
             {paciente.edad} años · {paciente.telefono}
           </Text>
           <Text style={styles.motivo}>
-            Motivo de consulta: {paciente.motivoConsulta}
+            Motivo de consulta: {obtenerUltimaCitaPaciente(pacienteId, citas)?.motivoConsulta ?? 'Sin citas registradas'}
           </Text>
           <Pressable
             accessibilityRole="button"

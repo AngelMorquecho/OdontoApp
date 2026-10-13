@@ -31,7 +31,8 @@ function esPaciente(valor: unknown): valor is Paciente {
     typeof valor.nombre === 'string' &&
     typeof valor.edad === 'number' &&
     typeof valor.telefono === 'string' &&
-    typeof valor.motivoConsulta === 'string' &&
+    (valor.fechaNacimiento === undefined || typeof valor.fechaNacimiento === 'string') &&
+    (valor.correo === undefined || typeof valor.correo === 'string') &&
     esObjeto(valor.odontograma) &&
     esObjeto(valor.historiaClinica) &&
     Array.isArray(valor.radiografias)

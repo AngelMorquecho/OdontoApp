@@ -101,7 +101,8 @@ function seccionEncabezadoConsultorio(
     <div class="ficha-paciente">
       <h2>${escaparHtml(paciente.nombre)}</h2>
       <p>${paciente.edad} años &middot; ${escaparHtml(paciente.telefono)}</p>
-      <p>Motivo de consulta: ${textoOGuion(paciente.motivoConsulta)}</p>
+      ${paciente.fechaNacimiento ? `<p>Fecha de nacimiento: ${escaparHtml(paciente.fechaNacimiento)}</p>` : ''}
+      ${paciente.correo ? `<p>Correo: ${escaparHtml(paciente.correo)}</p>` : ''}
     </div>
   `;
 }

@@ -157,7 +157,10 @@ function sanearPaciente(paciente: Partial<Paciente> & { id: string }): Paciente 
     nombre: paciente.nombre ?? '',
     edad: paciente.edad ?? 0,
     telefono: paciente.telefono ?? '',
-    motivoConsulta: paciente.motivoConsulta ?? '',
+    ...(typeof paciente.fechaNacimiento === 'string'
+      ? { fechaNacimiento: paciente.fechaNacimiento }
+      : {}),
+    ...(typeof paciente.correo === 'string' ? { correo: paciente.correo } : {}),
     odontograma: sanearOdontograma(paciente.odontograma, paciente.id),
     historiaClinica: sanearHistoriaClinica(paciente.historiaClinica),
     radiografias: Array.isArray(paciente.radiografias)
@@ -173,8 +176,8 @@ function sanearPacientes(pacientes: (Partial<Paciente> & { id: string })[]): Pac
 /** Datos que el usuario captura al dar de alta un paciente nuevo. */
 export type NuevoPaciente = Pick<
   Paciente,
-  'nombre' | 'edad' | 'telefono' | 'motivoConsulta'
->;
+  'nombre' | 'edad' | 'telefono'
+> & Pick<Paciente, 'fechaNacimiento' | 'correo'>;
 
 interface PacientesContextValor {
   pacientes: Paciente[];
