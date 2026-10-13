@@ -147,7 +147,7 @@ export default function SeccionMedicos({ historiaClinica, onChange }: Props) {
                   ginecoObstetricos: { ...go, semanas: v },
                 })
               }
-              keyboardType="number-pad"
+              keyboardType="numeric"
             />
           )}
           <CampoSiNo
@@ -228,7 +228,7 @@ export default function SeccionMedicos({ historiaClinica, onChange }: Props) {
             signosVitales: { ...sv, fc: v },
           })
         }
-        keyboardType="number-pad"
+        keyboardType="numeric"
       />
       <CampoTexto
         etiqueta="Frecuencia respiratoria (FR)"
@@ -239,7 +239,7 @@ export default function SeccionMedicos({ historiaClinica, onChange }: Props) {
             signosVitales: { ...sv, fr: v },
           })
         }
-        keyboardType="number-pad"
+        keyboardType="numeric"
       />
       <CampoTexto
         etiqueta="Temperatura"
@@ -250,6 +250,7 @@ export default function SeccionMedicos({ historiaClinica, onChange }: Props) {
             signosVitales: { ...sv, temperatura: v },
           })
         }
+        keyboardType="decimal-pad"
       />
     </View>
   );

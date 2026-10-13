@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,6 +14,7 @@ interface Props {
   visible: boolean;
   mode: 'date' | 'time';
   value: Date;
+  maximumDate?: Date;
   onChange: (value: Date) => void;
   onClose: () => void;
 }
@@ -23,9 +25,11 @@ export default function AppointmentDateTimePicker({
   visible,
   mode,
   value,
+  maximumDate,
   onChange,
   onClose,
 }: Props) {
+  const [mostrarAnios, setMostrarAnios] = useState(false);
   const [mesVisible, setMesVisible] = useState(
     () => new Date(value.getFullYear(), value.getMonth(), 1),
   );
@@ -38,6 +42,9 @@ export default function AppointmentDateTimePicker({
     mesVisible.getMonth() + 1,
     0,
   ).getDate();
+  const anioActual = new Date().getFullYear();
+  const anioMinimo = anioActual - 120;
+  const anioMaximo = maximumDate?.getFullYear() ?? anioActual + 10;
 
   const moverMes = (cantidad: number) => {
     setMesVisible(
@@ -56,6 +63,26 @@ export default function AppointmentDateTimePicker({
           actual.getMinutes(),
         ),
     );
+  };
+
+  const seleccionarAnio = (anio: number) => {
+    const mesMaximo =
+      maximumDate && anio === maximumDate.getFullYear()
+        ? maximumDate.getMonth()
+        : 11;
+    const mes = Math.min(mesVisible.getMonth(), mesMaximo);
+    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+    const dia = Math.min(fechaBase.getDate(), ultimoDia);
+    const fecha = new Date(
+      anio,
+      mes,
+      dia,
+      fechaBase.getHours(),
+      fechaBase.getMinutes(),
+    );
+    setMesVisible(new Date(anio, mes, 1));
+    setFechaBase(fecha);
+    setMostrarAnios(false);
   };
 
   const modificarTiempo = (unidad: 'hora' | 'minuto', cantidad: number) => {
@@ -103,70 +130,134 @@ export default function AppointmentDateTimePicker({
 
           {mode === 'date' ? (
             <>
-              <View style={styles.cabeceraCalendario}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Mes anterior"
-                  onPress={() => moverMes(-1)}
-                  style={({ pressed }) => [styles.botonMes, pressed && styles.presionado]}
-                >
-                  <Ionicons name="chevron-back" size={20} color={colors.primary} />
-                </Pressable>
-                <Text style={styles.nombreMes}>
-                  {mesVisible.toLocaleDateString('es-MX', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Mes siguiente"
-                  onPress={() => moverMes(1)}
-                  style={({ pressed }) => [styles.botonMes, pressed && styles.presionado]}
-                >
-                  <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-                </Pressable>
-              </View>
-              <View style={styles.calendario}>
-                {DIAS_SEMANA.map((dia, indice) => (
-                  <Text key={`${dia}-${indice}`} style={styles.diaSemana}>
-                    {dia}
-                  </Text>
-                ))}
-                {Array.from({ length: primerDia }, (_, indice) => (
-                  <View key={`vacio-${indice}`} style={styles.celdaDia} />
-                ))}
-                {Array.from({ length: diasEnMes }, (_, indice) => {
-                  const dia = indice + 1;
-                  const seleccionado =
-                    fechaBase.getFullYear() === mesVisible.getFullYear() &&
-                    fechaBase.getMonth() === mesVisible.getMonth() &&
-                    fechaBase.getDate() === dia;
-                  return (
+              {mostrarAnios ? (
+                <ScrollView style={styles.selectorAnios}>
+                  <View style={styles.listaAnios}>
+                    {Array.from(
+                      { length: anioMaximo - anioMinimo + 1 },
+                      (_, indice) => anioMaximo - indice,
+                    ).map((anio) => (
+                      <Pressable
+                        key={anio}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Seleccionar año ${anio}`}
+                        accessibilityState={{
+                          selected: anio === mesVisible.getFullYear(),
+                        }}
+                        onPress={() => seleccionarAnio(anio)}
+                        style={({ pressed }) => [
+                          styles.botonAnio,
+                          anio === mesVisible.getFullYear() && styles.anioSeleccionado,
+                          pressed && styles.presionado,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.textoAnio,
+                            anio === mesVisible.getFullYear() &&
+                              styles.textoAnioSeleccionado,
+                          ]}
+                        >
+                          {anio}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </ScrollView>
+              ) : (
+                <>
+                  <View style={styles.cabeceraCalendario}>
                     <Pressable
-                      key={dia}
                       accessibilityRole="button"
-                      accessibilityLabel={`${dia} de ${mesVisible.toLocaleDateString('es-MX', { month: 'long' })}`}
-                      accessibilityState={{ selected: seleccionado }}
-                      onPress={() => seleccionarDia(dia)}
+                      accessibilityLabel="Mes anterior"
+                      onPress={() => moverMes(-1)}
+                      style={({ pressed }) => [styles.botonMes, pressed && styles.presionado]}
+                    >
+                      <Ionicons name="chevron-back" size={20} color={colors.primary} />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Elegir año"
+                      onPress={() => setMostrarAnios(true)}
                       style={({ pressed }) => [
-                        styles.celdaDia,
-                        seleccionado && styles.diaSeleccionado,
+                        styles.botonNombreMes,
                         pressed && styles.presionado,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.numeroDia,
-                          seleccionado && styles.numeroDiaSeleccionado,
-                        ]}
-                      >
+                      <Text style={styles.nombreMes}>
+                        {mesVisible.toLocaleDateString('es-MX', {
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </Text>
+                      <Ionicons name="chevron-down" size={16} color={colors.primary} />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Mes siguiente"
+                      onPress={() => moverMes(1)}
+                      style={({ pressed }) => [styles.botonMes, pressed && styles.presionado]}
+                    >
+                      <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                    </Pressable>
+                  </View>
+                  <View style={styles.calendario}>
+                    {DIAS_SEMANA.map((dia, indice) => (
+                      <Text key={`${dia}-${indice}`} style={styles.diaSemana}>
                         {dia}
                       </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+                    ))}
+                    {Array.from({ length: primerDia }, (_, indice) => (
+                      <View key={`vacio-${indice}`} style={styles.celdaDia} />
+                    ))}
+                    {Array.from({ length: diasEnMes }, (_, indice) => {
+                      const dia = indice + 1;
+                      const fechaDia = new Date(
+                        mesVisible.getFullYear(),
+                        mesVisible.getMonth(),
+                        dia,
+                      );
+                      const deshabilitado =
+                        maximumDate !== undefined &&
+                        fechaDia > new Date(
+                          maximumDate.getFullYear(),
+                          maximumDate.getMonth(),
+                          maximumDate.getDate(),
+                        );
+                      const seleccionado =
+                        fechaBase.getFullYear() === mesVisible.getFullYear() &&
+                        fechaBase.getMonth() === mesVisible.getMonth() &&
+                        fechaBase.getDate() === dia;
+                      return (
+                        <Pressable
+                          key={dia}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${dia} de ${mesVisible.toLocaleDateString('es-MX', { month: 'long' })}`}
+                          accessibilityState={{ selected: seleccionado }}
+                          disabled={deshabilitado}
+                          onPress={() => seleccionarDia(dia)}
+                          style={({ pressed }) => [
+                            styles.celdaDia,
+                            seleccionado && styles.diaSeleccionado,
+                            deshabilitado && styles.diaDeshabilitado,
+                            pressed && styles.presionado,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.numeroDia,
+                              seleccionado && styles.numeroDiaSeleccionado,
+                              deshabilitado && styles.numeroDiaDeshabilitado,
+                            ]}
+                          >
+                            {dia}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
               <Text style={styles.resumenSeleccion}>
                 {fechaBase.toLocaleDateString('es-MX', {
                   day: 'numeric',
@@ -282,6 +373,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  botonNombreMes: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+  },
   botonMes: {
     width: 40,
     height: 40,
@@ -295,6 +394,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     textTransform: 'capitalize',
+  },
+  selectorAnios: {
+    maxHeight: 280,
+  },
+  listaAnios: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  botonAnio: {
+    width: '25%',
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.full,
+  },
+  anioSeleccionado: {
+    backgroundColor: colors.primary,
+  },
+  textoAnio: {
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+  textoAnioSeleccionado: {
+    color: colors.surface,
+    fontWeight: '700',
   },
   calendario: {
     flexDirection: 'row',
@@ -319,6 +444,9 @@ const styles = StyleSheet.create({
   diaSeleccionado: {
     backgroundColor: colors.primary,
   },
+  diaDeshabilitado: {
+    opacity: 0.35,
+  },
   numeroDia: {
     color: colors.textPrimary,
     fontSize: 14,
@@ -326,6 +454,9 @@ const styles = StyleSheet.create({
   numeroDiaSeleccionado: {
     color: colors.surface,
     fontWeight: '700',
+  },
+  numeroDiaDeshabilitado: {
+    color: colors.textSecondary,
   },
   resumenSeleccion: {
     marginTop: 12,

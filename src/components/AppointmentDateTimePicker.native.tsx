@@ -16,6 +16,7 @@ interface Props {
   visible: boolean;
   mode: 'date' | 'time';
   value: Date;
+  maximumDate?: Date;
   onChange: (value: Date) => void;
   onClose: () => void;
 }
@@ -24,14 +25,15 @@ export default function AppointmentDateTimePicker({
   visible,
   mode,
   value,
+  maximumDate,
   onChange,
   onClose,
 }: Props) {
-  const currentProps = useRef({ value, onChange, onClose });
+  const currentProps = useRef({ value, maximumDate, onChange, onClose });
 
   useEffect(() => {
-    currentProps.current = { value, onChange, onClose };
-  }, [onChange, onClose, value]);
+    currentProps.current = { value, maximumDate, onChange, onClose };
+  }, [maximumDate, onChange, onClose, value]);
 
   useEffect(() => {
     if (!visible || Platform.OS !== 'android') return;
@@ -39,6 +41,9 @@ export default function AppointmentDateTimePicker({
     DateTimePickerAndroid.open({
       mode,
       value: currentProps.current.value,
+      maximumDate: mode === 'date' ? currentProps.current.maximumDate : undefined,
+      display: mode === 'date' ? 'calendar' : undefined,
+      startOnYearSelection: mode === 'date',
       is24Hour: true,
       onValueChange: (_event, selectedValue) => {
         currentProps.current.onChange(selectedValue);
@@ -83,6 +88,7 @@ export default function AppointmentDateTimePicker({
             mode={mode}
             display="spinner"
             locale="es-MX"
+            maximumDate={mode === 'date' ? maximumDate : undefined}
             is24Hour
             onValueChange={(_event, selectedValue) => onChange(selectedValue)}
           />

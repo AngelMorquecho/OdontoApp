@@ -15,6 +15,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { usePacientes } from '../context/PacientesContext';
 import { borderRadius, colors } from '../constants/theme';
+import AppointmentDateTimePicker from '../components/AppointmentDateTimePicker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AgregarPaciente'>;
 
@@ -23,15 +24,34 @@ export default function AgregarPaciente({ navigation }: Props) {
 
   const [nombre, setNombre] = useState('');
   const [edad, setEdad] = useState('');
-  const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
+  const [mostrarSelectorFecha, setMostrarSelectorFecha] = useState(false);
   const [telefono, setTelefono] = useState('');
   const [correo, setCorreo] = useState('');
   const [guardando, setGuardando] = useState(false);
 
+  const actualizarFechaNacimiento = (fecha: Date) => {
+    setFechaNacimiento(fecha);
+    const hoy = new Date();
+    const edadCalculada =
+      hoy.getFullYear() -
+      fecha.getFullYear() -
+      (hoy.getMonth() < fecha.getMonth() ||
+      (hoy.getMonth() === fecha.getMonth() && hoy.getDate() < fecha.getDate())
+        ? 1
+        : 0);
+    setEdad(String(edadCalculada));
+  };
+
+  const edadComoNumero = (valor: string) => {
+    if (!/^\d+$/.test(valor)) return Number.NaN;
+    const numero = Number(valor);
+    return Number.isSafeInteger(numero) ? numero : Number.NaN;
+  };
+
   const guardar = async () => {
     const nombreLimpio = nombre.trim();
-    const edadIngresada = Number(edad);
-    const nacimiento = fechaNacimiento.trim();
+    const edadIngresada = edadComoNumero(edad);
 
     if (!nombreLimpio) {
       Alert.alert('Falta información', 'Ingresa el nombre completo del paciente.');
@@ -42,33 +62,21 @@ export default function AgregarPaciente({ navigation }: Props) {
       return;
     }
 
-    let edadNumero = edadIngresada;
-    if (nacimiento) {
-      const coincidencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(nacimiento);
-      if (!coincidencia) {
-        Alert.alert('Fecha no válida', 'Ingresa la fecha de nacimiento con formato AAAA-MM-DD.');
-        return;
-      }
-      const [, anio, mes, dia] = coincidencia;
-      const fecha = new Date(Number(anio), Number(mes) - 1, Number(dia));
-      if (
-        fecha.getFullYear() !== Number(anio) ||
-        fecha.getMonth() !== Number(mes) - 1 ||
-        fecha.getDate() !== Number(dia) ||
-        fecha > new Date()
-      ) {
-        Alert.alert('Fecha no válida', 'Verifica la fecha de nacimiento.');
-        return;
-      }
-      const hoy = new Date();
-      edadNumero =
-        hoy.getFullYear() -
-        fecha.getFullYear() -
-        (hoy.getMonth() < fecha.getMonth() ||
-        (hoy.getMonth() === fecha.getMonth() && hoy.getDate() < fecha.getDate())
-          ? 1
-          : 0);
-    } else if (!edad.trim() || Number.isNaN(edadIngresada) || edadIngresada <= 0) {
+    if (
+      fechaNacimiento &&
+      fechaNacimiento > new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate(),
+      )
+    ) {
+      Alert.alert('Fecha no válida', 'La fecha de nacimiento no puede estar en el futuro.');
+      return;
+    }
+    if (
+      !fechaNacimiento &&
+      (!edad.trim() || Number.isNaN(edadIngresada) || edadIngresada <= 0)
+    ) {
       Alert.alert('Falta información', 'Ingresa una edad o fecha de nacimiento válida.');
       return;
     }
@@ -81,9 +89,9 @@ export default function AgregarPaciente({ navigation }: Props) {
     try {
       await agregarPaciente({
         nombre: nombreLimpio,
-        edad: edadNumero,
+        edad: fechaNacimiento ? Number(edad) : edadIngresada,
         telefono: telefono.trim(),
-        ...(nacimiento ? { fechaNacimiento: nacimiento } : {}),
+        ...(fechaNacimiento ? { fechaNacimiento: fechaISO(fechaNacimiento) } : {}),
         ...(correo.trim() ? { correo: correo.trim() } : {}),
       });
       navigation.goBack();
@@ -91,6 +99,19 @@ export default function AgregarPaciente({ navigation }: Props) {
       setGuardando(false);
     }
   };
+
+  const fechaISO = (fecha: Date) =>
+    `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+
+  const fechaLegible = (fecha: Date) =>
+    fecha.toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+  const fechaNacimientoInicial = new Date();
+  fechaNacimientoInicial.setFullYear(fechaNacimientoInicial.getFullYear() - 30);
 
   return (
     <KeyboardAvoidingView
@@ -115,20 +136,64 @@ export default function AgregarPaciente({ navigation }: Props) {
             style={styles.input}
             placeholder="Ingresa edad o fecha de nacimiento"
             value={edad}
-            onChangeText={setEdad}
-            keyboardType="number-pad"
-            editable={!fechaNacimiento}
+            onChangeText={(valor) => {
+              if (!/^\d*$/.test(valor)) {
+                setEdad('');
+                setFechaNacimiento(null);
+                return;
+              }
+              setEdad(valor);
+              setFechaNacimiento(null);
+            }}
+            keyboardType="numeric"
           />
 
           <Text style={styles.etiqueta}>Fecha de nacimiento</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AAAA-MM-DD"
-            value={fechaNacimiento}
-            onChangeText={setFechaNacimiento}
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-          />
+          <View style={styles.filaFecha}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                fechaNacimiento
+                  ? `Cambiar fecha de nacimiento. Fecha seleccionada: ${fechaLegible(fechaNacimiento)}`
+                  : 'Seleccionar fecha de nacimiento'
+              }
+              onPress={() => setMostrarSelectorFecha(true)}
+              style={({ pressed }) => [
+                styles.selectorFecha,
+                pressed && styles.botonPresionado,
+              ]}
+            >
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+              <Text
+                style={[
+                  styles.textoFecha,
+                  !fechaNacimiento && styles.placeholderFecha,
+                ]}
+              >
+                {fechaNacimiento
+                  ? fechaLegible(fechaNacimiento)
+                  : 'Selecciona una fecha'}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+            </Pressable>
+            {fechaNacimiento && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Quitar fecha de nacimiento"
+                hitSlop={8}
+                onPress={() => {
+                  setFechaNacimiento(null);
+                  setEdad('');
+                }}
+                style={({ pressed }) => [
+                  styles.limpiarFecha,
+                  pressed && styles.botonPresionado,
+                ]}
+              >
+                <Ionicons name="close-circle" size={21} color={colors.textSecondary} />
+              </Pressable>
+            )}
+          </View>
           <Text style={styles.ayuda}>Requerido: edad o fecha de nacimiento.</Text>
 
           <Text style={styles.etiqueta}>Teléfono *</Text>
@@ -165,6 +230,16 @@ export default function AgregarPaciente({ navigation }: Props) {
             {guardando ? 'Guardando...' : 'Guardar paciente'}
           </Text>
         </Pressable>
+        {mostrarSelectorFecha && (
+          <AppointmentDateTimePicker
+            visible
+            mode="date"
+            value={fechaNacimiento ?? fechaNacimientoInicial}
+            maximumDate={new Date()}
+            onChange={actualizarFechaNacimiento}
+            onClose={() => setMostrarSelectorFecha(false)}
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -213,6 +288,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
     backgroundColor: '#F8FAFC',
+  },
+  filaFecha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  selectorFecha: {
+    flex: 1,
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F8FAFC',
+  },
+  textoFecha: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  placeholderFecha: {
+    color: colors.textSecondary,
+    fontWeight: '400',
+  },
+  limpiarFecha: {
+    width: 36,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ayuda: { marginTop: 6, color: colors.textSecondary, fontSize: 12 },
   boton: {

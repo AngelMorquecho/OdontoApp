@@ -81,7 +81,7 @@ export default function SeccionDatosGenerales({ historiaClinica, onChange }: Pro
             identificacion: { ...identificacion, cp: v },
           })
         }
-        keyboardType="number-pad"
+        keyboardType="numeric"
       />
       <CampoTexto
         etiqueta="Ciudad"

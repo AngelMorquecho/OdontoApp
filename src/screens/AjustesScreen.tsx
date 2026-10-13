@@ -266,6 +266,7 @@ function FormularioAjustes({
           etiqueta="Cédula profesional"
           valor={formulario.cedula}
           placeholder="Número de cédula"
+          keyboardType="numeric"
           onChangeText={(valor) => actualizarCampo('cedula', valor)}
         />
         <Campo
@@ -503,7 +504,7 @@ interface CampoProps {
   placeholder: string;
   onChangeText: (valor: string) => void;
   multiline?: boolean;
-  keyboardType?: 'default' | 'phone-pad';
+  keyboardType?: 'default' | 'phone-pad' | 'numeric' | 'number-pad' | 'decimal-pad';
 }
 
 function Campo({

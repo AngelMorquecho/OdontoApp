@@ -6,6 +6,7 @@ interface Props {
   visible: boolean;
   mode: 'date' | 'time';
   value: Date;
+  maximumDate?: Date;
   onChange: (value: Date) => void;
   onClose: () => void;
 }
@@ -14,6 +15,7 @@ export default function AppointmentDateTimePicker({
   visible,
   mode,
   value,
+  maximumDate,
   onChange,
   onClose,
 }: Props) {
@@ -33,6 +35,7 @@ export default function AppointmentDateTimePicker({
             value={value}
             mode={mode}
             is24Hour
+            maximumDate={mode === 'date' ? maximumDate : undefined}
             onValueChange={(_event, selectedValue) => onChange(selectedValue)}
           />
           <Pressable
