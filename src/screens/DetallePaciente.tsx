@@ -1,13 +1,12 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useLayoutEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import Odontograma2D from '../components/Odontograma2D';
 import { Odontograma } from '../components/types/odontograma';
 import { usePacientes } from '../context/PacientesContext';
 import { crearHistoriaClinicaVacia, HistoriaClinica, NotaEvolucion, Radiografia } from '../types/paciente';
-import { generarYCompartirPdfExpediente } from '../utils/generarPdfExpediente';
 import { useConsultorio } from '../context/ConsultorioContext';
 import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaForm';
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
@@ -43,56 +42,15 @@ export default function DetallePaciente({ route, navigation }: Props) {
     agregarRadiografia,
   } = usePacientes();
   const paciente = obtenerPaciente(pacienteId);
-  const { consultorio, cargandoConsultorio } = useConsultorio();
+  const { consultorio } = useConsultorio();
   const [pestana, setPestana] = useState<Pestana>('odontograma');
-  const [exportandoPdf, setExportandoPdf] = useState(false);
-  const exportacionEnCurso = useRef(false);
-
-  const alExportarPdf = useCallback(async () => {
-    if (!paciente || exportacionEnCurso.current) return;
-
-    exportacionEnCurso.current = true;
-    setExportandoPdf(true);
-    try {
-      await generarYCompartirPdfExpediente(paciente, consultorio);
-    } catch (error) {
-      const mensaje =
-        error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
-      Alert.alert('No se pudo exportar el PDF', mensaje);
-    } finally {
-      exportacionEnCurso.current = false;
-      setExportandoPdf(false);
-    }
-  }, [consultorio, paciente]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: paciente?.nombre ?? 'Paciente',
-      headerRight: paciente
-        ? () => (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Exportar expediente en PDF"
-              accessibilityState={{ disabled: exportandoPdf, busy: exportandoPdf }}
-              disabled={exportandoPdf || cargandoConsultorio}
-              hitSlop={8}
-              style={({ pressed }) => pressed && styles.botonPdfPresionado}
-              onPress={() => {
-                void alExportarPdf();
-              }}
-            >
-              <Text style={styles.botonExportarPdf}>
-                {cargandoConsultorio
-                  ? 'Cargando…'
-                  : exportandoPdf
-                    ? 'Preparando…'
-                    : 'Exportar PDF'}
-              </Text>
-            </Pressable>
-          )
-        : undefined,
+      headerRight: undefined,
     });
-  }, [alExportarPdf, cargandoConsultorio, exportandoPdf, navigation, paciente]);
+  }, [navigation, paciente?.nombre]);
 
   if (!paciente) {
     return (
@@ -133,7 +91,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('AgendarCita', { pacienteId })}
-            style={({ pressed }) => [styles.botonAgendar, pressed && styles.botonPdfPresionado]}
+            style={({ pressed }) => [styles.botonAgendar, pressed && styles.botonPresionado]}
           >
             <MaterialCommunityIcons name="calendar-plus" size={18} color={colors.primary} />
             <Text style={styles.textoAgendar}>Agendar cita</Text>
@@ -182,13 +140,25 @@ export default function DetallePaciente({ route, navigation }: Props) {
       <View style={styles.contenidoPestana}>
         {pestana === 'odontograma' && (
           <ScrollView contentContainerStyle={styles.contenidoOdontograma}>
+            <View style={styles.guiaOdontograma}>
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color={colors.primary}
+              />
+              <View style={styles.contenidoGuiaOdontograma}>
+                <Text style={styles.tituloGuiaOdontograma}>Guía de Odontograma</Text>
+                <Text style={styles.textoGuiaOdontograma}>
+                  Toca cualquier cara del diente (Oclusal, Vestibular, Lingual, Mesial,
+                  Distal) para cambiar su estado: Blanco = Sano | Rojo = Caries | Azul =
+                  Obturación/Restaurado.
+                </Text>
+              </View>
+            </View>
             <Odontograma2D
               odontograma={paciente.odontograma}
               onChange={alCambiarOdontograma}
             />
-            <Text style={styles.ayuda}>
-              Toca una cara: sana → caries → obturación → sana
-            </Text>
           </ScrollView>
         )}
 
@@ -273,15 +243,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     flexShrink: 1,
   },
-  botonExportarPdf: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-    flexShrink: 1,
-  },
-  botonPdfPresionado: {
-    opacity: 0.7,
-  },
   botonAgendar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,6 +253,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primaryLight,
+  },
+  botonPresionado: {
+    opacity: 0.7,
   },
   textoAgendar: {
     color: colors.primary,
@@ -343,8 +307,29 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     flexGrow: 1,
   },
-  ayuda: {
-    marginTop: 12,
+  guiaOdontograma: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: borderRadius.md,
+    backgroundColor: '#EFF6FF',
+  },
+  contenidoGuiaOdontograma: {
+    flex: 1,
+  },
+  tituloGuiaOdontograma: {
+    marginBottom: 4,
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  textoGuiaOdontograma: {
     color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

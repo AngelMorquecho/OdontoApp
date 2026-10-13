@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     backgroundColor: colors.background,
   },
-  filtros: { marginTop: 8 },
+  filtros: { marginTop: 16, marginBottom: 12 },
   lista: {
     flexGrow: 1,
     justifyContent: 'flex-start',

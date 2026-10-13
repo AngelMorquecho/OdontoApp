@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurTargetView } from 'expo-blur';
 import {
@@ -16,7 +16,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
-import { useAuth } from '../context/AuthContext';
 import { useConsultorio } from '../context/ConsultorioContext';
 import PanelRespaldo from '../components/PanelRespaldo';
 import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
@@ -32,54 +31,9 @@ export default function ListaPacientes({ navigation }: Props) {
     pacientes,
     citas,
     cargando,
-    restablecerDatosPrueba,
     reemplazarPacientes,
   } = usePacientes();
-  const { seleccionarRolDoctor } = useAuth();
   const { consultorio, cargandoConsultorio, restaurarConsultorio } = useConsultorio();
-
-  const confirmarRestablecer = () => {
-    Alert.alert(
-      'Restablecer datos',
-      'Esto reemplazará los datos locales por el conjunto completo de datos de prueba. ¿Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Restablecer',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              try {
-                await restablecerDatosPrueba();
-                await seleccionarRolDoctor();
-                Alert.alert('Datos de prueba restablecidos correctamente');
-              } catch (error) {
-                Alert.alert(
-                  'No se pudieron restablecer los datos',
-                  error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
-                );
-              }
-            })();
-          },
-        },
-      ],
-    );
-  };
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable
-          onPress={confirmarRestablecer}
-          hitSlop={8}
-          style={({ pressed }) => [styles.botonRestablecer, pressed && styles.botonAccesoPresionado]}
-        >
-          <Text style={styles.textoRestablecer}>Restablecer</Text>
-        </Pressable>
-      ),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation]);
 
   const pacientesFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -469,15 +423,5 @@ const styles = StyleSheet.create({
   },
   botonFlotantePresionado: {
     opacity: 0.7,
-  },
-  botonRestablecer: {
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    marginRight: 4,
-  },
-  textoRestablecer: {
-    color: colors.danger,
-    fontSize: 13,
-    fontWeight: '700',
   },
 });
