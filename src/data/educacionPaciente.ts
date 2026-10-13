@@ -185,4 +185,62 @@ export const TEMAS_EDUCACION_PACIENTE: TemaEducativo[] = [
       <text x="160" y="139" text-anchor="middle" font-family="Arial" font-size="13" fill="#455A64">Protección y recuperación de la función</text>
     </svg>`,
   },
+  {
+    id: 'cepillado-diario',
+    titulo: 'Guía de cepillado diario',
+    categoria: 'Prevención',
+    descripcionCorta: 'Pasos sencillos para limpiar dientes y encías con suavidad y constancia.',
+    explicacionDetallada:
+      'Un cepillado cuidadoso ayuda a retirar la placa de dientes y encías. Usa un cepillo de cerdas suaves y pasta con flúor; coloca las cerdas inclinadas hacia la línea de la encía y limpia con movimientos cortos, sin aplicar fuerza excesiva. Dedica tiempo a las caras externas, internas y superficies de masticación. El cepillado no sustituye la limpieza entre los dientes.',
+    pasosTratamiento: [
+      'Coloca el cepillo en un ángulo suave hacia la unión entre diente y encía.',
+      'Limpia cada zona con movimientos pequeños y delicados, por dentro y por fuera.',
+      'Cepilla también las superficies con las que masticas y la lengua.',
+      'Limpia entre los dientes una vez al día con hilo o el auxiliar que te recomiende tu odontólogo.',
+    ],
+    recomendacionesPostTratamiento: [
+      'Cepíllate dos veces al día durante aproximadamente dos minutos.',
+      'Usa un cepillo de cerdas suaves y cámbialo cuando esté desgastado.',
+      'Evita cepillar con fuerza; la presión excesiva puede irritar las encías.',
+      'Si tienes dudas sobre la técnica, pide a tu odontólogo que te la muestre.',
+    ],
+    svgIlustracion: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150">
+      <rect width="320" height="150" rx="18" fill="#F2F8FE"/>
+      <path d="M57 81q38-24 76 0v28H57z" fill="#F48FB1"/>
+      <path d="M70 47h20v58H70zM99 47h20v58H99z" fill="#fff" stroke="#607D8B" stroke-width="3"/>
+      <path d="M171 84 230 39l11 14-59 45z" fill="#64B5F6" stroke="#1E88E5" stroke-width="3"/>
+      <path d="m221 46 13-10 16 20-13 10z" fill="#BBDEFB" stroke="#1E88E5" stroke-width="3"/>
+      <path d="M234 73q14 11 27 0" fill="none" stroke="#26A69A" stroke-width="4" stroke-linecap="round"/>
+      <text x="160" y="137" text-anchor="middle" font-family="Arial" font-size="13" fill="#455A64">Suave · completo · todos los días</text>
+    </svg>`,
+  },
+  {
+    id: 'cuidados-extraccion',
+    titulo: 'Cuidados después de una extracción',
+    categoria: 'Tratamientos especializados',
+    descripcionCorta: 'Recomendaciones generales para acompañar la recuperación tras retirar un diente.',
+    explicacionDetallada:
+      'Después de una extracción se forma un coágulo que protege la zona mientras inicia la cicatrización. Las indicaciones pueden variar según el procedimiento y tu salud, por eso las instrucciones de tu odontólogo siempre tienen prioridad. Mantén la zona protegida y comunícate con la clínica si algo te preocupa.',
+    pasosTratamiento: [
+      'Mantén la gasa el tiempo indicado por el profesional y evita manipular la herida.',
+      'Durante el primer día, evita enjuagarte con fuerza, escupir repetidamente o usar popote.',
+      'Cuando te indiquen, retoma la higiene con cuidado, evitando cepillar directamente la herida.',
+      'Acude a la revisión o contacta a la clínica si los síntomas empeoran.',
+    ],
+    recomendacionesPostTratamiento: [
+      'Descansa y sigue las indicaciones personalizadas sobre medicamentos y alimentación.',
+      'Prefiere alimentos suaves y evita fumar durante la recuperación.',
+      'No coloques remedios ni objetos directamente en la herida.',
+      'Solicita atención si el sangrado no cede, aparece fiebre o el dolor e hinchazón aumentan.',
+    ],
+    svgIlustracion: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150">
+      <rect width="320" height="150" rx="18" fill="#FFF7F2"/>
+      <path d="M73 38c-21-17-45-2-40 24 4 19 13 29 19 52 4 13 15 13 18 0l7-23 7 23c4 13 14 13 18 0 6-23 15-33 19-52 5-26-19-41-40-24-3 2-5 2-8 0Z" fill="#fff" stroke="#607D8B" stroke-width="4"/>
+      <path d="M153 75h42" stroke="#90A4AE" stroke-width="4" stroke-linecap="round"/>
+      <path d="m187 64 12 11-12 11" fill="none" stroke="#90A4AE" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="246" cy="70" r="28" fill="#FDE2D5"/>
+      <path d="M231 72q15-19 30 0m-24 11h18" fill="none" stroke="#E57373" stroke-width="4" stroke-linecap="round"/>
+      <text x="160" y="137" text-anchor="middle" font-family="Arial" font-size="13" fill="#455A64">Protege la zona · sigue indicaciones</text>
+    </svg>`,
+  },
 ];

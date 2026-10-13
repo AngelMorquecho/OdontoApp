@@ -17,6 +17,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
 import {
   CategoriaEducativa,
   TEMAS_EDUCACION_PACIENTE,
@@ -42,6 +43,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EducacionPaciente'>;
 
 export default function EducacionPacienteScreen({ navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
+  const { user } = useAuth();
+  const modoPaciente = user?.rol === 'paciente';
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaEducativa | null>(
     null,
@@ -71,6 +74,15 @@ export default function EducacionPacienteScreen({ navigation }: Props) {
   );
 
   const navegar = (ruta: FloatingTabRoute) => {
+    if (modoPaciente) {
+      if (ruta === 'AgendaCitas') {
+        navigation.navigate('PortalPaciente', { seccion: 'citas' });
+      } else if (ruta === 'Ajustes') {
+        navigation.navigate('Ajustes');
+      }
+      return;
+    }
+
     switch (ruta) {
       case 'ListaPacientes':
         navigation.navigate('ListaPacientes');
@@ -117,7 +129,9 @@ export default function EducacionPacienteScreen({ navigation }: Props) {
     >
       <View style={styles.filtros}>
         <Text style={styles.introduccion}>
-          Información clara para conocer los tratamientos y cuidar tu salud bucal.
+          {modoPaciente
+            ? 'Guías sencillas para cuidar tu sonrisa, conocer tus tratamientos y resolver dudas sobre higiene bucal.'
+            : 'Información clara para conocer los tratamientos y cuidar tu salud bucal.'}
         </Text>
 
         <TextInput
@@ -283,6 +297,7 @@ export default function EducacionPacienteScreen({ navigation }: Props) {
       rutaActiva="EducacionPaciente"
       onNavegar={navegar}
       blurTarget={blurTarget}
+      modoPaciente={modoPaciente}
     />
     </View>
   );

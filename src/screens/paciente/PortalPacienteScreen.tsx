@@ -83,7 +83,15 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
       navigation.navigate('Ajustes');
       return;
     }
-    const siguienteSeccion = ruta === 'AgendaCitas' ? 'citas' : 'tratamiento';
+    if (ruta === 'EducacionPaciente') {
+      navigation.navigate('EducacionPaciente');
+      return;
+    }
+    setSeccionLocal('citas');
+    navigation.setParams({ seccion: 'citas' });
+  };
+
+  const seleccionarSeccion = (siguienteSeccion: SeccionPortal) => {
     setSeccionLocal(siguienteSeccion);
     navigation.setParams({ seccion: siguienteSeccion });
   };
@@ -147,6 +155,54 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
                 : 'Revisa tus tratamientos e indicaciones.'}
             </Text>
           </View>
+          <View style={styles.selectorSeccion}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: seccion === 'citas' }}
+              onPress={() => seleccionarSeccion('citas')}
+              style={[
+                styles.opcionSeccion,
+                seccion === 'citas' && styles.opcionSeccionActiva,
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={17}
+                color={seccion === 'citas' ? colors.primary : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.textoOpcionSeccion,
+                  seccion === 'citas' && styles.textoOpcionSeccionActiva,
+                ]}
+              >
+                Mis citas
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: seccion === 'tratamiento' }}
+              onPress={() => seleccionarSeccion('tratamiento')}
+              style={[
+                styles.opcionSeccion,
+                seccion === 'tratamiento' && styles.opcionSeccionActiva,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="pill"
+                size={18}
+                color={seccion === 'tratamiento' ? colors.primary : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.textoOpcionSeccion,
+                  seccion === 'tratamiento' && styles.textoOpcionSeccionActiva,
+                ]}
+              >
+                Tratamiento
+              </Text>
+            </Pressable>
+          </View>
 
           {!paciente ? (
             <View style={styles.tarjetaVacia}>
@@ -179,7 +235,7 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
         </ScrollView>
       </BlurTargetView>
       <FloatingTabBar
-        rutaActiva={seccion === 'citas' ? 'AgendaCitas' : 'ListaPacientes'}
+        rutaActiva="AgendaCitas"
         onNavegar={navegar}
         blurTarget={blurTarget}
         modoPaciente
@@ -425,6 +481,37 @@ const styles = StyleSheet.create({
   },
   encabezado: {
     marginBottom: 20,
+  },
+  selectorSeccion: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 18,
+    padding: 4,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#E2E8F0',
+  },
+  opcionSeccion: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.sm,
+  },
+  opcionSeccionActiva: {
+    backgroundColor: colors.surface,
+    ...shadows.sm,
+  },
+  textoOpcionSeccion: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  textoOpcionSeccionActiva: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   filaSaludo: {
     flexDirection: 'row',

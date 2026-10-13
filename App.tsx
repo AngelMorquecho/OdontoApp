@@ -139,6 +139,11 @@ function AppNavegacion() {
               options={{ title: 'Portal Paciente', headerLeft: () => null }}
             />
             <Stack.Screen
+              name="EducacionPaciente"
+              component={EducacionPacienteScreen}
+              options={{ title: 'Educación e Higiene', headerLeft: () => null }}
+            />
+            <Stack.Screen
               name="Ajustes"
               component={AjustesScreen}
               options={{ title: 'Perfil y acceso' }}

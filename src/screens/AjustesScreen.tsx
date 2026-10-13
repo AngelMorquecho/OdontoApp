@@ -76,8 +76,8 @@ export default function AjustesScreen({ route, navigation }: Props) {
           onNavegar={(ruta) => {
             if (ruta === 'AgendaCitas') {
               navigation.navigate('PortalPaciente', { seccion: 'citas' });
-            } else if (ruta === 'ListaPacientes') {
-              navigation.navigate('PortalPaciente', { seccion: 'tratamiento' });
+            } else if (ruta === 'EducacionPaciente') {
+              navigation.navigate('EducacionPaciente');
             }
           }}
           blurTarget={blurTarget}
