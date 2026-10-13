@@ -3,6 +3,7 @@ import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ListaPacientes from './src/screens/ListaPacientes';
+import EducacionPacienteScreen from './src/screens/EducacionPacienteScreen';
 import DetallePaciente from './src/screens/DetallePaciente';
 import AgregarPaciente from './src/screens/AgregarPaciente';
 import { RootStackParamList } from './src/navigation/types';
@@ -22,6 +23,11 @@ export default function App() {
             options={{ title: 'Pacientes' }}
           />
           <Stack.Screen
+            name="EducacionPaciente"
+            component={EducacionPacienteScreen}
+            options={{ title: 'Educación al Paciente' }}
+          />
+          <Stack.Screen
             name="DetallePaciente"
             component={DetallePaciente}
             options={{ title: 'Detalle del paciente' }}
@@ -39,4 +45,3 @@ export default function App() {
     </PacientesProvider>
   );
 }
-
