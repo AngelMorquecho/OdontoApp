@@ -16,6 +16,7 @@ import { Radiografia, TipoRadiografia } from '../../types/paciente';
 interface Props {
   radiografias: Radiografia[];
   onAgregar: (radiografia: Radiografia) => void;
+  onAnalizar: () => void;
 }
 
 function fechaHoy(): string {
@@ -23,7 +24,7 @@ function fechaHoy(): string {
 }
 
 /** Pestaña de Radiografías / Galería: visualiza y permite adjuntar fotos y placas. */
-export default function TabRadiografias({ radiografias, onAgregar }: Props) {
+export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [uriPendiente, setUriPendiente] = useState<string | null>(null);
   const [tipoPendiente, setTipoPendiente] = useState<TipoRadiografia>('foto');
@@ -105,6 +106,13 @@ export default function TabRadiografias({ radiografias, onAgregar }: Props) {
           <Text style={styles.botonAccionTexto}>🖼️ Elegir de galería</Text>
         </Pressable>
       </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onAnalizar}
+        style={styles.botonAnalizar}
+      >
+        <Text style={styles.botonAnalizarTexto}>🤖 Analizar con IA</Text>
+      </Pressable>
 
       {radiografias.length === 0 ? (
         <View style={styles.vacio}>
@@ -198,6 +206,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     paddingBottom: 8,
+  },
+  botonAnalizar: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 10,
+    backgroundColor: '#E3F2FD',
+    borderWidth: 1,
+    borderColor: '#BBDEFB',
+  },
+  botonAnalizarTexto: {
+    color: '#0D47A1',
+    fontSize: 14,
+    fontWeight: '700',
   },
   botonAccion: {
     flex: 1,

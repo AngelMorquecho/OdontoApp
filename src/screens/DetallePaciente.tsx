@@ -151,6 +151,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
         <TabRadiografias
           radiografias={paciente.radiografias ?? []}
           onAgregar={alAgregarRadiografia}
+          onAnalizar={() => navigation.navigate('DiagnosticoIa', { pacienteId })}
         />
       )}
     </View>

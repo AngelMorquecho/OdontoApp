@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ListaPacientes from './src/screens/ListaPacientes';
 import EducacionPacienteScreen from './src/screens/EducacionPacienteScreen';
+import DiagnosticoIaScreen from './src/screens/DiagnosticoIaScreen';
 import DetallePaciente from './src/screens/DetallePaciente';
 import AgregarPaciente from './src/screens/AgregarPaciente';
 import { RootStackParamList } from './src/navigation/types';
@@ -26,6 +27,11 @@ export default function App() {
             name="EducacionPaciente"
             component={EducacionPacienteScreen}
             options={{ title: 'Educación al Paciente' }}
+          />
+          <Stack.Screen
+            name="DiagnosticoIa"
+            component={DiagnosticoIaScreen}
+            options={{ title: 'Diagnóstico asistido por IA' }}
           />
           <Stack.Screen
             name="DetallePaciente"
