@@ -12,12 +12,13 @@ import HistoriaClinicaForm from '../components/historiaClinica/HistoriaClinicaFo
 import TabNotasEvolucion from '../components/notasEvolucion/TabNotasEvolucion';
 import TabRadiografias from '../components/radiografias/TabRadiografias';
 import TabRecetasTratamiento from '../components/recetas/TabRecetasTratamiento';
+import TabTratamientosPagos from '../components/tratamientos/TabTratamientosPagos';
 import { borderRadius, colors } from '../constants/theme';
 import { obtenerUltimaCitaPaciente } from '../utils/citas';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetallePaciente'>;
 
-type Pestana = 'odontograma' | 'historia' | 'notas' | 'radiografias' | 'recetas';
+type Pestana = 'odontograma' | 'historia' | 'notas' | 'radiografias' | 'recetas' | 'pagos';
 
 const OPCIONES_PESTANAS: {
   valor: Pestana;
@@ -29,6 +30,7 @@ const OPCIONES_PESTANAS: {
   { valor: 'notas', etiqueta: 'Notas de Evolución', icono: 'note-text-outline' },
   { valor: 'radiografias', etiqueta: 'Radiografías / Galería', icono: 'image-multiple-outline' },
   { valor: 'recetas', etiqueta: 'Recetas y Tratamiento', icono: 'pill' },
+  { valor: 'pagos', etiqueta: 'Tratamientos y Pagos', icono: 'cash-multiple' },
 ];
 
 export default function DetallePaciente({ route, navigation }: Props) {
@@ -197,6 +199,14 @@ export default function DetallePaciente({ route, navigation }: Props) {
             onNuevaReceta={() =>
               navigation.navigate('CrearReceta', { pacienteId })
             }
+          />
+        )}
+
+        {pestana === 'pagos' && (
+          <TabTratamientosPagos
+            paciente={paciente}
+            consultorio={consultorio}
+            navigation={navigation}
           />
         )}
       </View>

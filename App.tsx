@@ -20,6 +20,8 @@ import ModalCrearReceta from './src/screens/ModalCrearReceta';
 import PortalPacienteScreen from './src/screens/paciente/PortalPacienteScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import AdminDoctoresScreen from './src/screens/AdminDoctoresScreen';
+import NuevoTratamientoModal from './src/screens/NuevoTratamientoModal';
+import RegistrarAbonoModal from './src/screens/RegistrarAbonoModal';
 import type { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
@@ -180,6 +182,16 @@ function AppNavegacion() {
               name="CrearReceta"
               component={ModalCrearReceta}
               options={{ title: 'Crear nueva receta', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="NuevoTratamiento"
+              component={NuevoTratamientoModal}
+              options={{ title: 'Nuevo tratamiento', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="RegistrarAbono"
+              component={RegistrarAbonoModal}
+              options={{ title: 'Registrar abono', presentation: 'modal' }}
             />
             <Stack.Screen
               name="EducacionPaciente"

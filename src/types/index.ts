@@ -67,3 +67,26 @@ export interface CuentaDoctor {
   fechaVencimiento: string;
   fechaAlta: string;
 }
+
+export type EstadoPlanTratamiento = 'en_proceso' | 'completado';
+export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia';
+
+export interface AbonoTratamiento {
+  id: string;
+  monto: number;
+  fecha: string;
+  metodoPago: MetodoPago;
+  concepto: string;
+}
+
+export interface TratamientoPaciente {
+  id: string;
+  doctorId: string;
+  pacienteId: string;
+  nombre: string;
+  descripcion: string;
+  costoTotal: number;
+  estado: EstadoPlanTratamiento;
+  fechaCreacion: string;
+  abonos: AbonoTratamiento[];
+}

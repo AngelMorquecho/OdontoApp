@@ -24,11 +24,13 @@ import {
   PACIENTES_INICIALES,
 } from '../types/paciente';
 import {
+  AbonoTratamiento,
   Cita,
   EstatusCita,
   EstadoTratamiento,
   Medicamento,
   Receta,
+  TratamientoPaciente,
 } from '../types';
 import { CLAVES_DATOS, crearDatosPrueba } from '../utils/seedData';
 import { listarDoctores } from '../services/doctores';
@@ -37,7 +39,16 @@ import { useAuth } from './AuthContext';
 const CLAVE_ALMACENAMIENTO = CLAVES_DATOS.pacientes;
 const CLAVE_CITAS = CLAVES_DATOS.citas;
 const CLAVE_RECETAS = CLAVES_DATOS.recetas;
+const CLAVE_TRATAMIENTOS = '@OdontoApp:tratamientos';
 const DOCTOR_DEMO_ID = 'doctor-demo-alejandro';
+
+function fechaLocalISO(fecha: Date): string {
+  return [
+    fecha.getFullYear(),
+    String(fecha.getMonth() + 1).padStart(2, '0'),
+    String(fecha.getDate()).padStart(2, '0'),
+  ].join('-');
+}
 
 /**
  * Completa campos que pudieran faltar en pacientes guardados con una versión
@@ -195,6 +206,7 @@ interface PacientesContextValor {
   pacientes: Paciente[];
   citas: Cita[];
   recetas: Receta[];
+  tratamientos: TratamientoPaciente[];
   cargandoCitas: boolean;
   cargandoRecetas: boolean;
   /** true mientras se recupera la lista guardada en AsyncStorage. */
@@ -207,6 +219,14 @@ interface PacientesContextValor {
   actualizarEstadoTratamiento: (
     recetaId: string,
     estado: EstadoTratamiento,
+  ) => Promise<void>;
+  getTratamientosPaciente: (pacienteId: string) => TratamientoPaciente[];
+  crearTratamiento: (
+    tratamiento: Omit<TratamientoPaciente, 'id' | 'doctorId' | 'fechaCreacion' | 'abonos'>,
+  ) => Promise<void>;
+  registrarAbono: (
+    tratamientoId: string,
+    abono: Omit<AbonoTratamiento, 'id'>,
   ) => Promise<void>;
   obtenerPaciente: (id: string) => Paciente | undefined;
   agregarPaciente: (datos: NuevoPaciente) => Promise<Paciente>;
@@ -248,12 +268,15 @@ export function PacientesProvider({ children }: Props) {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [cargandoCitas, setCargandoCitas] = useState(true);
   const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [tratamientos, setTratamientos] = useState<TratamientoPaciente[]>([]);
   const [cargandoRecetas, setCargandoRecetas] = useState(true);
   const [cargando, setCargando] = useState(true);
   const citasRef = useRef<Cita[]>([]);
   const recetasRef = useRef<Receta[]>([]);
+  const tratamientosRef = useRef<TratamientoPaciente[]>([]);
   const citasInicialesCompletas = useRef(false);
   const recetasInicialesCompletas = useRef(false);
+  const tratamientosInicialesCompletos = useRef(false);
   // Evita que el efecto de guardado se dispare con el array vacío inicial,
   // antes de que termine de leerse el valor persistido.
   const cargaInicialCompleta = useRef(false);
@@ -368,6 +391,38 @@ export function PacientesProvider({ children }: Props) {
           citasInicialesCompletas.current = true;
           setCargandoCitas(false);
         }
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let activo = true;
+    (async () => {
+      try {
+        const guardado = await AsyncStorage.getItem(CLAVE_TRATAMIENTOS);
+        if (!activo) return;
+        if (guardado) {
+          const recibidos: unknown = JSON.parse(guardado);
+          if (!Array.isArray(recibidos) || !recibidos.every(esTratamientoValido)) {
+            throw new Error('El almacenamiento de tratamientos tiene un formato no válido.');
+          }
+          const normalizados = (recibidos as TratamientoPaciente[]).map((tratamiento) => ({
+            ...tratamiento,
+            doctorId: tratamiento.doctorId || DOCTOR_DEMO_ID,
+          }));
+          tratamientosRef.current = normalizados;
+          setTratamientos(normalizados);
+        }
+      } catch (error) {
+        console.warn(
+          'No se pudieron leer los tratamientos desde el almacenamiento local',
+          error,
+        );
+      } finally {
+        if (activo) tratamientosInicialesCompletos.current = true;
       }
     })();
     return () => {
@@ -491,6 +546,85 @@ export function PacientesProvider({ children }: Props) {
     );
   }, [doctorId, guardarRecetas, user?.rol]);
 
+  const guardarTratamientos = useCallback(async (
+    nuevosTratamientos: TratamientoPaciente[],
+  ) => {
+    await AsyncStorage.setItem(CLAVE_TRATAMIENTOS, JSON.stringify(nuevosTratamientos));
+    tratamientosRef.current = nuevosTratamientos;
+    setTratamientos(nuevosTratamientos);
+  }, []);
+
+  const getTratamientosPaciente = useCallback((pacienteId: string) =>
+    tratamientosRef.current
+      .filter((tratamiento) =>
+        tratamiento.pacienteId === pacienteId &&
+        (user?.rol === 'PACIENTE'
+          ? user.pacienteId === pacienteId
+          : user?.rol === 'DOCTOR' && tratamiento.doctorId === doctorId),
+      )
+      .sort((a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion)),
+  [doctorId, user]);
+
+  const crearTratamiento = useCallback(async (
+    nuevo: Omit<TratamientoPaciente, 'id' | 'doctorId' | 'fechaCreacion' | 'abonos'>,
+  ) => {
+    if (!tratamientosInicialesCompletos.current) {
+      throw new Error('Espera a que termine de cargar el historial de tratamientos.');
+    }
+    if (user?.rol !== 'DOCTOR' || !doctorId) {
+      throw new Error('Solo un doctor puede registrar tratamientos.');
+    }
+    if (!pacientes.some((paciente) =>
+      paciente.id === nuevo.pacienteId &&
+      (paciente.doctorId ?? DOCTOR_DEMO_ID) === doctorId,
+    )) {
+      throw new Error('El paciente no pertenece a la cuenta del doctor actual.');
+    }
+    if (!Number.isFinite(nuevo.costoTotal) || nuevo.costoTotal <= 0) {
+      throw new Error('El costo total debe ser mayor que cero.');
+    }
+    await guardarTratamientos([{
+      ...nuevo,
+      id: `tratamiento-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      doctorId,
+      fechaCreacion: fechaLocalISO(new Date()),
+      abonos: [],
+    }, ...tratamientosRef.current]);
+  }, [doctorId, guardarTratamientos, pacientes, user?.rol]);
+
+  const registrarAbono = useCallback(async (
+    tratamientoId: string,
+    abono: Omit<AbonoTratamiento, 'id'>,
+  ) => {
+    if (!tratamientosInicialesCompletos.current) {
+      throw new Error('Espera a que termine de cargar el historial de tratamientos.');
+    }
+    const tratamiento = tratamientosRef.current.find((item) =>
+      item.id === tratamientoId &&
+      user?.rol === 'DOCTOR' &&
+      item.doctorId === doctorId,
+    );
+    if (!tratamiento) throw new Error('No se encontró el tratamiento seleccionado.');
+    if (!Number.isFinite(abono.monto) || abono.monto <= 0) {
+      throw new Error('El monto del abono debe ser mayor que cero.');
+    }
+    const totalPagado = tratamiento.abonos.reduce((total, pago) => total + pago.monto, 0);
+    if (totalPagado + abono.monto > tratamiento.costoTotal + 0.005) {
+      throw new Error('El abono supera el saldo pendiente del tratamiento.');
+    }
+    const abonoConId: AbonoTratamiento = {
+      ...abono,
+      id: `abono-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    };
+    await guardarTratamientos(
+      tratamientosRef.current.map((item) =>
+        item.id === tratamientoId
+          ? { ...item, abonos: [...item.abonos, abonoConId] }
+          : item,
+      ),
+    );
+  }, [doctorId, guardarTratamientos, user?.rol]);
+
   useEffect(() => {
     if (!cargaInicialCompleta.current) return;
     AsyncStorage.setItem(
@@ -527,6 +661,14 @@ export function PacientesProvider({ children }: Props) {
     if (user?.rol !== 'DOCTOR' || !doctorId) return recetas;
     return recetas.filter((receta) => (receta.doctorId ?? DOCTOR_DEMO_ID) === doctorId);
   }, [doctorId, recetas, user]);
+  const tratamientosVisibles = useMemo(() => {
+    if (user?.rol === 'SUPER_ADMIN') return [];
+    if (user?.rol === 'PACIENTE') {
+      return tratamientos.filter((item) => item.pacienteId === user.pacienteId);
+    }
+    if (user?.rol !== 'DOCTOR' || !doctorId) return [];
+    return tratamientos.filter((item) => item.doctorId === doctorId);
+  }, [doctorId, tratamientos, user]);
   const obtenerPaciente = useCallback(
     (id: string) => pacientesVisibles.find((p) => p.id === id),
     [pacientesVisibles],
@@ -672,19 +814,26 @@ export function PacientesProvider({ children }: Props) {
       ...recetasRef.current.filter((receta) => (receta.doctorId ?? DOCTOR_DEMO_ID) !== doctorId),
       ...recetasPropietarias,
     ];
+    const tratamientosActualizados = tratamientosRef.current.filter(
+      (tratamiento) => tratamiento.doctorId !== doctorId,
+    );
     await AsyncStorage.multiSet([
       [CLAVE_ALMACENAMIENTO, JSON.stringify(pacientesActualizados)],
       [CLAVE_CITAS, JSON.stringify(citasActualizadas)],
       [CLAVE_RECETAS, JSON.stringify(recetasActualizadas)],
+      [CLAVE_TRATAMIENTOS, JSON.stringify(tratamientosActualizados)],
     ]);
     citasRef.current = citasActualizadas;
     recetasRef.current = recetasActualizadas;
+    tratamientosRef.current = tratamientosActualizados;
     citasInicialesCompletas.current = true;
     recetasInicialesCompletas.current = true;
+    tratamientosInicialesCompletos.current = true;
     cargaInicialCompleta.current = true;
     setPacientes(pacientesActualizados);
     setCitas(citasActualizadas);
     setRecetas(recetasActualizadas);
+    setTratamientos(tratamientosActualizados);
     setCargando(false);
     setCargandoCitas(false);
     setCargandoRecetas(false);
@@ -696,6 +845,7 @@ export function PacientesProvider({ children }: Props) {
         pacientes: pacientesVisibles,
         citas: citasVisibles,
         recetas: recetasVisibles,
+        tratamientos: tratamientosVisibles,
         cargandoRecetas,
         cargandoCitas,
         cargando,
@@ -705,6 +855,9 @@ export function PacientesProvider({ children }: Props) {
         getRecetasPaciente,
         crearReceta,
         actualizarEstadoTratamiento,
+        getTratamientosPaciente,
+        crearTratamiento,
+        registrarAbono,
         obtenerPaciente,
         agregarPaciente,
         actualizarOdontograma,
@@ -717,6 +870,41 @@ export function PacientesProvider({ children }: Props) {
     >
       {children}
     </PacientesContext.Provider>
+  );
+}
+
+function esAbonoValido(valor: unknown): valor is AbonoTratamiento {
+  if (!valor || typeof valor !== 'object') return false;
+  const abono = valor as Partial<AbonoTratamiento>;
+  return (
+    typeof abono.id === 'string' &&
+    typeof abono.monto === 'number' &&
+    Number.isFinite(abono.monto) &&
+    abono.monto > 0 &&
+    typeof abono.fecha === 'string' &&
+    (abono.metodoPago === 'efectivo' ||
+      abono.metodoPago === 'tarjeta' ||
+      abono.metodoPago === 'transferencia') &&
+    typeof abono.concepto === 'string'
+  );
+}
+
+function esTratamientoValido(valor: unknown): valor is TratamientoPaciente {
+  if (!valor || typeof valor !== 'object') return false;
+  const tratamiento = valor as Partial<TratamientoPaciente>;
+  return (
+    typeof tratamiento.id === 'string' &&
+    typeof tratamiento.doctorId === 'string' &&
+    typeof tratamiento.pacienteId === 'string' &&
+    typeof tratamiento.nombre === 'string' &&
+    typeof tratamiento.descripcion === 'string' &&
+    typeof tratamiento.costoTotal === 'number' &&
+    Number.isFinite(tratamiento.costoTotal) &&
+    tratamiento.costoTotal > 0 &&
+    (tratamiento.estado === 'en_proceso' || tratamiento.estado === 'completado') &&
+    typeof tratamiento.fechaCreacion === 'string' &&
+    Array.isArray(tratamiento.abonos) &&
+    tratamiento.abonos.every(esAbonoValido)
   );
 }
 
