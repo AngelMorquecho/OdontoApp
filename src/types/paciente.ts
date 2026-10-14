@@ -192,6 +192,7 @@ export interface Radiografia {
 /** Datos clínicos y de contacto de un paciente. */
 export interface Paciente {
   id: string;
+  doctorId?: string;
   nombre: string;
   edad: number;
   telefono: string;

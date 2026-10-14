@@ -19,6 +19,7 @@ import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
 import ModalCrearReceta from './src/screens/ModalCrearReceta';
 import PortalPacienteScreen from './src/screens/paciente/PortalPacienteScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import AdminDoctoresScreen from './src/screens/AdminDoctoresScreen';
 import type { RootStackParamList } from './src/navigation/types';
 import { PacientesProvider } from './src/context/PacientesContext';
 import { ConsultorioProvider } from './src/context/ConsultorioContext';
@@ -94,7 +95,8 @@ export default function App() {
 
 function AppNavegacion() {
   const { user, isAuthenticated, cargandoAuth } = useAuth();
-  const esPaciente = user?.rol === 'paciente';
+  const esPaciente = user?.rol === 'PACIENTE';
+  const esSuperAdmin = user?.rol === 'SUPER_ADMIN';
 
   if (cargandoAuth) {
     return (
@@ -106,14 +108,16 @@ function AppNavegacion() {
 
   return (
     <NavigationContainer
-      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user?.rol ?? 'none'}:${user?.pacienteId ?? ''}`}
+      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user?.rol ?? 'none'}:${user?.doctorId ?? ''}:${user?.pacienteId ?? ''}`}
     >
       <StatusBar barStyle="dark-content" />
       <Stack.Navigator
         initialRouteName={
           !isAuthenticated
             ? 'Login'
-            : esPaciente
+            : esSuperAdmin
+              ? 'AdminDoctores'
+              : esPaciente
               ? 'PortalPaciente'
               : 'ListaPacientes'
         }
@@ -130,6 +134,12 @@ function AppNavegacion() {
             name="Login"
             component={LoginScreen}
             options={{ title: '', headerShown: false }}
+          />
+        ) : esSuperAdmin ? (
+          <Stack.Screen
+            name="AdminDoctores"
+            component={AdminDoctoresScreen}
+            options={{ title: 'Gestión de doctores', headerLeft: () => null }}
           />
         ) : esPaciente ? (
           <>

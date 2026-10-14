@@ -44,7 +44,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EducacionPaciente'>;
 export default function EducacionPacienteScreen({ navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
   const { user } = useAuth();
-  const modoPaciente = user?.rol === 'paciente';
+  const modoPaciente = user?.rol === 'PACIENTE';
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaEducativa | null>(
     null,

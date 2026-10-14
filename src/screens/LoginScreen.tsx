@@ -23,6 +23,7 @@ export default function LoginScreen(_props: Props) {
     iniciarSesion,
     iniciarComoDoctor,
     iniciarComoPaciente,
+    iniciarComoSuperAdmin,
   } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -206,6 +207,25 @@ export default function LoginScreen(_props: Props) {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={cargando}
+            onPress={() => void autenticar(iniciarComoSuperAdmin)}
+            style={({ pressed }) => [
+              styles.botonDemo,
+              pressed && styles.presionado,
+              cargando && styles.deshabilitado,
+            ]}
+          >
+            <View style={[styles.iconoDoctor, styles.iconoAdmin]}>
+              <Ionicons name="shield-checkmark-outline" size={19} color="#7C3AED" />
+            </View>
+            <View style={styles.infoDemo}>
+              <Text style={styles.textoDemo}>Ingresar como Admin Master</Text>
+              <Text style={styles.correoDemo}>Gestión exclusiva de doctores y licencias</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </Pressable>
           <Text style={styles.avisoDemo}>
             Modo demostración: ingresa el correo de una de estas cuentas y cualquier contraseña no vacía.
           </Text>
@@ -360,6 +380,9 @@ const styles = StyleSheet.create({
   },
   iconoPaciente: {
     backgroundColor: '#DCFCE7',
+  },
+  iconoAdmin: {
+    backgroundColor: '#EDE9FE',
   },
   infoDemo: {
     flex: 1,

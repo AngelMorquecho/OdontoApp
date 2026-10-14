@@ -9,6 +9,7 @@ export type EstatusCita =
 
 export interface Cita {
   id: string;
+  doctorId?: string;
   pacienteId: string;
   nombrePaciente: string;
   fecha: string;
@@ -32,6 +33,7 @@ export type EstadoTratamiento = 'activo' | 'completado';
 
 export interface Receta {
   id: string;
+  doctorId?: string;
   pacienteId: string;
   fechaEmision: string;
   diagnostico: string;
@@ -40,12 +42,28 @@ export interface Receta {
   estadoTratamiento: EstadoTratamiento;
 }
 
-export type RolUsuario = 'doctor' | 'paciente';
+export type RolUsuario = 'SUPER_ADMIN' | 'DOCTOR' | 'PACIENTE';
 
 export interface Usuario {
   id: string;
   nombre: string;
   email: string;
   rol: RolUsuario;
+  doctorId?: string;
   pacienteId?: string;
+}
+
+export type EstadoSuscripcion = 'activa' | 'inactiva';
+
+export interface CuentaDoctor {
+  id: string;
+  nombre: string;
+  especialidad: string;
+  cedula: string;
+  email: string;
+  passwordTemporal: string;
+  suscripcion: EstadoSuscripcion;
+  limitePacientes?: number;
+  fechaVencimiento: string;
+  fechaAlta: string;
 }

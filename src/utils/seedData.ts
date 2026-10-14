@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Cita, Receta, Usuario } from '../types';
+import { Cita, CuentaDoctor, Receta, Usuario } from '../types';
 import {
   NotaEvolucion,
   PACIENTES_INICIALES,
@@ -12,6 +12,7 @@ export const CLAVES_DATOS = {
   citas: '@OdontoApp:citas',
   recetas: '@OdontoApp:recetas',
   usuarios: '@OdontoApp:usuarios',
+  doctores: '@OdontoApp:doctores',
   usuarioActual: '@OdontoApp:usuario_actual',
   notasEvolucion: '@notas_evolucion',
   galeriaPacientes: '@galeria_pacientes',
@@ -22,6 +23,7 @@ export interface DatosPrueba {
   citas: Cita[];
   recetas: Receta[];
   usuarios: Usuario[];
+  doctores: CuentaDoctor[];
   usuarioActual: Usuario;
   notasEvolucion: Record<string, NotaEvolucion[]>;
   galeriaPacientes: Record<string, Radiografia[]>;
@@ -41,6 +43,9 @@ export function crearDatosPrueba(): DatosPrueba {
   const pacientes: Paciente[] = JSON.parse(
     JSON.stringify(PACIENTES_INICIALES),
   ) as Paciente[];
+  pacientes.forEach((paciente) => {
+    paciente.doctorId = 'doctor-demo-alejandro';
+  });
   pacientes[0].correo = 'maria.lopez@example.test';
   pacientes[1].correo = 'juan.perez@example.test';
   pacientes[2].correo = 'ana.ramirez@example.test';
@@ -102,23 +107,38 @@ export function crearDatosPrueba(): DatosPrueba {
 
   const usuarios: Usuario[] = [
     {
-      id: 'doctor-demo',
+      id: 'doctor-demo-alejandro',
       nombre: 'Doctor (modo de prueba)',
       email: 'doctor@odontoapp.local',
-      rol: 'doctor',
+      rol: 'DOCTOR',
+      doctorId: 'doctor-demo-alejandro',
     },
     ...pacientes.map((paciente) => ({
       id: `usuario-${paciente.id}`,
       nombre: paciente.nombre,
       email: paciente.correo ?? `${paciente.id}@odontoapp.local`,
-      rol: 'paciente' as const,
+      rol: 'PACIENTE' as const,
       pacienteId: paciente.id,
     })),
+  ];
+  const doctores: CuentaDoctor[] = [
+    {
+      id: 'doctor-demo-alejandro',
+      nombre: 'Dr. Alejandro Morales',
+      especialidad: 'Odontología general',
+      cedula: '',
+      email: 'doctor@dental.com',
+      passwordTemporal: 'demo',
+      suscripcion: 'activa',
+      fechaVencimiento: fechaRelativa(365),
+      fechaAlta: fechaRelativa(0),
+    },
   ];
 
   const citas: Cita[] = [
     {
       id: 'cita-demo-001',
+      doctorId: 'doctor-demo-alejandro',
       pacienteId: pacientes[0].id,
       nombrePaciente: pacientes[0].nombre,
       fecha: fechaRelativa(2),
@@ -129,6 +149,7 @@ export function crearDatosPrueba(): DatosPrueba {
     },
     {
       id: 'cita-demo-002',
+      doctorId: 'doctor-demo-alejandro',
       pacienteId: pacientes[1].id,
       nombrePaciente: pacientes[1].nombre,
       fecha: fechaRelativa(5),
@@ -140,6 +161,7 @@ export function crearDatosPrueba(): DatosPrueba {
     },
     {
       id: 'cita-demo-003',
+      doctorId: 'doctor-demo-alejandro',
       pacienteId: pacientes[2].id,
       nombrePaciente: pacientes[2].nombre,
       fecha: fechaRelativa(-7),
@@ -153,6 +175,7 @@ export function crearDatosPrueba(): DatosPrueba {
   const recetas: Receta[] = [
     {
       id: 'receta-demo-001',
+      doctorId: 'doctor-demo-alejandro',
       pacienteId: pacientes[0].id,
       fechaEmision: fechaRelativa(-1),
       diagnostico: 'Sensibilidad posterior a restauración dental',
@@ -171,6 +194,7 @@ export function crearDatosPrueba(): DatosPrueba {
     },
     {
       id: 'receta-demo-002',
+      doctorId: 'doctor-demo-alejandro',
       pacienteId: pacientes[2].id,
       fechaEmision: fechaRelativa(-30),
       diagnostico: 'Molestia gingival leve',
@@ -185,6 +209,7 @@ export function crearDatosPrueba(): DatosPrueba {
     citas,
     recetas,
     usuarios,
+    doctores,
     usuarioActual: usuarios[0],
     notasEvolucion: { [pacientes[0].id]: notasMaria },
     galeriaPacientes: { [pacientes[0].id]: galeriaMaria },
@@ -264,6 +289,9 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
     if (!valores.get(CLAVES_DATOS.usuarios)) {
       clavesPorCompletar.push([CLAVES_DATOS.usuarios, JSON.stringify(datos.usuarios)]);
     }
+    if (!valores.get(CLAVES_DATOS.doctores)) {
+      clavesPorCompletar.push([CLAVES_DATOS.doctores, JSON.stringify(datos.doctores)]);
+    }
     if (sonPacientesIniciales) {
       for (const clave of [CLAVES_DATOS.citas, CLAVES_DATOS.recetas] as const) {
         const contenido = valores.get(clave);
@@ -323,6 +351,7 @@ export async function initializeMockData(forzar = false): Promise<DatosPrueba | 
     [CLAVES_DATOS.citas, JSON.stringify(datos.citas)],
     [CLAVES_DATOS.recetas, JSON.stringify(datos.recetas)],
     [CLAVES_DATOS.usuarios, JSON.stringify(datos.usuarios)],
+    [CLAVES_DATOS.doctores, JSON.stringify(datos.doctores)],
     [CLAVES_DATOS.usuarioActual, JSON.stringify(datos.usuarioActual)],
     [CLAVES_DATOS.notasEvolucion, JSON.stringify(datos.notasEvolucion)],
     [CLAVES_DATOS.galeriaPacientes, JSON.stringify(datos.galeriaPacientes)],

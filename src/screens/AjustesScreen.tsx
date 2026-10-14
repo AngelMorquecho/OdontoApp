@@ -53,7 +53,7 @@ export default function AjustesScreen({ route, navigation }: Props) {
     }
   };
 
-  if (user.rol === 'paciente') {
+  if (user.rol === 'PACIENTE') {
     return (
       <View style={styles.root}>
         <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
@@ -190,7 +190,7 @@ function FormularioAjustes({
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ selected: user.rol === 'doctor' }}
+          accessibilityState={{ selected: user.rol === 'DOCTOR' }}
           onPress={seleccionarRolDoctor}
           style={({ pressed }) => [
             styles.opcionRol,

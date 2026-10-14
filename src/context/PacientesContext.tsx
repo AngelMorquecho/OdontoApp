@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -29,11 +30,14 @@ import {
   Medicamento,
   Receta,
 } from '../types';
-import { CLAVES_DATOS, initializeMockData } from '../utils/seedData';
+import { CLAVES_DATOS, crearDatosPrueba } from '../utils/seedData';
+import { listarDoctores } from '../services/doctores';
+import { useAuth } from './AuthContext';
 
 const CLAVE_ALMACENAMIENTO = CLAVES_DATOS.pacientes;
 const CLAVE_CITAS = CLAVES_DATOS.citas;
 const CLAVE_RECETAS = CLAVES_DATOS.recetas;
+const DOCTOR_DEMO_ID = 'doctor-demo-alejandro';
 
 /**
  * Completa campos que pudieran faltar en pacientes guardados con una versión
@@ -236,6 +240,10 @@ interface Props {
 }
 
 export function PacientesProvider({ children }: Props) {
+  const { user } = useAuth();
+  const doctorId = user?.rol === 'DOCTOR'
+    ? user.doctorId ?? user.id
+    : undefined;
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [cargandoCitas, setCargandoCitas] = useState(true);
@@ -263,13 +271,20 @@ export function PacientesProvider({ children }: Props) {
           // Sanea cualquier paciente persistido con un esquema previo
           // (sin historiaClinica/radiografias) para evitar errores de
           // "Cannot read properties of undefined" en el renderizado.
-          const pacientesSaneados = sanearPacientes(datosCrudos);
+          const pacientesSaneados = sanearPacientes(datosCrudos).map((paciente) => ({
+            ...paciente,
+            doctorId: paciente.doctorId ?? DOCTOR_DEMO_ID,
+          }));
           setPacientes(pacientesSaneados);
         } else {
-          setPacientes(PACIENTES_INICIALES);
+          const pacientesIniciales = PACIENTES_INICIALES.map((paciente) => ({
+            ...paciente,
+            doctorId: DOCTOR_DEMO_ID,
+          }));
+          setPacientes(pacientesIniciales);
           await AsyncStorage.setItem(
             CLAVE_ALMACENAMIENTO,
-            JSON.stringify(PACIENTES_INICIALES),
+            JSON.stringify(pacientesIniciales),
           );
         }
       } catch (error) {
@@ -301,8 +316,15 @@ export function PacientesProvider({ children }: Props) {
           if (!Array.isArray(recibidas) || !recibidas.every(esRecetaValida)) {
             throw new Error('El almacenamiento de recetas tiene un formato no válido.');
           }
-          recetasRef.current = recibidas;
-          setRecetas(recibidas);
+          const recetasConPropietario = (recibidas as Receta[]).map((receta) => ({
+            ...receta,
+            doctorId: receta.doctorId ?? DOCTOR_DEMO_ID,
+          }));
+          recetasRef.current = recetasConPropietario;
+          setRecetas(recetasConPropietario);
+          if ((recibidas as Receta[]).some((receta) => !receta.doctorId)) {
+            await AsyncStorage.setItem(CLAVE_RECETAS, JSON.stringify(recetasConPropietario));
+          }
         }
       } catch (error) {
         console.warn('No se pudieron leer las recetas desde el almacenamiento local', error);
@@ -329,8 +351,15 @@ export function PacientesProvider({ children }: Props) {
           if (!Array.isArray(citasGuardadas) || !citasGuardadas.every(esCitaValida)) {
             throw new Error('El almacenamiento de citas tiene un formato no válido.');
           }
-          citasRef.current = citasGuardadas;
-          setCitas(citasGuardadas);
+          const citasConPropietario = (citasGuardadas as Cita[]).map((cita) => ({
+            ...cita,
+            doctorId: cita.doctorId ?? DOCTOR_DEMO_ID,
+          }));
+          citasRef.current = citasConPropietario;
+          setCitas(citasConPropietario);
+          if ((citasGuardadas as Cita[]).some((cita) => !cita.doctorId)) {
+            await AsyncStorage.setItem(CLAVE_CITAS, JSON.stringify(citasConPropietario));
+          }
         }
       } catch (error) {
         console.warn('No se pudieron leer las citas desde el almacenamiento local', error);
@@ -356,14 +385,21 @@ export function PacientesProvider({ children }: Props) {
     if (!citasInicialesCompletas.current) {
       throw new Error('Espera a que termine de cargar la agenda para crear una cita.');
     }
+    if (!doctorId || user?.rol !== 'DOCTOR') {
+      throw new Error('Solo un doctor puede crear citas.');
+    }
+    if (!pacientes.some((paciente) => paciente.id === cita.pacienteId && paciente.doctorId === doctorId)) {
+      throw new Error('El paciente no pertenece a la cuenta del doctor actual.');
+    }
     if (citasRef.current.some((existente) => existente.id === cita.id)) {
       throw new Error('Ya existe una cita con ese identificador.');
     }
-    const nuevasCitas = [...citasRef.current, cita].sort(
+    const citaPropietaria = { ...cita, doctorId };
+    const nuevasCitas = [...citasRef.current, citaPropietaria].sort(
       (a, b) => `${a.fecha}T${a.hora}`.localeCompare(`${b.fecha}T${b.hora}`),
     );
     await guardarCitas(nuevasCitas);
-  }, [guardarCitas]);
+  }, [doctorId, guardarCitas, pacientes, user?.rol]);
 
   const cambiarEstatusCita = useCallback(async (
     id: string,
@@ -372,13 +408,25 @@ export function PacientesProvider({ children }: Props) {
     if (!citasInicialesCompletas.current) {
       throw new Error('Espera a que termine de cargar la agenda para actualizar una cita.');
     }
-    const indice = citasRef.current.findIndex((cita) => cita.id === id);
+    const indice = citasRef.current.findIndex((cita) =>
+      cita.id === id &&
+      (user?.rol === 'PACIENTE'
+        ? cita.pacienteId === user.pacienteId
+        : user?.rol === 'DOCTOR' &&
+          (cita.doctorId ?? DOCTOR_DEMO_ID) === doctorId),
+    );
     if (indice < 0) throw new Error('No se encontró la cita seleccionada.');
     const nuevasCitas = citasRef.current.map((cita) =>
-      cita.id === id ? { ...cita, estatus: nuevoEstatus } : cita,
+      cita.id === id &&
+      (user?.rol === 'PACIENTE'
+        ? cita.pacienteId === user.pacienteId
+        : user?.rol === 'DOCTOR' &&
+          (cita.doctorId ?? DOCTOR_DEMO_ID) === doctorId)
+        ? { ...cita, doctorId: cita.doctorId ?? DOCTOR_DEMO_ID, estatus: nuevoEstatus }
+        : cita,
     );
     await guardarCitas(nuevasCitas);
-  }, [guardarCitas]);
+  }, [doctorId, guardarCitas, user]);
 
   const guardarRecetas = useCallback(async (nuevasRecetas: Receta[]) => {
     await AsyncStorage.setItem(CLAVE_RECETAS, JSON.stringify(nuevasRecetas));
@@ -389,14 +437,26 @@ export function PacientesProvider({ children }: Props) {
   const getRecetasPaciente = useCallback(
     (pacienteId: string) =>
       recetasRef.current
-        .filter((receta) => receta.pacienteId === pacienteId)
+        .filter((receta) =>
+          receta.pacienteId === pacienteId &&
+          (user?.rol === 'PACIENTE'
+            ? user.pacienteId === pacienteId
+            : user?.rol === 'DOCTOR' &&
+              (receta.doctorId ?? DOCTOR_DEMO_ID) === doctorId),
+        )
         .sort((a, b) => b.fechaEmision.localeCompare(a.fechaEmision)),
-    [],
+    [doctorId, user],
   );
 
   const crearReceta = useCallback(async (receta: Receta) => {
     if (!recetasInicialesCompletas.current) {
       throw new Error('Espera a que termine de cargar el historial de recetas.');
+    }
+    if (user?.rol !== 'DOCTOR' || !doctorId) {
+      throw new Error('Solo un doctor puede emitir recetas.');
+    }
+    if (!pacientes.some((paciente) => paciente.id === receta.pacienteId && paciente.doctorId === doctorId)) {
+      throw new Error('El paciente no pertenece a la cuenta del doctor actual.');
     }
     if (recetasRef.current.some((existente) => existente.id === receta.id)) {
       throw new Error('Ya existe una receta con ese identificador.');
@@ -404,8 +464,8 @@ export function PacientesProvider({ children }: Props) {
     if (!receta.medicamentos.every(esMedicamentoValido)) {
       throw new Error('La receta contiene un medicamento con datos no válidos.');
     }
-    await guardarRecetas([receta, ...recetasRef.current]);
-  }, [guardarRecetas]);
+    await guardarRecetas([{ ...receta, doctorId }, ...recetasRef.current]);
+  }, [doctorId, guardarRecetas, pacientes, user?.rol]);
 
   const actualizarEstadoTratamiento = useCallback(async (
     recetaId: string,
@@ -414,15 +474,22 @@ export function PacientesProvider({ children }: Props) {
     if (!recetasInicialesCompletas.current) {
       throw new Error('Espera a que termine de cargar el historial de recetas.');
     }
-    if (!recetasRef.current.some((receta) => receta.id === recetaId)) {
+    if (!recetasRef.current.some((receta) =>
+      receta.id === recetaId &&
+      user?.rol === 'DOCTOR' &&
+      (receta.doctorId ?? DOCTOR_DEMO_ID) === doctorId,
+    )) {
       throw new Error('No se encontró la receta seleccionada.');
     }
     await guardarRecetas(
       recetasRef.current.map((receta) =>
-        receta.id === recetaId ? { ...receta, estadoTratamiento: estado } : receta,
+        receta.id === recetaId &&
+        (receta.doctorId ?? DOCTOR_DEMO_ID) === doctorId
+          ? { ...receta, estadoTratamiento: estado }
+          : receta,
       ),
     );
-  }, [guardarRecetas]);
+  }, [doctorId, guardarRecetas, user?.rol]);
 
   useEffect(() => {
     if (!cargaInicialCompleta.current) return;
@@ -437,16 +504,53 @@ export function PacientesProvider({ children }: Props) {
     });
   }, [pacientes]);
 
+  const pacientesVisibles = useMemo(() => {
+    if (user?.rol === 'SUPER_ADMIN') return [];
+    if (user?.rol !== 'DOCTOR' || !doctorId) return pacientes;
+    return pacientes.filter(
+      (paciente) => (paciente.doctorId ?? DOCTOR_DEMO_ID) === doctorId,
+    );
+  }, [doctorId, pacientes, user?.rol]);
+  const citasVisibles = useMemo(() => {
+    if (user?.rol === 'SUPER_ADMIN') return [];
+    if (user?.rol === 'PACIENTE') {
+      return citas.filter((cita) => cita.pacienteId === user.pacienteId);
+    }
+    if (user?.rol !== 'DOCTOR' || !doctorId) return citas;
+    return citas.filter((cita) => (cita.doctorId ?? DOCTOR_DEMO_ID) === doctorId);
+  }, [citas, doctorId, user]);
+  const recetasVisibles = useMemo(() => {
+    if (user?.rol === 'SUPER_ADMIN') return [];
+    if (user?.rol === 'PACIENTE') {
+      return recetas.filter((receta) => receta.pacienteId === user.pacienteId);
+    }
+    if (user?.rol !== 'DOCTOR' || !doctorId) return recetas;
+    return recetas.filter((receta) => (receta.doctorId ?? DOCTOR_DEMO_ID) === doctorId);
+  }, [doctorId, recetas, user]);
   const obtenerPaciente = useCallback(
-    (id: string) => pacientes.find((p) => p.id === id),
-    [pacientes],
+    (id: string) => pacientesVisibles.find((p) => p.id === id),
+    [pacientesVisibles],
   );
 
   const agregarPaciente = useCallback(
     async (datos: NuevoPaciente): Promise<Paciente> => {
+      if (user?.rol !== 'DOCTOR' || !doctorId) {
+        throw new Error('Solo un doctor puede dar de alta pacientes.');
+      }
+      const cuentaDoctor = (await listarDoctores()).find((doctor) => doctor.id === doctorId);
+      const pacientesActuales = pacientes.filter(
+        (paciente) => (paciente.doctorId ?? DOCTOR_DEMO_ID) === doctorId,
+      );
+      if (
+        cuentaDoctor?.limitePacientes !== undefined &&
+        pacientesActuales.length >= cuentaDoctor.limitePacientes
+      ) {
+        throw new Error('Se alcanzó el límite de pacientes permitido para esta cuenta.');
+      }
       const id = `paciente-${Date.now()}`;
       const nuevo: Paciente = {
         id,
+        doctorId,
         ...datos,
         odontograma: crearOdontogramaVacio(id),
         historiaClinica: crearHistoriaClinicaVacia(),
@@ -455,36 +559,46 @@ export function PacientesProvider({ children }: Props) {
       setPacientes((anteriores) => [...anteriores, nuevo]);
       return nuevo;
     },
-    [],
+    [doctorId, pacientes, user?.rol],
   );
 
   const actualizarOdontograma = useCallback(
     (pacienteId: string, odontograma: Odontograma) => {
+      if (user?.rol !== 'DOCTOR' || !doctorId) return;
       setPacientes((anteriores) =>
         anteriores.map((p) =>
-          p.id === pacienteId ? { ...p, odontograma } : p,
+          p.id === pacienteId && (p.doctorId ?? DOCTOR_DEMO_ID) === doctorId
+            ? { ...p, odontograma }
+            : p,
         ),
       );
     },
-    [],
+    [doctorId, user?.rol],
   );
 
   const actualizarHistoriaClinica = useCallback(
     (pacienteId: string, historiaClinica: HistoriaClinica) => {
+      if (user?.rol !== 'DOCTOR' || !doctorId) return;
       setPacientes((anteriores) =>
         anteriores.map((p) =>
-          p.id === pacienteId ? { ...p, historiaClinica } : p,
+          p.id === pacienteId && (p.doctorId ?? DOCTOR_DEMO_ID) === doctorId
+            ? { ...p, historiaClinica }
+            : p,
         ),
       );
     },
-    [],
+    [doctorId, user?.rol],
   );
 
   const agregarNotaEvolucion = useCallback(
     (pacienteId: string, nuevaNota: NotaEvolucion) => {
+      if (user?.rol !== 'DOCTOR' || !doctorId) return;
       setPacientes((anteriores) =>
         anteriores.map((p) => {
-          if (p.id !== pacienteId) return p;
+          if (
+            p.id !== pacienteId ||
+            (p.doctorId ?? DOCTOR_DEMO_ID) !== doctorId
+          ) return p;
           // Optional chaining + fallback: por si el paciente en memoria
           // viniera sin historiaClinica (dato corrupto o esquema previo).
           const historiaClinica = p.historiaClinica ?? crearHistoriaClinicaVacia();
@@ -498,60 +612,94 @@ export function PacientesProvider({ children }: Props) {
         }),
       );
     },
-    [],
+    [doctorId, user?.rol],
   );
 
   const agregarRadiografia = useCallback(
     (pacienteId: string, nuevaRadiografia: Radiografia) => {
+      if (user?.rol !== 'DOCTOR' || !doctorId) return;
       setPacientes((anteriores) =>
         anteriores.map((p) =>
-          p.id === pacienteId
+          p.id === pacienteId && (p.doctorId ?? DOCTOR_DEMO_ID) === doctorId
             ? { ...p, radiografias: [...(p.radiografias ?? []), nuevaRadiografia] }
             : p,
         ),
       );
     },
-    [],
+    [doctorId, user?.rol],
   );
 
   const reemplazarPacientes = useCallback(
     async (pacientesImportados: Paciente[]) => {
       const pacientesSaneados = sanearPacientes(pacientesImportados);
-      await AsyncStorage.setItem(
-        CLAVE_ALMACENAMIENTO,
-        JSON.stringify(pacientesSaneados),
+      if (user?.rol !== 'DOCTOR' || !doctorId) {
+        throw new Error('Solo un doctor puede restaurar sus datos.');
+      }
+      const pacientesPropietarios = pacientesSaneados.map((paciente) => ({
+        ...paciente,
+        doctorId,
+      }));
+      const otrasCuentas = pacientes.filter(
+        (paciente) => (paciente.doctorId ?? DOCTOR_DEMO_ID) !== doctorId,
       );
-      setPacientes(pacientesSaneados);
+      const listaActualizada = [...otrasCuentas, ...pacientesPropietarios];
+      await AsyncStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(listaActualizada));
+      setPacientes(listaActualizada);
     },
-    [],
+    [doctorId, pacientes, user?.rol],
   );
 
   const restablecerDatosPrueba = useCallback(async () => {
-    const datos = await initializeMockData(true);
-    if (!datos) throw new Error('No se pudieron crear los datos de prueba.');
-    citasRef.current = datos.citas;
-    recetasRef.current = datos.recetas;
+    if (user?.rol !== 'DOCTOR' || !doctorId) {
+      throw new Error('Solo un doctor puede restablecer sus datos de prueba.');
+    }
+    const datos = crearDatosPrueba();
+    const pacientesPropietarios = datos.pacientes.map((paciente) => ({
+      ...paciente,
+      doctorId,
+    }));
+    const citasPropietarias = datos.citas.map((cita) => ({ ...cita, doctorId }));
+    const recetasPropietarias = datos.recetas.map((receta) => ({ ...receta, doctorId }));
+    const pacientesActualizados = [
+      ...pacientes.filter((paciente) => (paciente.doctorId ?? DOCTOR_DEMO_ID) !== doctorId),
+      ...pacientesPropietarios,
+    ];
+    const citasActualizadas = [
+      ...citasRef.current.filter((cita) => (cita.doctorId ?? DOCTOR_DEMO_ID) !== doctorId),
+      ...citasPropietarias,
+    ];
+    const recetasActualizadas = [
+      ...recetasRef.current.filter((receta) => (receta.doctorId ?? DOCTOR_DEMO_ID) !== doctorId),
+      ...recetasPropietarias,
+    ];
+    await AsyncStorage.multiSet([
+      [CLAVE_ALMACENAMIENTO, JSON.stringify(pacientesActualizados)],
+      [CLAVE_CITAS, JSON.stringify(citasActualizadas)],
+      [CLAVE_RECETAS, JSON.stringify(recetasActualizadas)],
+    ]);
+    citasRef.current = citasActualizadas;
+    recetasRef.current = recetasActualizadas;
     citasInicialesCompletas.current = true;
     recetasInicialesCompletas.current = true;
     cargaInicialCompleta.current = true;
-    setPacientes(datos.pacientes);
-    setCitas(datos.citas);
-    setRecetas(datos.recetas);
+    setPacientes(pacientesActualizados);
+    setCitas(citasActualizadas);
+    setRecetas(recetasActualizadas);
     setCargando(false);
     setCargandoCitas(false);
     setCargandoRecetas(false);
-  }, []);
+  }, [doctorId, pacientes, user?.rol]);
 
   return (
     <PacientesContext.Provider
       value={{
-        pacientes,
-        citas,
-        recetas,
+        pacientes: pacientesVisibles,
+        citas: citasVisibles,
+        recetas: recetasVisibles,
         cargandoRecetas,
         cargandoCitas,
         cargando,
-        getCitas: () => citas,
+        getCitas: () => citasVisibles,
         crearCita,
         cambiarEstatusCita,
         getRecetasPaciente,

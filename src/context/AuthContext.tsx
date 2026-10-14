@@ -10,6 +10,7 @@ import React, {
 import { Alert } from 'react-native';
 import type { Paciente } from '../types/paciente';
 import { RolUsuario, Usuario } from '../types';
+import { autenticarDoctor } from '../services/doctores';
 import { CLAVES_DATOS } from '../utils/seedData';
 
 interface AuthContextValue {
@@ -19,6 +20,7 @@ interface AuthContextValue {
   iniciarSesion: (email: string, password: string) => Promise<boolean>;
   iniciarComoDoctor: () => Promise<boolean>;
   iniciarComoPaciente: () => Promise<boolean>;
+  iniciarComoSuperAdmin: () => Promise<boolean>;
   logout: () => Promise<boolean>;
   seleccionarRolDoctor: () => Promise<void>;
   seleccionarPaciente: (paciente: Paciente) => Promise<void>;
@@ -28,15 +30,23 @@ const USUARIO_DOCTOR_DEMO: Usuario = {
   id: 'doctor-demo-alejandro',
   nombre: 'Dr. Alejandro Morales',
   email: 'doctor@dental.com',
-  rol: 'doctor',
+  rol: 'DOCTOR',
+  doctorId: 'doctor-demo-alejandro',
 };
 
 const USUARIO_PACIENTE_DEMO: Usuario = {
   id: 'paciente-001',
   nombre: 'María López',
   email: 'maria.lopez@email.com',
-  rol: 'paciente',
+  rol: 'PACIENTE',
   pacienteId: 'paciente-001',
+};
+
+const USUARIO_SUPER_ADMIN: Usuario = {
+  id: 'super-admin-master',
+  nombre: 'Administrador Master',
+  email: 'admin@odontoapp.local',
+  rol: 'SUPER_ADMIN',
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -56,7 +66,10 @@ export function AuthProvider({ children }: Props) {
       .then((guardado) => {
         if (!activo || !guardado) return;
         const usuario: unknown = JSON.parse(guardado);
-        if (esUsuarioValido(usuario)) setUser(usuario);
+        const usuarioNormalizado = normalizarUsuario(usuario);
+        if (usuarioNormalizado) {
+          setUser(usuarioNormalizado);
+        }
         else console.warn('La sesión guardada no tiene un formato de usuario válido.');
       })
       .catch((error) => {
@@ -85,13 +98,39 @@ export function AuthProvider({ children }: Props) {
     }
   }, []);
 
-  const iniciarComoDoctor = useCallback(
-    () => guardarUsuario(USUARIO_DOCTOR_DEMO),
-    [guardarUsuario],
-  );
+  const iniciarComoDoctor = useCallback(async () => {
+    try {
+      const cuenta = await autenticarDoctor(USUARIO_DOCTOR_DEMO.email, 'demo');
+      if (!cuenta) {
+        Alert.alert(
+          'Cuenta de doctor no disponible',
+          'La suscripción de la cuenta demo está inactiva o vencida.',
+        );
+        return false;
+      }
+      return guardarUsuario({
+        ...USUARIO_DOCTOR_DEMO,
+        id: cuenta.id,
+        doctorId: cuenta.id,
+        nombre: cuenta.nombre,
+        email: cuenta.email,
+      });
+    } catch (error) {
+      Alert.alert(
+        'No se pudo validar la cuenta',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+      return false;
+    }
+  }, [guardarUsuario]);
 
   const iniciarComoPaciente = useCallback(
     () => guardarUsuario(USUARIO_PACIENTE_DEMO),
+    [guardarUsuario],
+  );
+
+  const iniciarComoSuperAdmin = useCallback(
+    () => guardarUsuario(USUARIO_SUPER_ADMIN),
     [guardarUsuario],
   );
 
@@ -107,8 +146,27 @@ export function AuthProvider({ children }: Props) {
     if (correo === USUARIO_PACIENTE_DEMO.email) {
       return iniciarComoPaciente();
     }
-    return false;
-  }, [iniciarComoDoctor, iniciarComoPaciente]);
+    if (correo === USUARIO_SUPER_ADMIN.email) {
+      return iniciarComoSuperAdmin();
+    }
+    try {
+      const doctor = await autenticarDoctor(correo, password);
+      if (!doctor) return false;
+      return guardarUsuario({
+        id: doctor.id,
+        doctorId: doctor.id,
+        nombre: doctor.nombre,
+        email: doctor.email,
+        rol: 'DOCTOR',
+      });
+    } catch (error) {
+      Alert.alert(
+        'No se pudo validar la cuenta',
+        error instanceof Error ? error.message : 'Ocurrió un error al consultar las cuentas.',
+      );
+      return false;
+    }
+  }, [guardarUsuario, iniciarComoDoctor, iniciarComoPaciente, iniciarComoSuperAdmin]);
 
   const logout = useCallback(async (): Promise<boolean> => {
     try {
@@ -137,7 +195,7 @@ export function AuthProvider({ children }: Props) {
       id: paciente.id,
       nombre: paciente.nombre,
       email: paciente.correo ?? `${paciente.id}@odontoapp.local`,
-      rol: 'paciente',
+      rol: 'PACIENTE',
       pacienteId: paciente.id,
     };
     return guardarUsuario(usuario).then(() => undefined);
@@ -151,6 +209,7 @@ export function AuthProvider({ children }: Props) {
       iniciarSesion,
       iniciarComoDoctor,
       iniciarComoPaciente,
+      iniciarComoSuperAdmin,
       logout,
       seleccionarRolDoctor,
       seleccionarPaciente,
@@ -162,6 +221,7 @@ export function AuthProvider({ children }: Props) {
       iniciarSesion,
       iniciarComoDoctor,
       iniciarComoPaciente,
+      iniciarComoSuperAdmin,
       logout,
       seleccionarRolDoctor,
       seleccionarPaciente,
@@ -180,17 +240,41 @@ export function useAuth(): AuthContextValue {
 }
 
 export function esRolUsuario(valor: unknown): valor is RolUsuario {
-  return valor === 'doctor' || valor === 'paciente';
+  return valor === 'SUPER_ADMIN' || valor === 'DOCTOR' || valor === 'PACIENTE';
 }
 
-function esUsuarioValido(valor: unknown): valor is Usuario {
-  if (typeof valor !== 'object' || valor === null) return false;
-  const usuario = valor as Partial<Usuario>;
-  return (
-    typeof usuario.id === 'string' &&
-    typeof usuario.nombre === 'string' &&
-    typeof usuario.email === 'string' &&
-    esRolUsuario(usuario.rol) &&
-    (usuario.pacienteId === undefined || typeof usuario.pacienteId === 'string')
-  );
+function normalizarUsuario(valor: unknown): Usuario | null {
+  if (typeof valor !== 'object' || valor === null) return null;
+  const usuario = valor as Record<string, unknown>;
+  const rolGuardado = usuario.rol;
+  const rol =
+    rolGuardado === 'doctor'
+      ? 'DOCTOR'
+      : rolGuardado === 'paciente'
+        ? 'PACIENTE'
+        : rolGuardado;
+  if (
+    typeof usuario.id !== 'string' ||
+    typeof usuario.nombre !== 'string' ||
+    typeof usuario.email !== 'string' ||
+    !esRolUsuario(rol) ||
+    (usuario.pacienteId !== undefined && typeof usuario.pacienteId !== 'string') ||
+    (usuario.doctorId !== undefined && typeof usuario.doctorId !== 'string')
+  ) {
+    return null;
+  }
+  return {
+    id: usuario.id as string,
+    nombre: usuario.nombre as string,
+    email: usuario.email as string,
+    rol,
+    ...(typeof usuario.doctorId === 'string'
+      ? { doctorId: usuario.doctorId as string }
+      : rol === 'DOCTOR'
+        ? { doctorId: usuario.id === 'doctor-demo' ? 'doctor-demo-alejandro' : usuario.id as string }
+        : {}),
+    ...(typeof usuario.pacienteId === 'string'
+      ? { pacienteId: usuario.pacienteId as string }
+      : {}),
+  };
 }
