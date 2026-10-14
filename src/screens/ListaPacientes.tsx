@@ -16,8 +16,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Paciente } from '../types/paciente';
 import { usePacientes } from '../context/PacientesContext';
-import { useConsultorio } from '../context/ConsultorioContext';
-import PanelRespaldo from '../components/PanelRespaldo';
 import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
 import { obtenerUltimaCitaPaciente } from '../utils/citas';
@@ -27,13 +25,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
 export default function ListaPacientes({ navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const {
-    pacientes,
-    citas,
-    cargando,
-    reemplazarPacientes,
-  } = usePacientes();
-  const { consultorio, cargandoConsultorio, restaurarConsultorio } = useConsultorio();
+  const { pacientes, citas, cargando } = usePacientes();
 
   const pacientesFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -127,27 +119,6 @@ export default function ListaPacientes({ navigation }: Props) {
         <Text numberOfLines={1} style={styles.textoAgendar}>Agendar cita</Text>
         <Ionicons name="chevron-forward" size={17} color={colors.textSecondary} />
       </Pressable>
-
-      <View style={styles.panelRespaldo}>
-        <PanelRespaldo
-          compacto
-          deshabilitado={cargandoConsultorio}
-          pacientes={pacientes}
-          consultorio={consultorio}
-          onRestaurar={async (pacientesImportados, consultorioImportado) => {
-            try {
-              await restaurarConsultorio(consultorioImportado);
-              await reemplazarPacientes(pacientesImportados);
-            } catch (error) {
-              await Promise.all([
-                restaurarConsultorio(consultorio),
-                reemplazarPacientes(pacientes),
-              ]);
-              throw error;
-            }
-          }}
-        />
-      </View>
 
       <FlatList
         data={pacientesFiltrados}
@@ -294,9 +265,6 @@ const styles = StyleSheet.create({
   botonAccesoPresionado: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
-  },
-  panelRespaldo: {
-    marginBottom: 8,
   },
   lista: {
     paddingBottom: 100,

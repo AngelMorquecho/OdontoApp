@@ -46,7 +46,7 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
   const [pacienteId, setPacienteId] = useState(route.params?.pacienteId ?? '');
   const [mostrarPacientes, setMostrarPacientes] = useState(false);
   const [fecha, setFecha] = useState(() => new Date());
-  const [hora, setHora] = useState<Date | null>(null);
+  const [hora, setHora] = useState(() => new Date());
   const [selectorActivo, setSelectorActivo] = useState<ModoSelector | null>(null);
   const paciente = useMemo(
     () => pacientes.find((item) => item.id === pacienteId),
@@ -68,10 +68,6 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
   const guardar = async () => {
     if (!paciente) {
       Alert.alert('Falta información', 'Selecciona al paciente de esta cita.');
-      return;
-    }
-    if (!hora) {
-      Alert.alert('Falta información', 'Selecciona la hora de la cita.');
       return;
     }
     if (!motivoConsulta.trim()) {
@@ -185,14 +181,12 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
           <Text style={styles.etiqueta}>Hora * (24 horas)</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Seleccionar hora${hora ? `. Hora actual: ${hora24(hora)}` : ''}`}
+            accessibilityLabel={`Seleccionar hora. Hora actual: ${hora24(hora)}`}
             onPress={() => setSelectorActivo('time')}
             style={({ pressed }) => [styles.selectorFechaHora, pressed && styles.presionado]}
           >
             <Ionicons name="time-outline" size={20} color={colors.primary} />
-            <Text style={[styles.valorFechaHora, !hora && styles.textoPlaceholder]}>
-              {hora ? hora24(hora) : 'Selecciona una hora'}
-            </Text>
+            <Text style={styles.valorFechaHora}>{hora24(hora)}</Text>
             <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
           </Pressable>
         </View>
@@ -249,7 +243,7 @@ export default function AgendarCitaScreen({ navigation, route }: Props) {
         <AppointmentDateTimePicker
           visible
           mode={selectorActivo}
-          value={selectorActivo === 'time' ? hora ?? new Date() : fecha}
+          value={selectorActivo === 'time' ? hora : fecha}
           onChange={cambiarFechaHora}
           onClose={() => setSelectorActivo(null)}
         />
