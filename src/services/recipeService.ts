@@ -1,5 +1,6 @@
 import type { Receta } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
+import { obtenerDoctorIdAutenticado } from './doctorScope';
 
 interface RecetaFila {
   id: string;
@@ -26,20 +27,25 @@ function desdeFila(fila: RecetaFila): Receta {
 }
 
 export async function listarRecetas(pacienteId?: string): Promise<Receta[]> {
+  const doctorId = await obtenerDoctorIdAutenticado();
   let consulta = getSupabaseClient()
     .from('recetas')
     .select('*')
     .order('fecha_emision', { ascending: false });
   if (pacienteId) consulta = consulta.eq('paciente_id', pacienteId);
+  if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
   const { data, error } = await consulta;
   if (error) throw new Error(`No se pudieron consultar las recetas: ${error.message}`);
   return (data as unknown as RecetaFila[]).map(desdeFila);
 }
 
 export async function crearReceta(receta: Receta): Promise<Receta> {
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede emitir recetas.');
   const { data, error } = await getSupabaseClient()
     .from('recetas')
     .insert({
+      doctor_id: doctorId,
       paciente_id: receta.pacienteId,
       fecha_emision: receta.fechaEmision,
       diagnostico: receta.diagnostico,
@@ -54,6 +60,8 @@ export async function crearReceta(receta: Receta): Promise<Receta> {
 }
 
 export async function actualizarReceta(receta: Receta): Promise<void> {
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede actualizar recetas.');
   const { error } = await getSupabaseClient()
     .from('recetas')
     .update({
@@ -62,11 +70,18 @@ export async function actualizarReceta(receta: Receta): Promise<void> {
       indicaciones_generales: receta.indicacionesGenerales,
       estado_tratamiento: receta.estadoTratamiento,
     })
-    .eq('id', receta.id);
+    .eq('id', receta.id)
+    .eq('doctor_id', doctorId);
   if (error) throw new Error(`No se pudo actualizar la receta: ${error.message}`);
 }
 
 export async function eliminarReceta(recetaId: string): Promise<void> {
-  const { error } = await getSupabaseClient().from('recetas').delete().eq('id', recetaId);
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede eliminar recetas.');
+  const { error } = await getSupabaseClient()
+    .from('recetas')
+    .delete()
+    .eq('id', recetaId)
+    .eq('doctor_id', doctorId);
   if (error) throw new Error(`No se pudo eliminar la receta: ${error.message}`);
 }

@@ -89,10 +89,7 @@ export function AuthProvider({ children }: Props) {
               );
             });
           }
-          Alert.alert(
-            'No se pudo recuperar la sesión',
-            error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
-          );
+          console.error('No se pudo recuperar el perfil de la sesión.', error);
         }
       } finally {
         if (activo) setCargandoAuth(false);
@@ -116,10 +113,7 @@ export function AuthProvider({ children }: Props) {
       setIsAuthenticated(true);
       return true;
     } catch (error) {
-      Alert.alert(
-        'Error de Autenticación',
-        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
-      );
+      console.error('No se pudo iniciar sesión.', error);
       return false;
     }
   }, []);

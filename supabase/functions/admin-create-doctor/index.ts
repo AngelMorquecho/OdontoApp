@@ -13,8 +13,6 @@ interface AltaDoctor {
   email: string;
   passwordTemporal: string;
   suscripcion: 'activa' | 'inactiva';
-  limitePacientes: number | null;
-  fechaVencimiento: string;
 }
 
 async function manejarSolicitud(request: Request): Promise<Response> {
@@ -65,12 +63,6 @@ async function manejarSolicitud(request: Request): Promise<Response> {
   } catch {
     return Response.json({ error: 'El cuerpo de la solicitud no es JSON válido.' }, { status: 400, headers: corsHeaders });
   }
-  const fechaVencimiento = input.fechaVencimiento;
-  const fechaVencimientoValida =
-    typeof fechaVencimiento === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(fechaVencimiento) &&
-    !Number.isNaN(Date.parse(`${fechaVencimiento}T00:00:00.000Z`)) &&
-    new Date(`${fechaVencimiento}T00:00:00.000Z`).toISOString().slice(0, 10) === fechaVencimiento;
   if (
     typeof input.nombre !== 'string' ||
     !input.nombre.trim() ||
@@ -82,10 +74,7 @@ async function manejarSolicitud(request: Request): Promise<Response> {
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) ||
     typeof input.passwordTemporal !== 'string' ||
     input.passwordTemporal.length < 8 ||
-    !['activa', 'inactiva'].includes(input.suscripcion) ||
-    (input.limitePacientes !== null &&
-      (!Number.isSafeInteger(input.limitePacientes) || input.limitePacientes < 1)) ||
-    !fechaVencimientoValida
+    !['activa', 'inactiva'].includes(input.suscripcion)
   ) {
     return Response.json({ error: 'Los datos del doctor no son válidos; la contraseña debe tener al menos 8 caracteres.' }, { status: 400, headers: corsHeaders });
   }
@@ -95,59 +84,38 @@ async function manejarSolicitud(request: Request): Promise<Response> {
     email,
     password: input.passwordTemporal,
     email_confirm: true,
-    user_metadata: { nombre_completo: input.nombre.trim() },
+    user_metadata: { nombre: input.nombre.trim() },
   });
   if (createError || !created.user) {
     return Response.json({ error: `No se pudo crear el usuario: ${createError?.message ?? 'respuesta vacía.'}` }, { status: 400, headers: corsHeaders });
   }
 
   const doctorId = created.user.id;
-  const { error: profileInsertError } = await adminClient.from('perfiles').insert({
+  const { data: profile, error: profileInsertError } = await adminClient.from('perfiles').insert({
     id: doctorId,
     email,
-    nombre_completo: input.nombre.trim(),
+    nombre: input.nombre.trim(),
     rol: 'DOCTOR',
-    doctor_id: doctorId,
-  });
-  if (profileInsertError) {
+    cedula: input.cedula.trim(),
+    especialidad: input.especialidad.trim(),
+    suscripcion_estado: input.suscripcion,
+  }).select('id, nombre, email, cedula, especialidad, suscripcion_estado, created_at').single();
+  if (profileInsertError || !profile) {
     const { error: rollbackError } = await adminClient.auth.admin.deleteUser(doctorId);
     return Response.json({
-      error: `No se pudo crear el perfil: ${profileInsertError.message}` +
-        (rollbackError ? ` Tampoco se pudo eliminar la cuenta parcial: ${rollbackError.message}` : ''),
-    }, { status: 500, headers: corsHeaders });
-  }
-
-  const { data: doctor, error: doctorInsertError } = await adminClient
-    .from('doctores')
-    .insert({
-      id: doctorId,
-      email,
-      especialidad: input.especialidad.trim(),
-      cedula: input.cedula.trim(),
-      suscripcion: input.suscripcion,
-      limite_pacientes: input.limitePacientes,
-      fecha_vencimiento: fechaVencimiento,
-    })
-    .select('id, email, especialidad, cedula, suscripcion, limite_pacientes, fecha_vencimiento, fecha_alta')
-    .single();
-  if (doctorInsertError) {
-    const { error: rollbackError } = await adminClient.auth.admin.deleteUser(doctorId);
-    return Response.json({
-      error: `No se pudo crear la licencia: ${doctorInsertError.message}` +
+      error: `No se pudo crear el perfil: ${profileInsertError?.message ?? 'respuesta vacía.'}` +
         (rollbackError ? ` Tampoco se pudo eliminar la cuenta parcial: ${rollbackError.message}` : ''),
     }, { status: 500, headers: corsHeaders });
   }
 
   return Response.json({
-    id: doctor.id,
-    nombre: input.nombre.trim(),
-    email: doctor.email,
-    especialidad: doctor.especialidad,
-    cedula: doctor.cedula,
-    suscripcion: doctor.suscripcion,
-    ...(doctor.limite_pacientes ? { limitePacientes: doctor.limite_pacientes } : {}),
-    fechaVencimiento: doctor.fecha_vencimiento,
-    fechaAlta: doctor.fecha_alta,
+    id: profile.id,
+    nombre: profile.nombre,
+    email: profile.email,
+    especialidad: profile.especialidad,
+    cedula: profile.cedula,
+    suscripcion: profile.suscripcion_estado,
+    fechaAlta: profile.created_at,
   }, { headers: corsHeaders });
 }
 

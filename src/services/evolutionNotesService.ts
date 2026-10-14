@@ -1,5 +1,6 @@
 import type { NotaEvolucion } from '../types/paciente';
 import { getSupabaseClient } from '../lib/supabase';
+import { obtenerDoctorIdAutenticado } from './doctorScope';
 
 interface NotaFila {
   id: string;
@@ -37,8 +38,15 @@ function desdeFila(fila: NotaFila): NotaEvolucion {
   };
 }
 
-function aFila(pacienteId: string, nota: NotaEvolucion, id = nota.id) {
+function aFila(
+  pacienteId: string,
+  nota: NotaEvolucion,
+  doctorId: string,
+  id = nota.id,
+  incluirDoctorId = true,
+) {
   return {
+    ...(incluirDoctorId ? { doctor_id: doctorId } : {}),
     ...(id ? { id } : {}),
     paciente_id: pacienteId,
     fecha: nota.fecha,
@@ -58,11 +66,14 @@ function aFila(pacienteId: string, nota: NotaEvolucion, id = nota.id) {
 }
 
 export async function listarNotasEvolucion(pacienteId: string): Promise<NotaEvolucion[]> {
-  const { data, error } = await getSupabaseClient()
+  const doctorId = await obtenerDoctorIdAutenticado();
+  let consulta = getSupabaseClient()
     .from('notas_evolucion')
     .select('*')
     .eq('paciente_id', pacienteId)
     .order('fecha', { ascending: false });
+  if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
+  const { data, error } = await consulta;
   if (error) throw new Error(`No se pudieron consultar las notas de evolución: ${error.message}`);
   return (data as unknown as NotaFila[]).map(desdeFila);
 }
@@ -71,11 +82,14 @@ export async function listarNotasPorPacientes(
   pacientesIds: string[],
 ): Promise<Map<string, NotaEvolucion[]>> {
   if (pacientesIds.length === 0) return new Map();
-  const { data, error } = await getSupabaseClient()
+  const doctorId = await obtenerDoctorIdAutenticado();
+  let consulta = getSupabaseClient()
     .from('notas_evolucion')
     .select('*')
     .in('paciente_id', pacientesIds)
     .order('fecha', { ascending: false });
+  if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
+  const { data, error } = await consulta;
   if (error) throw new Error(`No se pudieron consultar las notas de evolución: ${error.message}`);
   const resultado = new Map<string, NotaEvolucion[]>();
   for (const fila of data as unknown as (NotaFila & { paciente_id: string })[]) {
@@ -90,7 +104,9 @@ export async function crearNotaEvolucion(
   pacienteId: string,
   nota: NotaEvolucion,
 ): Promise<NotaEvolucion> {
-  const fila = aFila(pacienteId, nota, '');
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede crear notas de evolución.');
+  const fila = aFila(pacienteId, nota, doctorId, '');
   const { data, error } = await getSupabaseClient()
     .from('notas_evolucion')
     .insert(fila)
@@ -104,28 +120,37 @@ export async function actualizarNotaEvolucion(
   pacienteId: string,
   nota: NotaEvolucion,
 ): Promise<void> {
-  const fila = aFila(pacienteId, nota);
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede actualizar notas de evolución.');
+  const fila = aFila(pacienteId, nota, doctorId, nota.id, false);
   delete fila.id;
   const { error } = await getSupabaseClient()
     .from('notas_evolucion')
     .update(fila)
     .eq('id', nota.id)
-    .eq('paciente_id', pacienteId);
+    .eq('paciente_id', pacienteId)
+    .eq('doctor_id', doctorId);
   if (error) throw new Error(`No se pudo actualizar la nota de evolución: ${error.message}`);
 }
 
 export async function eliminarNotaEvolucion(notaId: string): Promise<void> {
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede eliminar notas de evolución.');
   const { error } = await getSupabaseClient()
     .from('notas_evolucion')
     .delete()
-    .eq('id', notaId);
+    .eq('id', notaId)
+    .eq('doctor_id', doctorId);
   if (error) throw new Error(`No se pudo eliminar la nota de evolución: ${error.message}`);
 }
 
 export async function eliminarNotasEvolucionPaciente(pacienteId: string): Promise<void> {
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede eliminar notas de evolución.');
   const { error } = await getSupabaseClient()
     .from('notas_evolucion')
     .delete()
-    .eq('paciente_id', pacienteId);
+    .eq('paciente_id', pacienteId)
+    .eq('doctor_id', doctorId);
   if (error) throw new Error(`No se pudieron eliminar las notas de evolución: ${error.message}`);
 }

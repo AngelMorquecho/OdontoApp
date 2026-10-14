@@ -1,11 +1,14 @@
 import type { DatosConsultorio } from '../context/ConsultorioContext';
 import { getSupabaseClient } from '../lib/supabase';
+import { obtenerDoctorIdAutenticado } from './doctorScope';
 
 export async function obtenerDatosConsultorio(): Promise<DatosConsultorio | null> {
-  const { data, error } = await getSupabaseClient()
+  const doctorId = await obtenerDoctorIdAutenticado();
+  let consulta = getSupabaseClient()
     .from('consultorios')
-    .select('nombre_doctor, cedula, direccion, telefono, nombre_clinica')
-    .maybeSingle();
+    .select('nombre_doctor, cedula, direccion, telefono, nombre_clinica');
+  if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
+  const { data, error } = await consulta.maybeSingle();
   if (error) throw new Error(`No se pudieron consultar los datos del consultorio: ${error.message}`);
   return data
     ? {

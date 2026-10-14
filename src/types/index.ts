@@ -1,4 +1,5 @@
 export * from './paciente';
+export * from './database';
 
 export type EstatusCita =
   | 'programada'
@@ -62,8 +63,6 @@ export interface CuentaDoctor {
   cedula: string;
   email: string;
   suscripcion: EstadoSuscripcion;
-  limitePacientes?: number;
-  fechaVencimiento: string;
   fechaAlta: string;
 }
 

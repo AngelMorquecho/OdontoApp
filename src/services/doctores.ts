@@ -1,58 +1,46 @@
-import type { CuentaDoctor, EstadoSuscripcion } from '../types';
+import type { CuentaDoctor } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 
-export type EstadoDoctor = 'activo' | 'inactivo' | 'vencido';
+export type EstadoDoctor = 'activo' | 'inactivo';
 export type NuevaCuentaDoctor = Omit<CuentaDoctor, 'id' | 'fechaAlta'> & {
   passwordTemporal: string;
 };
 
 interface DoctorFila {
   id: string;
-  nombre_completo: string;
+  nombre: string;
   email: string;
-  especialidad: string;
-  cedula: string;
-  suscripcion: EstadoSuscripcion;
-  limite_pacientes: number | null;
-  fecha_vencimiento: string;
-  fecha_alta: string;
+  especialidad: string | null;
+  cedula: string | null;
+  suscripcion_estado: string | null;
+  created_at: string;
 }
 
 function desdeFila(fila: DoctorFila): CuentaDoctor {
   return {
     id: fila.id,
-    nombre: fila.nombre_completo,
+    nombre: fila.nombre,
     email: fila.email,
-    especialidad: fila.especialidad,
-    cedula: fila.cedula,
-    suscripcion: fila.suscripcion,
-    ...(fila.limite_pacientes ? { limitePacientes: fila.limite_pacientes } : {}),
-    fechaVencimiento: fila.fecha_vencimiento,
-    fechaAlta: fila.fecha_alta,
+    especialidad: fila.especialidad ?? '',
+    cedula: fila.cedula ?? '',
+    suscripcion: fila.suscripcion_estado?.toLowerCase() === 'inactiva' ||
+      fila.suscripcion_estado?.toLowerCase() === 'inactivo' ? 'inactiva' : 'activa',
+    fechaAlta: fila.created_at,
   };
 }
 
 export async function listarDoctores(): Promise<CuentaDoctor[]> {
   const { data, error } = await getSupabaseClient()
-    .from('doctores')
-    .select('id, especialidad, cedula, suscripcion, limite_pacientes, fecha_vencimiento, fecha_alta, perfil:perfiles(nombre_completo, email)')
-    .order('fecha_alta', { ascending: false });
+    .from('perfiles')
+    .select('id, nombre, email, cedula, especialidad, suscripcion_estado, created_at')
+    .eq('rol', 'DOCTOR')
+    .order('created_at', { ascending: false });
   if (error) throw new Error(`No se pudieron cargar los doctores: ${error.message}`);
-  return (data as unknown as (Omit<DoctorFila, 'nombre_completo' | 'email'> & {
-    perfil: { nombre_completo: string; email: string };
-  })[]).map((fila) => desdeFila({
-    ...fila,
-    nombre_completo: fila.perfil.nombre_completo,
-    email: fila.perfil.email,
-  }));
+  return (data as unknown as DoctorFila[]).map(desdeFila);
 }
 
-export function obtenerEstadoDoctor(doctor: CuentaDoctor, hoy = new Date()): EstadoDoctor {
-  if (doctor.suscripcion === 'inactiva') return 'inactivo';
-  const fechaVencimiento = new Date(`${doctor.fechaVencimiento}T23:59:59`);
-  return Number.isNaN(fechaVencimiento.getTime()) || fechaVencimiento < hoy
-    ? 'vencido'
-    : 'activo';
+export function obtenerEstadoDoctor(doctor: CuentaDoctor): EstadoDoctor {
+  return doctor.suscripcion === 'inactiva' ? 'inactivo' : 'activo';
 }
 
 export async function registrarDoctor(nuevaCuenta: NuevaCuentaDoctor): Promise<CuentaDoctor> {
@@ -64,8 +52,6 @@ export async function registrarDoctor(nuevaCuenta: NuevaCuentaDoctor): Promise<C
       email: nuevaCuenta.email.trim().toLowerCase(),
       passwordTemporal: nuevaCuenta.passwordTemporal,
       suscripcion: nuevaCuenta.suscripcion,
-      limitePacientes: nuevaCuenta.limitePacientes ?? null,
-      fechaVencimiento: nuevaCuenta.fechaVencimiento,
     },
   });
   if (error) throw new Error(`No se pudo crear la cuenta del doctor: ${error.message}`);
@@ -74,14 +60,12 @@ export async function registrarDoctor(nuevaCuenta: NuevaCuentaDoctor): Promise<C
 
 export async function actualizarDoctor(
   doctorId: string,
-  cambios: Partial<Pick<CuentaDoctor, 'suscripcion' | 'fechaVencimiento'>>,
+  cambios: Pick<CuentaDoctor, 'suscripcion'>,
 ): Promise<void> {
   const { error } = await getSupabaseClient()
-    .from('doctores')
-    .update({
-      ...(cambios.suscripcion ? { suscripcion: cambios.suscripcion } : {}),
-      ...(cambios.fechaVencimiento ? { fecha_vencimiento: cambios.fechaVencimiento } : {}),
-    })
-    .eq('id', doctorId);
-  if (error) throw new Error(`No se pudo actualizar la licencia del doctor: ${error.message}`);
+    .from('perfiles')
+    .update({ suscripcion_estado: cambios.suscripcion })
+    .eq('id', doctorId)
+    .eq('rol', 'DOCTOR');
+  if (error) throw new Error(`No se pudo actualizar la suscripción del doctor: ${error.message}`);
 }

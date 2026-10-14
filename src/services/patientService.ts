@@ -6,6 +6,7 @@ import { obtenerUrlRadiografia } from './storageService';
 import { ejecutarSupabase } from './supabaseErrors';
 import { listarHistoriasClinicas } from './clinicalHistoryService';
 import { listarNotasPorPacientes } from './evolutionNotesService';
+import { obtenerDoctorIdAutenticado } from './doctorScope';
 
 interface PacienteFila {
   id: string;
@@ -20,9 +21,12 @@ interface PacienteFila {
 }
 
 export async function listarPacientes(): Promise<Paciente[]> {
+  const doctorId = await obtenerDoctorIdAutenticado();
+  let consulta = getSupabaseClient().from('pacientes').select('*').order('nombre');
+  if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
   const filas = await ejecutarSupabase(
     'No se pudieron consultar los pacientes',
-    () => getSupabaseClient().from('pacientes').select('*').order('nombre'),
+    () => consulta,
   ) as PacienteFila[];
   const ids = filas.map((fila) => fila.id);
   const [historias, notas] = await Promise.all([
@@ -62,20 +66,15 @@ export async function crearPaciente(
   if (authError) throw new Error(`No se pudo validar la sesión del doctor: ${authError.message}`);
   if (!authData.user) throw new Error('Inicia sesión nuevamente para crear un paciente.');
   const { data: doctor, error: doctorError } = await cliente
-    .from('doctores')
-    .select('limite_pacientes, suscripcion, fecha_vencimiento')
+    .from('perfiles')
+    .select('suscripcion_estado')
     .eq('id', authData.user.id)
+    .eq('rol', 'DOCTOR')
     .single();
   if (doctorError) throw new Error(`No se pudo validar la licencia: ${doctorError.message}`);
-  if (doctor.suscripcion !== 'activa' || doctor.fecha_vencimiento < new Date().toISOString().slice(0, 10)) {
+  if (doctor.suscripcion_estado?.toLowerCase() !== 'activa' &&
+      doctor.suscripcion_estado?.toLowerCase() !== 'activo') {
     throw new Error('La licencia está inactiva o vencida; contacta al administrador.');
-  }
-  const { count, error: countError } = await cliente
-    .from('pacientes')
-    .select('id', { count: 'exact', head: true });
-  if (countError) throw new Error(`No se pudo comprobar el límite de pacientes: ${countError.message}`);
-  if (doctor.limite_pacientes !== null && count !== null && count >= doctor.limite_pacientes) {
-    throw new Error('Se alcanzó el límite de pacientes permitido para esta cuenta.');
   }
   const { data, error } = await cliente
     .from('pacientes')
@@ -108,9 +107,14 @@ export async function crearPaciente(
   const { error: odontogramaError } = await cliente
     .from('pacientes')
     .update({ odontograma })
-    .eq('id', fila.id);
+    .eq('id', fila.id)
+    .eq('doctor_id', authData.user.id);
   if (odontogramaError) {
-    const { error: cleanupError } = await cliente.from('pacientes').delete().eq('id', fila.id);
+    const { error: cleanupError } = await cliente
+      .from('pacientes')
+      .delete()
+      .eq('id', fila.id)
+      .eq('doctor_id', authData.user.id);
     throw new Error(
       `No se pudo inicializar el odontograma: ${odontogramaError.message}` +
         (cleanupError ? ` Tampoco se pudo revertir el alta del paciente: ${cleanupError.message}` : ''),
@@ -118,9 +122,17 @@ export async function crearPaciente(
   }
   const { error: historyError } = await cliente
     .from('historias_clinicas')
-    .insert({ paciente_id: paciente.id, datos: paciente.historiaClinica });
+    .insert({
+      doctor_id: authData.user.id,
+      paciente_id: paciente.id,
+      datos: paciente.historiaClinica,
+    });
   if (historyError) {
-    const { error: cleanupError } = await cliente.from('pacientes').delete().eq('id', paciente.id);
+    const { error: cleanupError } = await cliente
+      .from('pacientes')
+      .delete()
+      .eq('id', paciente.id)
+      .eq('doctor_id', authData.user.id);
     throw new Error(
       `No se pudo inicializar la historia clínica: ${historyError.message}` +
         (cleanupError ? ` Tampoco se pudo revertir el alta del paciente: ${cleanupError.message}` : ''),
@@ -131,11 +143,13 @@ export async function crearPaciente(
 
 export async function actualizarPaciente(paciente: Paciente): Promise<void> {
   const cliente = getSupabaseClient();
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede actualizar expedientes de pacientes.');
   const radiografias = paciente.radiografias.map((imagen) => ({
     ...imagen,
     uri: imagen.storagePath ?? imagen.uri,
   }));
-  const { error } = await cliente
+  let consulta = cliente
     .from('pacientes')
     .update({
       nombre: paciente.nombre,
@@ -147,13 +161,19 @@ export async function actualizarPaciente(paciente: Paciente): Promise<void> {
       radiografias,
     })
     .eq('id', paciente.id);
+  consulta = consulta.eq('doctor_id', doctorId);
+  const { error } = await consulta;
   if (error) throw new Error(`No se pudieron guardar los cambios del paciente: ${error.message}`);
 }
 
 export async function eliminarPaciente(pacienteId: string): Promise<void> {
-  const { error } = await getSupabaseClient()
+  const doctorId = await obtenerDoctorIdAutenticado();
+  if (!doctorId) throw new Error('Solo un doctor puede eliminar expedientes de pacientes.');
+  let consulta = getSupabaseClient()
     .from('pacientes')
     .delete()
     .eq('id', pacienteId);
+  consulta = consulta.eq('doctor_id', doctorId);
+  const { error } = await consulta;
   if (error) throw new Error(`No se pudo eliminar el paciente: ${error.message}`);
 }

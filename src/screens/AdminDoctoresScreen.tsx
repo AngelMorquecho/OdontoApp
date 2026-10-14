@@ -27,16 +27,7 @@ const FORMULARIO_VACIO = {
   cedula: '',
   email: '',
   passwordTemporal: '',
-  limitePacientes: '',
 };
-
-function fechaLocal(fecha: Date): string {
-  return [
-    fecha.getFullYear(),
-    String(fecha.getMonth() + 1).padStart(2, '0'),
-    String(fecha.getDate()).padStart(2, '0'),
-  ].join('-');
-}
 
 export default function AdminDoctoresScreen() {
   const { user, logout } = useAuth();
@@ -88,13 +79,8 @@ export default function AdminDoctoresScreen() {
     if (licenciaEnCurso) return;
     setLicenciaEnCurso(doctor.id);
     try {
-      const vencimiento = new Date();
-      vencimiento.setDate(vencimiento.getDate() + 30);
       await actualizarDoctor(doctor.id, {
         suscripcion: suscripcionNueva,
-        ...(suscripcionNueva === 'activa'
-        ? { fechaVencimiento: fechaLocal(vencimiento) }
-          : {}),
       });
       await cargarDoctores();
     } catch (error) {
@@ -112,7 +98,7 @@ export default function AdminDoctoresScreen() {
   };
 
   const guardarDoctor = async () => {
-    const { nombre, especialidad, cedula, email, passwordTemporal, limitePacientes } =
+    const { nombre, especialidad, cedula, email, passwordTemporal } =
       formulario;
     if (
       !nombre.trim() ||
@@ -132,18 +118,6 @@ export default function AdminDoctoresScreen() {
       Alert.alert('Contraseña no válida', 'La contraseña temporal debe tener al menos 8 caracteres.');
       return;
     }
-    if (
-      limitePacientes &&
-      (!/^\d+$/.test(limitePacientes) ||
-        !Number.isSafeInteger(Number(limitePacientes)) ||
-        Number(limitePacientes) < 1)
-    ) {
-      Alert.alert('Límite no válido', 'El límite de pacientes debe ser un entero mayor que cero.');
-      return;
-    }
-
-    const vencimiento = new Date();
-    vencimiento.setDate(vencimiento.getDate() + 30);
     setGuardando(true);
     try {
       await registrarDoctor({
@@ -153,8 +127,6 @@ export default function AdminDoctoresScreen() {
         email: email.trim(),
         passwordTemporal: passwordTemporal.trim(),
         suscripcion,
-        ...(limitePacientes ? { limitePacientes: Number(limitePacientes) } : {}),
-        fechaVencimiento: fechaLocal(vencimiento),
       });
       await cargarDoctores();
       setFormulario(FORMULARIO_VACIO);
@@ -223,8 +195,6 @@ export default function AdminDoctoresScreen() {
           <Campo label="Cédula profesional *" value={formulario.cedula} onChangeText={(v) => actualizarCampo('cedula', v)} keyboardType="numeric" />
           <Campo label="Correo de acceso *" value={formulario.email} onChangeText={(v) => actualizarCampo('email', v)} keyboardType="email-address" autoCapitalize="none" />
           <Campo label="Contraseña temporal *" value={formulario.passwordTemporal} onChangeText={(v) => actualizarCampo('passwordTemporal', v)} secureTextEntry />
-          <Campo label="Límite de pacientes (opcional)" value={formulario.limitePacientes} onChangeText={(v) => actualizarCampo('limitePacientes', v.replace(/\D/g, ''))} keyboardType="numeric" />
-
           <Text style={styles.etiqueta}>Suscripción</Text>
           <View style={styles.filaSuscripcion}>
             {(['activa', 'inactiva'] as const).map((estado) => (
@@ -352,9 +322,8 @@ function TarjetaDoctor({
         <Text style={styles.textoMeta}>
           Suscripción: {doctor.suscripcion === 'activa' ? 'Activa' : 'Inactiva'}
         </Text>
-        <Text style={styles.textoMeta}>Vence: {doctor.fechaVencimiento}</Text>
         <Text style={styles.textoMeta}>
-          Pacientes: {doctor.limitePacientes ?? 'Sin límite'}
+          Alta: {new Date(doctor.fechaAlta).toLocaleDateString()}
         </Text>
       </View>
       <View style={styles.filaAcciones}>
@@ -378,21 +347,6 @@ function TarjetaDoctor({
             {cargando ? 'Actualizando…' : doctor.suscripcion === 'activa' ? 'Suspender' : 'Activar'}
           </Text>
         </Pressable>
-        {estado === 'vencido' && (
-          <Pressable
-            accessibilityRole="button"
-            disabled={cargando}
-            onPress={() => onCambiarSuscripcion('activa')}
-            style={({ pressed }) => [
-              styles.botonAccion,
-              styles.botonActivar,
-              cargando && styles.deshabilitado,
-              pressed && styles.presionado,
-            ]}
-          >
-            <Text style={[styles.textoAccion, styles.textoActivar]}>Renovar 30 días</Text>
-          </Pressable>
-        )}
       </View>
     </View>
   );
@@ -401,13 +355,11 @@ function TarjetaDoctor({
 const COLORES_ESTADO: Record<EstadoDoctor, { fondo: string; texto: string }> = {
   activo: { fondo: '#DCFCE7', texto: '#15803D' },
   inactivo: { fondo: '#F1F5F9', texto: '#475569' },
-  vencido: { fondo: '#FEE2E2', texto: '#B91C1C' },
 };
 
 function etiquetaEstado(estado: EstadoDoctor) {
   if (estado === 'activo') return 'Activo';
-  if (estado === 'inactivo') return 'Inactivo';
-  return 'Vencido';
+  return 'Inactivo';
 }
 
 const styles = StyleSheet.create({
