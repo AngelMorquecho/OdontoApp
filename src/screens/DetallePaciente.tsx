@@ -69,20 +69,19 @@ export default function DetallePaciente({ route, navigation }: Props) {
   }
 
   const alCambiarOdontograma = (nuevo: Odontograma) => {
-    // Se guarda en el contexto, que a su vez persiste en AsyncStorage.
-    actualizarOdontograma(pacienteId, nuevo);
+    void actualizarOdontograma(pacienteId, nuevo);
   };
 
   const alGuardarHistoriaClinica = (nueva: HistoriaClinica) => {
-    actualizarHistoriaClinica(pacienteId, nueva);
+    return actualizarHistoriaClinica(pacienteId, nueva);
   };
 
   const alAgregarNota = (nota: NotaEvolucion) => {
-    agregarNotaEvolucion(pacienteId, nota);
+    return agregarNotaEvolucion(pacienteId, nota);
   };
 
   const alAgregarRadiografia = (radiografia: Radiografia) => {
-    agregarRadiografia(pacienteId, radiografia);
+    return agregarRadiografia(pacienteId, radiografia);
   };
 
   return (
@@ -188,7 +187,6 @@ export default function DetallePaciente({ route, navigation }: Props) {
           <TabRadiografias
             radiografias={paciente.radiografias ?? []}
             onAgregar={alAgregarRadiografia}
-            onAnalizar={() => navigation.navigate('DiagnosticoIa', { pacienteId })}
           />
         )}
 

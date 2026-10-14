@@ -17,7 +17,6 @@ import { borderRadius, colors } from '../../constants/theme';
 interface Props {
   radiografias: Radiografia[];
   onAgregar: (radiografia: Radiografia) => void;
-  onAnalizar: () => void;
 }
 
 function fechaHoy(): string {
@@ -25,11 +24,12 @@ function fechaHoy(): string {
 }
 
 /** Pestaña de Radiografías / Galería: visualiza y permite adjuntar fotos y placas. */
-export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }: Props) {
+export default function TabRadiografias({ radiografias, onAgregar }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [uriPendiente, setUriPendiente] = useState<string | null>(null);
   const [tipoPendiente, setTipoPendiente] = useState<TipoRadiografia>('foto');
   const [descripcion, setDescripcion] = useState('');
+  const [subiendo, setSubiendo] = useState(false);
 
   const tomarFoto = async () => {
     const permiso = await ImagePicker.requestCameraPermissionsAsync();
@@ -73,7 +73,7 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
     }
   };
 
-  const confirmarAlta = () => {
+  const confirmarAlta = async () => {
     if (!uriPendiente) return;
     const nueva: Radiografia = {
       id: `media-${Date.now()}`,
@@ -82,10 +82,20 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
       fecha: fechaHoy(),
       descripcion: descripcion.trim(),
     };
-    onAgregar(nueva);
-    setModalVisible(false);
-    setUriPendiente(null);
-    setDescripcion('');
+    setSubiendo(true);
+    try {
+      await onAgregar(nueva);
+      setModalVisible(false);
+      setUriPendiente(null);
+      setDescripcion('');
+    } catch (error) {
+      Alert.alert(
+        'No se pudo adjuntar la imagen',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    } finally {
+      setSubiendo(false);
+    }
   };
 
   const cancelarAlta = () => {
@@ -114,14 +124,6 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
           <Text style={styles.botonAccionTexto}>🖼️ Elegir de galería</Text>
         </Pressable>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onAnalizar}
-        style={({ pressed }) => [styles.botonAnalizar, pressed && styles.botonPresionado]}
-      >
-        <Text style={styles.botonAnalizarTexto}>🤖 Analizar con IA</Text>
-      </Pressable>
-
       {radiografias.length === 0 ? (
         <View style={styles.vacio}>
           <Text style={styles.vacioTexto}>
@@ -201,10 +203,17 @@ export default function TabRadiografias({ radiografias, onAgregar, onAnalizar }:
                 <Text style={styles.botonModalSecundarioTexto}>Cancelar</Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.botonModal, pressed && styles.botonPresionado]}
-                onPress={confirmarAlta}
+                style={({ pressed }) => [
+                  styles.botonModal,
+                  pressed && styles.botonPresionado,
+                  subiendo && { opacity: 0.55 },
+                ]}
+                disabled={subiendo}
+                onPress={() => void confirmarAlta()}
               >
-                <Text style={styles.botonModalTexto}>Guardar</Text>
+                <Text style={styles.botonModalTexto}>
+                  {subiendo ? 'Subiendo…' : 'Guardar'}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -222,22 +231,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     paddingBottom: 8,
-  },
-  botonAnalizar: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
-  },
-  botonAnalizarTexto: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
   },
   botonAccion: {
     flex: 1,

@@ -61,7 +61,6 @@ export interface CuentaDoctor {
   especialidad: string;
   cedula: string;
   email: string;
-  passwordTemporal: string;
   suscripcion: EstadoSuscripcion;
   limitePacientes?: number;
   fechaVencimiento: string;

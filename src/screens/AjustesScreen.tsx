@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { BlurTargetView } from 'expo-blur';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -10,32 +11,24 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DatosConsultorio, useConsultorio } from '../context/ConsultorioContext';
-import { usePacientes } from '../context/PacientesContext';
-import PanelRespaldo from '../components/PanelRespaldo';
-import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
+import FloatingTabBar, { type FloatingTabRoute } from '../components/FloatingTabBar';
 import { borderRadius, colors, shadows } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
-import type { Usuario } from '../types';
-import type { Paciente } from '../types/paciente';
+import { useConsultorio, type DatosConsultorio } from '../context/ConsultorioContext';
+import type { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Ajustes'>;
 
-export default function AjustesScreen({ route, navigation }: Props) {
+export default function AjustesScreen({ navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
-  const { user, logout, seleccionarRolDoctor, seleccionarPaciente } = useAuth();
+  const { user, logout } = useAuth();
   const {
     consultorio,
     cargandoConsultorio,
     actualizarConsultorio,
-    restaurarConsultorio,
   } = useConsultorio();
-  const { pacientes, reemplazarPacientes, restablecerDatosPrueba } = usePacientes();
-
   if (!user) return null;
-
   const navegar = (ruta: FloatingTabRoute) => {
     switch (ruta) {
       case 'ListaPacientes':
@@ -52,120 +45,79 @@ export default function AjustesScreen({ route, navigation }: Props) {
         break;
     }
   };
-
-  if (user.rol === 'PACIENTE') {
-    return (
-      <View style={styles.root}>
-        <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
-          <PerfilPaciente
-            user={user}
-            pacientes={pacientes}
-            seleccionarRolDoctor={seleccionarRolDoctor}
-            seleccionarPaciente={seleccionarPaciente}
-            onLogout={() => void logout()}
-            onRestablecer={() =>
-              solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
-            }
-            onVolver={(seccion) =>
-              navigation.navigate('PortalPaciente', { seccion })
-            }
-          />
-        </BlurTargetView>
-        <FloatingTabBar
-          rutaActiva="Ajustes"
-          onNavegar={(ruta) => {
-            if (ruta === 'AgendaCitas') {
-              navigation.navigate('PortalPaciente', { seccion: 'citas' });
-            } else if (ruta === 'EducacionPaciente') {
-              navigation.navigate('EducacionPaciente');
-            }
-          }}
-          blurTarget={blurTarget}
-          modoPaciente
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.root}>
       <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
-        <FormularioAjustes
-          key={JSON.stringify(consultorio)}
-          route={route}
-          consultorio={consultorio}
-          cargandoConsultorio={cargandoConsultorio}
-          actualizarConsultorio={actualizarConsultorio}
-          restaurarConsultorio={restaurarConsultorio}
-          pacientes={pacientes}
-          reemplazarPacientes={reemplazarPacientes}
-          user={user}
-          seleccionarRolDoctor={seleccionarRolDoctor}
-          seleccionarPaciente={seleccionarPaciente}
-          onLogout={() => void logout()}
-          onRestablecer={() =>
-            solicitarRestablecimiento(restablecerDatosPrueba, seleccionarRolDoctor)
-          }
-        />
+        <ScrollView
+          style={styles.pantalla}
+          contentContainerStyle={styles.contenido}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.seccion}>
+            <Text style={styles.titulo}>Mi perfil</Text>
+            <Text style={styles.nombre}>{user.nombre}</Text>
+            <Text style={styles.secundario}>{user.email}</Text>
+            <Text style={styles.etiquetaRol}>
+              {user.rol === 'DOCTOR' ? 'Cuenta de doctor' : 'Portal de paciente'}
+            </Text>
+          </View>
+
+          {user.rol === 'DOCTOR' && (
+            <FormularioConsultorio
+              key={JSON.stringify(consultorio)}
+              consultorio={consultorio}
+              cargando={cargandoConsultorio}
+              actualizarConsultorio={actualizarConsultorio}
+            />
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void logout()}
+            style={({ pressed }) => [styles.botonSalir, pressed && styles.presionado]}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#B91C1C" />
+            <Text style={styles.textoSalir}>Cerrar sesión</Text>
+          </Pressable>
+        </ScrollView>
       </BlurTargetView>
       <FloatingTabBar
         rutaActiva="Ajustes"
-        onNavegar={navegar}
+        onNavegar={(ruta) => {
+          if (user.rol === 'PACIENTE') {
+            if (ruta === 'AgendaCitas') navigation.navigate('PortalPaciente', { seccion: 'citas' });
+            else if (ruta === 'EducacionPaciente') navigation.navigate('EducacionPaciente');
+          } else {
+            navegar(ruta);
+          }
+        }}
         blurTarget={blurTarget}
+        modoPaciente={user.rol === 'PACIENTE'}
       />
     </View>
   );
 }
 
-interface FormularioAjustesProps {
-  route: Props['route'];
-  consultorio: DatosConsultorio;
-  cargandoConsultorio: boolean;
-  actualizarConsultorio: (datos: DatosConsultorio) => Promise<void>;
-  restaurarConsultorio: (datos: DatosConsultorio) => Promise<void>;
-  pacientes: ReturnType<typeof usePacientes>['pacientes'];
-  reemplazarPacientes: ReturnType<typeof usePacientes>['reemplazarPacientes'];
-  user: Usuario;
-  seleccionarRolDoctor: () => void;
-  seleccionarPaciente: (paciente: Paciente) => void;
-  onLogout: () => void;
-  onRestablecer: () => void;
-}
-
-function FormularioAjustes({
-  route,
+function FormularioConsultorio({
   consultorio,
-  cargandoConsultorio,
+  cargando,
   actualizarConsultorio,
-  restaurarConsultorio,
-  pacientes,
-  reemplazarPacientes,
-  user,
-  seleccionarRolDoctor,
-  seleccionarPaciente,
-  onLogout,
-  onRestablecer,
-}: FormularioAjustesProps) {
-  const scrollRef = useRef<ScrollView>(null);
-  const [offsetRespaldo, setOffsetRespaldo] = useState(0);
+}: {
+  consultorio: DatosConsultorio;
+  cargando: boolean;
+  actualizarConsultorio: (datos: DatosConsultorio) => Promise<void>;
+}) {
   const [formulario, setFormulario] = useState(consultorio);
   const [guardando, setGuardando] = useState(false);
-
-  useEffect(() => {
-    if (route.params?.seccion === 'respaldo') {
-      scrollRef.current?.scrollTo({ y: offsetRespaldo, animated: true });
-    }
-  }, [offsetRespaldo, route.params?.seccion]);
-
-  const actualizarCampo = (campo: keyof typeof formulario, valor: string) => {
-    setFormulario((anterior) => ({ ...anterior, [campo]: valor }));
+  const actualizarCampo = (campo: keyof DatosConsultorio, valor: string) => {
+    setFormulario((actual) => ({ ...actual, [campo]: valor }));
   };
-
   const guardar = async () => {
+    if (guardando || cargando) return;
     setGuardando(true);
     try {
       await actualizarConsultorio(formulario);
-      Alert.alert('Ajustes guardados', 'Los datos del consultorio se guardaron correctamente.');
+      Alert.alert('Ajustes guardados', 'Los datos del consultorio se guardaron en Supabase.');
     } catch (error) {
       Alert.alert(
         'No se pudieron guardar los ajustes',
@@ -177,541 +129,143 @@ function FormularioAjustes({
   };
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.pantalla}
-      contentContainerStyle={styles.contenido}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Simulador de roles</Text>
-        <Text style={styles.textoSimulador}>
-          Prueba la experiencia del doctor o entra al portal como un paciente.
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: user.rol === 'DOCTOR' }}
-          onPress={seleccionarRolDoctor}
-          style={({ pressed }) => [
-            styles.opcionRol,
-            styles.opcionRolSeleccionada,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoOpcionSeleccionada}>Vista Doctor</Text>
-          <Text style={styles.textoRolSecundario}>Interfaz administrativa completa</Text>
-        </Pressable>
-        <Text style={styles.etiquetaPaciente}>Vista Paciente</Text>
-        {pacientes.length === 0 ? (
-          <Text style={styles.textoSimulador}>No hay pacientes para probar el portal.</Text>
-        ) : (
-          pacientes.map((paciente) => (
-            <Pressable
-              key={paciente.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: user.pacienteId === paciente.id }}
-              onPress={() => seleccionarPaciente(paciente)}
-              style={({ pressed }) => [
-                styles.opcionRol,
-                user.pacienteId === paciente.id && styles.opcionRolSeleccionada,
-                pressed && styles.botonPresionado,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.textoOpcionRol,
-                  user.pacienteId === paciente.id && styles.textoOpcionSeleccionada,
-                ]}
-              >
-                {paciente.nombre}
-              </Text>
-              <Text style={styles.textoRolSecundario}>
-                {paciente.correo ?? 'Perfil de prueba'}
-              </Text>
-            </Pressable>
-          ))
-        )}
-      </View>
-
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Datos de prueba</Text>
-        <Text style={styles.textoSimulador}>
-          Restaura pacientes, citas, recetas y la sesión del doctor de prueba.
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onRestablecer}
-          style={({ pressed }) => [
-            styles.botonRestablecerDatos,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoBotonRestablecer}>Restablecer datos de prueba</Text>
-        </Pressable>
-      </View>
-
-      <Text style={styles.introduccion}>
-        Estos datos aparecerán en el membrete de los expedientes clínicos exportados.
+    <View style={styles.seccion}>
+      <Text style={styles.titulo}>Datos del consultorio</Text>
+      <Text style={styles.descripcion}>
+        Esta información se utiliza en los documentos clínicos y comprobantes.
       </Text>
-
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Datos del consultorio</Text>
-        <Campo
-          etiqueta="Nombre del doctor o profesionales"
-          valor={formulario.nombreDoctor}
-          placeholder="Nombre(s) completo(s)"
-          onChangeText={(valor) => actualizarCampo('nombreDoctor', valor)}
-        />
-        <Campo
-          etiqueta="Cédula profesional"
-          valor={formulario.cedula}
-          placeholder="Número de cédula"
-          keyboardType="numeric"
-          onChangeText={(valor) => actualizarCampo('cedula', valor)}
-        />
-        <Campo
-          etiqueta="Nombre de la clínica"
-          valor={formulario.nombreClinica}
-          placeholder="Nombre comercial (opcional)"
-          onChangeText={(valor) => actualizarCampo('nombreClinica', valor)}
-        />
-        <Campo
-          etiqueta="Dirección"
-          valor={formulario.direccion}
-          placeholder="Dirección del consultorio"
-          onChangeText={(valor) => actualizarCampo('direccion', valor)}
-          multiline
-        />
-        <Campo
-          etiqueta="Teléfono"
-          valor={formulario.telefono}
-          placeholder="Teléfono de contacto"
-          keyboardType="phone-pad"
-          onChangeText={(valor) => actualizarCampo('telefono', valor)}
-        />
-        <Pressable
-          accessibilityRole="button"
-          disabled={guardando || cargandoConsultorio}
-          onPress={() => void guardar()}
-          style={({ pressed }) => [
-            styles.botonGuardar,
-            (guardando || cargandoConsultorio) && styles.botonDeshabilitado,
-            pressed && !(guardando || cargandoConsultorio) && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoBotonGuardar}>
-            {cargandoConsultorio
-              ? 'Cargando datos…'
-              : guardando
-                ? 'Guardando…'
-                : 'Guardar datos del consultorio'}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View
-        style={styles.seccion}
-        onLayout={(evento) => setOffsetRespaldo(evento.nativeEvent.layout.y)}
+      <Campo
+        etiqueta="Nombre del doctor o profesionales"
+        valor={formulario.nombreDoctor}
+        onChangeText={(valor) => actualizarCampo('nombreDoctor', valor)}
+      />
+      <Campo
+        etiqueta="Cédula profesional"
+        valor={formulario.cedula}
+        onChangeText={(valor) => actualizarCampo('cedula', valor)}
+        keyboardType="numeric"
+      />
+      <Campo
+        etiqueta="Nombre de la clínica"
+        valor={formulario.nombreClinica}
+        onChangeText={(valor) => actualizarCampo('nombreClinica', valor)}
+      />
+      <Campo
+        etiqueta="Dirección"
+        valor={formulario.direccion}
+        onChangeText={(valor) => actualizarCampo('direccion', valor)}
+        multiline
+      />
+      <Campo
+        etiqueta="Teléfono"
+        valor={formulario.telefono}
+        onChangeText={(valor) => actualizarCampo('telefono', valor)}
+        keyboardType="phone-pad"
+      />
+      <Pressable
+        accessibilityRole="button"
+        disabled={guardando || cargando}
+        onPress={() => void guardar()}
+        style={({ pressed }) => [
+          styles.botonGuardar,
+          (guardando || cargando) && styles.deshabilitado,
+          pressed && !(guardando || cargando) && styles.presionado,
+        ]}
       >
-        <Text style={styles.tituloSeccion}>Respaldo de datos</Text>
-        <PanelRespaldo
-          pacientes={pacientes}
-          consultorio={consultorio}
-          deshabilitado={cargandoConsultorio}
-          onRestaurar={async (pacientesImportados, consultorioImportado) => {
-            try {
-              await restaurarConsultorio(consultorioImportado);
-              await reemplazarPacientes(pacientesImportados);
-            } catch (error) {
-              await Promise.all([
-                restaurarConsultorio(consultorio),
-                reemplazarPacientes(pacientes),
-              ]);
-              throw error;
-            }
-
-          }}
-        />
-      </View>
-      <BotonCerrarSesion onPress={onLogout} />
-    </ScrollView>
+        {guardando ? (
+          <ActivityIndicator color={colors.surface} />
+        ) : (
+          <Text style={styles.textoBoton}>
+            {cargando ? 'Cargando datos…' : 'Guardar datos del consultorio'}
+          </Text>
+        )}
+      </Pressable>
+    </View>
   );
-}
-
-interface PerfilPacienteProps {
-  user: Usuario;
-  pacientes: ReturnType<typeof usePacientes>['pacientes'];
-  seleccionarRolDoctor: () => void;
-  seleccionarPaciente: (paciente: Paciente) => void;
-  onLogout: () => void;
-  onVolver: (seccion: 'citas' | 'tratamiento') => void;
-  onRestablecer: () => void;
-}
-
-function PerfilPaciente({
-  user,
-  pacientes,
-  seleccionarRolDoctor,
-  seleccionarPaciente,
-  onLogout,
-  onVolver,
-  onRestablecer,
-}: PerfilPacienteProps) {
-  return (
-    <ScrollView
-      style={styles.pantalla}
-      contentContainerStyle={styles.contenido}
-    >
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Mi perfil</Text>
-        <Text style={styles.nombrePerfil}>{user.nombre}</Text>
-        <Text style={styles.textoSimulador}>{user.email}</Text>
-      </View>
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Cambiar vista de prueba</Text>
-        <Text style={styles.textoSimulador}>
-          El simulador permite revisar ambos portales en este dispositivo.
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={seleccionarRolDoctor}
-          style={({ pressed }) => [
-            styles.botonRolDoctor,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoBotonRol}>Cambiar a Vista Doctor</Text>
-        </Pressable>
-        <Text style={styles.etiquetaPaciente}>Cambiar paciente de prueba</Text>
-        {pacientes.map((paciente) => (
-          <Pressable
-            key={paciente.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: user.pacienteId === paciente.id }}
-            onPress={() => seleccionarPaciente(paciente)}
-            style={({ pressed }) => [
-              styles.opcionRol,
-              user.pacienteId === paciente.id && styles.opcionRolSeleccionada,
-              pressed && styles.botonPresionado,
-            ]}
-          >
-            <Text
-              style={[
-                styles.textoOpcionRol,
-                user.pacienteId === paciente.id && styles.textoOpcionSeleccionada,
-              ]}
-            >
-              {paciente.nombre}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Datos de prueba</Text>
-        <Text style={styles.textoSimulador}>
-          Restablece el conjunto de demostración del dispositivo.
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onRestablecer}
-          style={({ pressed }) => [
-            styles.botonRestablecerDatos,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoBotonRestablecer}>Restablecer datos de prueba</Text>
-        </Pressable>
-      </View>
-      <View style={styles.seccion}>
-        <Text style={styles.tituloSeccion}>Acceso rápido</Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => onVolver('citas')}
-          style={({ pressed }) => [
-            styles.opcionAcceso,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoOpcionRol}>Mis Citas</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => onVolver('tratamiento')}
-          style={({ pressed }) => [
-            styles.opcionAcceso,
-            pressed && styles.botonPresionado,
-          ]}
-        >
-          <Text style={styles.textoOpcionRol}>Tratamiento y Recetas</Text>
-        </Pressable>
-      </View>
-      <BotonCerrarSesion onPress={onLogout} />
-    </ScrollView>
-  );
-}
-
-function BotonCerrarSesion({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Cerrar sesión"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.botonCerrarSesion,
-        pressed && styles.botonPresionado,
-      ]}
-    >
-      <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-      <Text style={styles.textoCerrarSesion}>Cerrar sesión</Text>
-    </Pressable>
-  );
-}
-
-function solicitarRestablecimiento(
-  restablecer: () => Promise<void>,
-  seleccionarDoctor: () => Promise<void>,
-) {
-  Alert.alert(
-    'Restablecer datos de prueba',
-    'Se reemplazarán los datos locales por pacientes, citas y recetas de demostración.',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Restablecer',
-        style: 'destructive',
-        onPress: () => {
-          void (async () => {
-            try {
-              await restablecer();
-              await seleccionarDoctor();
-              Alert.alert('Datos de prueba restablecidos correctamente');
-            } catch (error) {
-              Alert.alert(
-                'No se pudieron restablecer los datos',
-                error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
-              );
-            }
-          })();
-        },
-      },
-    ],
-  );
-}
-
-interface CampoProps {
-  etiqueta: string;
-  valor: string;
-  placeholder: string;
-  onChangeText: (valor: string) => void;
-  multiline?: boolean;
-  keyboardType?: 'default' | 'phone-pad' | 'numeric' | 'number-pad' | 'decimal-pad';
 }
 
 function Campo({
   etiqueta,
   valor,
-  placeholder,
   onChangeText,
   multiline = false,
   keyboardType = 'default',
-}: CampoProps) {
-  const [enfocado, setEnfocado] = useState(false);
-
+}: {
+  etiqueta: string;
+  valor: string;
+  onChangeText: (valor: string) => void;
+  multiline?: boolean;
+  keyboardType?: 'default' | 'numeric' | 'phone-pad';
+}) {
   return (
-    <View style={styles.campo}>
+    <View style={styles.campoContenedor}>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
       <TextInput
-        style={[
-          styles.input,
-          enfocado && styles.inputEnfocado,
-          multiline && styles.inputMultiline,
-        ]}
+        style={[styles.input, multiline && styles.multilinea]}
         value={valor}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={etiqueta}
         placeholderTextColor={colors.textSecondary}
-        autoCapitalize="sentences"
-        autoCorrect={false}
         multiline={multiline}
-        keyboardType={keyboardType}
         textAlignVertical={multiline ? 'top' : 'center'}
-        onFocus={() => setEnfocado(true)}
-        onBlur={() => setEnfocado(false)}
+        keyboardType={keyboardType}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.background },
   destinoBlur: { flex: 1 },
-  pantalla: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  contenido: {
-    padding: 16,
-    paddingBottom: 120,
-  },
-  introduccion: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 14,
-  },
+  pantalla: { flex: 1 },
+  contenido: { padding: 16, paddingBottom: 110 },
   seccion: {
     padding: 16,
+    marginBottom: 14,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.surface,
-    marginBottom: 14,
     ...shadows.sm,
   },
-  tituloSeccion: {
-    color: colors.textPrimary,
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 14,
-  },
-  campo: {
-    marginBottom: 13,
-  },
-  etiqueta: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
+  titulo: { color: colors.textPrimary, fontSize: 17, fontWeight: '700' },
+  nombre: { marginTop: 12, color: colors.primary, fontSize: 16, fontWeight: '700' },
+  secundario: { marginTop: 4, color: colors.textSecondary, fontSize: 13 },
+  etiquetaRol: { marginTop: 12, color: colors.textSecondary, fontSize: 12 },
+  descripcion: { marginTop: 6, marginBottom: 8, color: colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  campoContenedor: { marginTop: 12 },
+  etiqueta: { marginBottom: 6, color: colors.textPrimary, fontSize: 13, fontWeight: '600' },
   input: {
     minHeight: 46,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.md,
-    paddingHorizontal: 12,
     color: colors.textPrimary,
-    fontSize: 15,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
-  inputEnfocado: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  inputMultiline: {
-    minHeight: 82,
-    paddingTop: 11,
-    paddingBottom: 11,
-  },
+  multilinea: { minHeight: 82, paddingTop: 12 },
   botonGuardar: {
     minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
-    marginTop: 4,
-  },
-  botonDeshabilitado: {
-    opacity: 0.55,
-  },
-  botonPresionado: {
-    opacity: 0.7,
-  },
-  textoBotonGuardar: {
-    color: colors.surface,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  textoSimulador: {
-    marginBottom: 10,
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  etiquetaPaciente: {
-    marginTop: 10,
-    marginBottom: 7,
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  opcionRol: {
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    marginBottom: 7,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
-  },
-  opcionRolSeleccionada: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  textoOpcionRol: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  textoOpcionSeleccionada: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  textoRolSecundario: {
-    marginTop: 3,
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  nombrePerfil: {
-    color: colors.textPrimary,
-    fontSize: 19,
-    fontWeight: '700',
-  },
-  botonRolDoctor: {
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 5,
-    marginBottom: 8,
+    marginTop: 18,
     borderRadius: borderRadius.md,
     backgroundColor: colors.primary,
   },
-  textoBotonRol: {
-    color: colors.surface,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  botonRestablecerDatos: {
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#FEF2F2',
-  },
-  textoBotonRestablecer: {
-    color: colors.danger,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  opcionAcceso: {
-    padding: 12,
-    marginTop: 7,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
-  },
-  botonCerrarSesion: {
-    minHeight: 50,
+  textoBoton: { color: colors.surface, fontSize: 14, fontWeight: '700' },
+  botonSalir: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 9,
-    marginBottom: 12,
-    paddingHorizontal: 16,
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: '#FECACA',
     borderRadius: borderRadius.md,
     backgroundColor: '#FEF2F2',
   },
-  textoCerrarSesion: {
-    color: colors.danger,
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  textoSalir: { color: '#B91C1C', fontSize: 14, fontWeight: '700' },
+  presionado: { opacity: 0.7 },
+  deshabilitado: { opacity: 0.55 },
 });

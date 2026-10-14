@@ -1,14 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useRef,
+  useMemo,
   useState,
 } from 'react';
-
-const CLAVE_CONSULTORIO = '@OdontoApp:consultorio';
+import { Alert } from 'react-native';
+import { guardarDatosConsultorio, obtenerDatosConsultorio } from '../services/clinicService';
+import type { Usuario } from '../types';
+import { useAuth } from './AuthContext';
 
 export interface DatosConsultorio {
   nombreDoctor: string;
@@ -19,96 +20,82 @@ export interface DatosConsultorio {
 }
 
 export const DATOS_CONSULTORIO_INICIALES: DatosConsultorio = {
-  nombreDoctor: 'Dr. Luis Morquecho García / Dra. Jacqueline Rodríguez Enríquez',
+  nombreDoctor: '',
   cedula: '',
   direccion: '',
   telefono: '',
   nombreClinica: '',
 };
 
-function sanearDatosConsultorio(datos: unknown): DatosConsultorio {
-  if (typeof datos !== 'object' || datos === null) {
-    return DATOS_CONSULTORIO_INICIALES;
-  }
-  const recibidos = datos as Partial<DatosConsultorio>;
-  return {
-    nombreDoctor:
-      typeof recibidos.nombreDoctor === 'string'
-        ? recibidos.nombreDoctor
-        : DATOS_CONSULTORIO_INICIALES.nombreDoctor,
-    cedula: typeof recibidos.cedula === 'string' ? recibidos.cedula : '',
-    direccion: typeof recibidos.direccion === 'string' ? recibidos.direccion : '',
-    telefono: typeof recibidos.telefono === 'string' ? recibidos.telefono : '',
-    nombreClinica: typeof recibidos.nombreClinica === 'string' ? recibidos.nombreClinica : '',
-  };
-}
-
 interface ConsultorioContextValor {
   consultorio: DatosConsultorio;
   cargandoConsultorio: boolean;
   actualizarConsultorio: (datos: DatosConsultorio) => Promise<void>;
-  restaurarConsultorio: (datos: DatosConsultorio) => Promise<void>;
 }
 
 const ConsultorioContext = createContext<ConsultorioContextValor | undefined>(undefined);
 
-interface Props {
-  children: React.ReactNode;
-}
-
-export function ConsultorioProvider({ children }: Props) {
-  const [consultorio, setConsultorio] = useState<DatosConsultorio>(
-    DATOS_CONSULTORIO_INICIALES,
-  );
-  const [cargandoConsultorio, setCargandoConsultorio] = useState(true);
-  const huboActualizacion = useRef(false);
+export function ConsultorioProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [consultorioCargado, setConsultorioCargado] = useState<{
+    usuario: Usuario;
+    datos: DatosConsultorio;
+  } | null>(null);
+  const cargandoConsultorio = user?.rol === 'DOCTOR' &&
+    consultorioCargado?.usuario !== user;
 
   useEffect(() => {
     let activo = true;
-    AsyncStorage.getItem(CLAVE_CONSULTORIO)
-      .then((guardado) => {
-        if (!activo) return;
-        if (guardado && !huboActualizacion.current) {
-          setConsultorio(sanearDatosConsultorio(JSON.parse(guardado) as unknown));
+    if (user?.rol !== 'DOCTOR') return;
+    void obtenerDatosConsultorio()
+      .then((datos) => {
+        if (activo) setConsultorioCargado({
+          usuario: user,
+          datos: datos ?? { ...DATOS_CONSULTORIO_INICIALES, nombreDoctor: user.nombre },
+        });
+      })
+      .catch((error: unknown) => {
+        if (activo) {
+          Alert.alert(
+            'No se pudieron cargar los datos del consultorio',
+            error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+          );
+          setConsultorioCargado({
+            usuario: user,
+            datos: { ...DATOS_CONSULTORIO_INICIALES, nombreDoctor: user.nombre },
+          });
         }
-      })
-      .catch((error) => {
-        console.warn('No se pudieron leer los datos del consultorio', error);
-      })
-      .finally(() => {
-        if (activo) setCargandoConsultorio(false);
       });
     return () => {
       activo = false;
     };
-  }, []);
+  }, [user]);
 
   const actualizarConsultorio = useCallback(async (datos: DatosConsultorio) => {
-    await AsyncStorage.setItem(CLAVE_CONSULTORIO, JSON.stringify(datos));
-    huboActualizacion.current = true;
-    setConsultorio(datos);
-  }, []);
+    if (user?.rol !== 'DOCTOR') throw new Error('Solo un doctor puede guardar datos del consultorio.');
+    await guardarDatosConsultorio(datos);
+    setConsultorioCargado({ usuario: user, datos });
+  }, [user]);
 
-  const restaurarConsultorio = actualizarConsultorio;
-
-  return (
-    <ConsultorioContext.Provider
-      value={{
-        consultorio,
-        cargandoConsultorio,
-        actualizarConsultorio,
-        restaurarConsultorio,
-      }}
-    >
-      {children}
-    </ConsultorioContext.Provider>
+  const consultorio = useMemo(
+    () => user?.rol === 'DOCTOR' && consultorioCargado?.usuario === user
+      ? consultorioCargado.datos
+      : {
+          ...DATOS_CONSULTORIO_INICIALES,
+          ...(user?.rol === 'DOCTOR' ? { nombreDoctor: user.nombre } : {}),
+        },
+    [consultorioCargado, user],
   );
+
+  const value = useMemo(
+    () => ({ consultorio, cargandoConsultorio, actualizarConsultorio }),
+    [consultorio, cargandoConsultorio, actualizarConsultorio],
+  );
+  return <ConsultorioContext.Provider value={value}>{children}</ConsultorioContext.Provider>;
 }
 
 export function useConsultorio(): ConsultorioContextValor {
   const contexto = useContext(ConsultorioContext);
-  if (!contexto) {
-    throw new Error('useConsultorio debe usarse dentro de un ConsultorioProvider');
-  }
+  if (!contexto) throw new Error('useConsultorio debe usarse dentro de un ConsultorioProvider');
   return contexto;
 }

@@ -46,6 +46,7 @@ export default function AdminDoctoresScreen() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [suscripcion, setSuscripcion] = useState<EstadoSuscripcion>('activa');
   const [formulario, setFormulario] = useState(FORMULARIO_VACIO);
+  const [licenciaEnCurso, setLicenciaEnCurso] = useState<string | null>(null);
 
   const cargarDoctores = useCallback(async () => {
     try {
@@ -84,6 +85,8 @@ export default function AdminDoctoresScreen() {
     doctor: CuentaDoctor,
     suscripcionNueva: EstadoSuscripcion,
   ) => {
+    if (licenciaEnCurso) return;
+    setLicenciaEnCurso(doctor.id);
     try {
       const vencimiento = new Date();
       vencimiento.setDate(vencimiento.getDate() + 30);
@@ -99,6 +102,8 @@ export default function AdminDoctoresScreen() {
         'No se pudo actualizar la suscripción',
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
       );
+    } finally {
+      setLicenciaEnCurso(null);
     }
   };
 
@@ -121,6 +126,10 @@ export default function AdminDoctoresScreen() {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       Alert.alert('Correo no válido', 'Verifica el correo de acceso del doctor.');
+      return;
+    }
+    if (passwordTemporal.trim().length < 8) {
+      Alert.alert('Contraseña no válida', 'La contraseña temporal debe tener al menos 8 caracteres.');
       return;
     }
     if (
@@ -151,7 +160,7 @@ export default function AdminDoctoresScreen() {
       setFormulario(FORMULARIO_VACIO);
       setSuscripcion('activa');
       setMostrarFormulario(false);
-      Alert.alert('Doctor registrado', 'La cuenta y su periodo de suscripción de prueba quedaron guardados.');
+      Alert.alert('Doctor registrado', 'La cuenta de acceso y la licencia quedaron guardadas.');
     } catch (error) {
       Alert.alert(
         'No se pudo registrar al doctor',
@@ -240,7 +249,7 @@ export default function AdminDoctoresScreen() {
             ))}
           </View>
           <Text style={styles.notaTemporal}>
-            El alta activa incluye 30 días de prueba. Las credenciales se guardan localmente en este prototipo.
+            El acceso se crea en Supabase Auth. La contraseña temporal solo se usa para el alta y no se conserva en la aplicación.
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -274,6 +283,7 @@ export default function AdminDoctoresScreen() {
           <TarjetaDoctor
             key={doctor.id}
             doctor={doctor}
+            cargando={licenciaEnCurso === doctor.id}
             onCambiarSuscripcion={(estado) => void modificarSuscripcion(doctor, estado)}
           />
         ))
@@ -312,9 +322,11 @@ function Campo({
 
 function TarjetaDoctor({
   doctor,
+  cargando,
   onCambiarSuscripcion,
 }: {
   doctor: CuentaDoctor;
+  cargando: boolean;
   onCambiarSuscripcion: (estado: EstadoSuscripcion) => void;
 }) {
   const estado = obtenerEstadoDoctor(doctor);
@@ -348,12 +360,14 @@ function TarjetaDoctor({
       <View style={styles.filaAcciones}>
         <Pressable
           accessibilityRole="button"
+          disabled={cargando}
           onPress={() =>
             onCambiarSuscripcion(doctor.suscripcion === 'activa' ? 'inactiva' : 'activa')
           }
           style={({ pressed }) => [
             styles.botonAccion,
             doctor.suscripcion === 'activa' ? styles.botonSuspender : styles.botonActivar,
+            cargando && styles.deshabilitado,
             pressed && styles.presionado,
           ]}
         >
@@ -361,16 +375,18 @@ function TarjetaDoctor({
             styles.textoAccion,
             doctor.suscripcion === 'activa' ? styles.textoSuspender : styles.textoActivar,
           ]}>
-            {doctor.suscripcion === 'activa' ? 'Suspender' : 'Activar'}
+            {cargando ? 'Actualizando…' : doctor.suscripcion === 'activa' ? 'Suspender' : 'Activar'}
           </Text>
         </Pressable>
         {estado === 'vencido' && (
           <Pressable
             accessibilityRole="button"
+            disabled={cargando}
             onPress={() => onCambiarSuscripcion('activa')}
             style={({ pressed }) => [
               styles.botonAccion,
               styles.botonActivar,
+              cargando && styles.deshabilitado,
               pressed && styles.presionado,
             ]}
           >

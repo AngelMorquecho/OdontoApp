@@ -63,6 +63,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
   const { citas, cambiarEstatusCita, obtenerPaciente, cargandoCitas } = usePacientes();
   const [estatusActivo, setEstatusActivo] = useState<EstatusCita>('programada');
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
+  const [citaEnProceso, setCitaEnProceso] = useState<string | null>(null);
 
   const citasFiltradas = useMemo(
     () =>
@@ -77,6 +78,8 @@ export default function AgendaCitasScreen({ navigation }: Props) {
   );
 
   const cambiarEstado = async (id: string, nuevoEstatus: EstatusCita) => {
+    if (citaEnProceso) return;
+    setCitaEnProceso(id);
     try {
       await cambiarEstatusCita(id, nuevoEstatus);
       setMenuAbierto(null);
@@ -85,6 +88,8 @@ export default function AgendaCitasScreen({ navigation }: Props) {
         'No se pudo actualizar la cita',
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
       );
+    } finally {
+      setCitaEnProceso(null);
     }
   };
 
@@ -225,6 +230,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                     <Pressable
                       key={opcion.valor}
                       accessibilityRole="button"
+                      disabled={citaEnProceso !== null}
                       onPress={() => void cambiarEstado(item.id, opcion.valor)}
                       style={({ pressed }) => [
                         styles.opcionEstado,
@@ -236,6 +242,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                             ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
                             colors.primary,
                         },
+                        citaEnProceso !== null && styles.deshabilitado,
                         pressed && styles.presionado,
                       ]}
                     >
@@ -249,7 +256,7 @@ export default function AgendaCitasScreen({ navigation }: Props) {
                           },
                         ]}
                       >
-                        {opcion.etiqueta}
+                        {citaEnProceso === item.id ? 'Actualizando…' : opcion.etiqueta}
                       </Text>
                     </Pressable>
                   ))}

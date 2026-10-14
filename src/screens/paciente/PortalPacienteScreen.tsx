@@ -213,7 +213,7 @@ export default function PortalPacienteScreen({ route, navigation }: Props) {
               />
               <Text style={styles.tituloVacio}>Perfil de paciente no disponible</Text>
               <Text style={styles.textoVacio}>
-                Vuelve a Ajustes y selecciona un paciente para la vista de prueba.
+                Tu cuenta todavía no está vinculada a un expediente. Contacta a la clínica para habilitar el acceso.
               </Text>
             </View>
           ) : seccion === 'citas' ? (

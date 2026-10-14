@@ -1,63 +1,50 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CuentaDoctor, EstadoSuscripcion } from '../types';
-import { CLAVES_DATOS, crearDatosPrueba } from '../utils/seedData';
+import type { CuentaDoctor, EstadoSuscripcion } from '../types';
+import { getSupabaseClient } from '../lib/supabase';
 
 export type EstadoDoctor = 'activo' | 'inactivo' | 'vencido';
-export type NuevaCuentaDoctor = Omit<CuentaDoctor, 'id' | 'fechaAlta'>;
+export type NuevaCuentaDoctor = Omit<CuentaDoctor, 'id' | 'fechaAlta'> & {
+  passwordTemporal: string;
+};
 
-function fechaLocal(fecha: Date): string {
-  return [
-    fecha.getFullYear(),
-    String(fecha.getMonth() + 1).padStart(2, '0'),
-    String(fecha.getDate()).padStart(2, '0'),
-  ].join('-');
+interface DoctorFila {
+  id: string;
+  nombre_completo: string;
+  email: string;
+  especialidad: string;
+  cedula: string;
+  suscripcion: EstadoSuscripcion;
+  limite_pacientes: number | null;
+  fecha_vencimiento: string;
+  fecha_alta: string;
 }
 
-function validarCuentas(valor: unknown): CuentaDoctor[] {
-  if (!Array.isArray(valor)) {
-    throw new Error('El registro de doctores guardado no tiene un formato válido.');
-  }
-  return valor.map((item) => {
-    if (
-      typeof item !== 'object' ||
-      item === null ||
-      !('id' in item) ||
-      typeof item.id !== 'string' ||
-      !('nombre' in item) ||
-      typeof item.nombre !== 'string' ||
-      !('especialidad' in item) ||
-      typeof item.especialidad !== 'string' ||
-      !('cedula' in item) ||
-      typeof item.cedula !== 'string' ||
-      !('email' in item) ||
-      typeof item.email !== 'string' ||
-      !('passwordTemporal' in item) ||
-      typeof item.passwordTemporal !== 'string' ||
-      !('suscripcion' in item) ||
-      (item.suscripcion !== 'activa' && item.suscripcion !== 'inactiva') ||
-      !('fechaVencimiento' in item) ||
-      typeof item.fechaVencimiento !== 'string' ||
-      !('fechaAlta' in item) ||
-      typeof item.fechaAlta !== 'string' ||
-      ('limitePacientes' in item &&
-        (typeof item.limitePacientes !== 'number' ||
-          !Number.isSafeInteger(item.limitePacientes) ||
-          item.limitePacientes < 1))
-    ) {
-      throw new Error('El registro de doctores contiene una cuenta no válida.');
-    }
-    return item as CuentaDoctor;
-  });
+function desdeFila(fila: DoctorFila): CuentaDoctor {
+  return {
+    id: fila.id,
+    nombre: fila.nombre_completo,
+    email: fila.email,
+    especialidad: fila.especialidad,
+    cedula: fila.cedula,
+    suscripcion: fila.suscripcion,
+    ...(fila.limite_pacientes ? { limitePacientes: fila.limite_pacientes } : {}),
+    fechaVencimiento: fila.fecha_vencimiento,
+    fechaAlta: fila.fecha_alta,
+  };
 }
 
 export async function listarDoctores(): Promise<CuentaDoctor[]> {
-  const guardado = await AsyncStorage.getItem(CLAVES_DATOS.doctores);
-  if (!guardado) {
-    const iniciales = crearDatosPrueba().doctores;
-    await AsyncStorage.setItem(CLAVES_DATOS.doctores, JSON.stringify(iniciales));
-    return iniciales;
-  }
-  return validarCuentas(JSON.parse(guardado) as unknown);
+  const { data, error } = await getSupabaseClient()
+    .from('doctores')
+    .select('id, especialidad, cedula, suscripcion, limite_pacientes, fecha_vencimiento, fecha_alta, perfil:perfiles(nombre_completo, email)')
+    .order('fecha_alta', { ascending: false });
+  if (error) throw new Error(`No se pudieron cargar los doctores: ${error.message}`);
+  return (data as unknown as (Omit<DoctorFila, 'nombre_completo' | 'email'> & {
+    perfil: { nombre_completo: string; email: string };
+  })[]).map((fila) => desdeFila({
+    ...fila,
+    nombre_completo: fila.perfil.nombre_completo,
+    email: fila.perfil.email,
+  }));
 }
 
 export function obtenerEstadoDoctor(doctor: CuentaDoctor, hoy = new Date()): EstadoDoctor {
@@ -68,57 +55,33 @@ export function obtenerEstadoDoctor(doctor: CuentaDoctor, hoy = new Date()): Est
     : 'activo';
 }
 
-export async function registrarDoctor(
-  nuevaCuenta: NuevaCuentaDoctor,
-): Promise<CuentaDoctor> {
-  const doctores = await listarDoctores();
-  const emailNormalizado = nuevaCuenta.email.trim().toLowerCase();
-  if (doctores.some((doctor) => doctor.email.toLowerCase() === emailNormalizado)) {
-    throw new Error('Ya existe una cuenta con ese correo electrónico.');
-  }
-  const ahora = new Date();
-  const doctor: CuentaDoctor = {
-    ...nuevaCuenta,
-    id: `doctor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    email: emailNormalizado,
-    fechaAlta: fechaLocal(ahora),
-  };
-  await AsyncStorage.setItem(
-    CLAVES_DATOS.doctores,
-    JSON.stringify([doctor, ...doctores]),
-  );
-  return doctor;
+export async function registrarDoctor(nuevaCuenta: NuevaCuentaDoctor): Promise<CuentaDoctor> {
+  const { data, error } = await getSupabaseClient().functions.invoke('admin-create-doctor', {
+    body: {
+      nombre: nuevaCuenta.nombre.trim(),
+      especialidad: nuevaCuenta.especialidad.trim(),
+      cedula: nuevaCuenta.cedula.trim(),
+      email: nuevaCuenta.email.trim().toLowerCase(),
+      passwordTemporal: nuevaCuenta.passwordTemporal,
+      suscripcion: nuevaCuenta.suscripcion,
+      limitePacientes: nuevaCuenta.limitePacientes ?? null,
+      fechaVencimiento: nuevaCuenta.fechaVencimiento,
+    },
+  });
+  if (error) throw new Error(`No se pudo crear la cuenta del doctor: ${error.message}`);
+  return data as CuentaDoctor;
 }
 
 export async function actualizarDoctor(
   doctorId: string,
   cambios: Partial<Pick<CuentaDoctor, 'suscripcion' | 'fechaVencimiento'>>,
 ): Promise<void> {
-  const doctores = await listarDoctores();
-  if (!doctores.some((doctor) => doctor.id === doctorId)) {
-    throw new Error('No se encontró la cuenta del doctor.');
-  }
-  await AsyncStorage.setItem(
-    CLAVES_DATOS.doctores,
-    JSON.stringify(doctores.map((doctor) =>
-      doctor.id === doctorId ? { ...doctor, ...cambios } : doctor,
-    )),
-  );
-}
-
-export async function autenticarDoctor(
-  email: string,
-  password: string,
-): Promise<CuentaDoctor | null> {
-  const doctores = await listarDoctores();
-  const doctor = doctores.find(
-    (cuenta) =>
-      cuenta.email.toLowerCase() === email.trim().toLowerCase() &&
-      cuenta.passwordTemporal === password,
-  );
-  return doctor && obtenerEstadoDoctor(doctor) === 'activo' ? doctor : null;
-}
-
-export function validarEstadoSuscripcion(valor: unknown): valor is EstadoSuscripcion {
-  return valor === 'activa' || valor === 'inactiva';
+  const { error } = await getSupabaseClient()
+    .from('doctores')
+    .update({
+      ...(cambios.suscripcion ? { suscripcion: cambios.suscripcion } : {}),
+      ...(cambios.fechaVencimiento ? { fecha_vencimiento: cambios.fechaVencimiento } : {}),
+    })
+    .eq('id', doctorId);
+  if (error) throw new Error(`No se pudo actualizar la licencia del doctor: ${error.message}`);
 }

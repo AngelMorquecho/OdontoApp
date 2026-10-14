@@ -1,4 +1,4 @@
-import { crearOdontogramaVacio, Odontograma } from '../components/types/odontograma';
+import type { Odontograma } from '../components/types/odontograma';
 
 /** Respuesta binaria usada en varios campos clínicos. */
 export type SiNo = 'si' | 'no';
@@ -184,6 +184,7 @@ export type TipoRadiografia = 'rx' | 'foto';
 export interface Radiografia {
   id: string;
   uri: string;
+  storagePath?: string;
   tipo: TipoRadiografia;
   fecha: string; // ISO 8601 (yyyy-mm-dd)
   descripcion: string;
@@ -288,34 +289,3 @@ export function crearHistoriaClinicaVacia(): HistoriaClinica {
     notasEvolucion: [],
   };
 }
-
-/** Mock inicial de 3 pacientes, cada uno con su propio odontograma vacío. */
-export const PACIENTES_INICIALES: Paciente[] = [
-  {
-    id: 'paciente-001',
-    nombre: 'María López',
-    edad: 34,
-    telefono: '+52 55 1234 5678',
-    odontograma: crearOdontogramaVacio('paciente-001'),
-    historiaClinica: crearHistoriaClinicaVacia(),
-    radiografias: [],
-  },
-  {
-    id: 'paciente-002',
-    nombre: 'Juan Carlos Pérez',
-    edad: 47,
-    telefono: '+52 55 2345 6789',
-    odontograma: crearOdontogramaVacio('paciente-002'),
-    historiaClinica: crearHistoriaClinicaVacia(),
-    radiografias: [],
-  },
-  {
-    id: 'paciente-003',
-    nombre: 'Ana Sofía Ramírez',
-    edad: 22,
-    telefono: '+52 55 3456 7890',
-    odontograma: crearOdontogramaVacio('paciente-003'),
-    historiaClinica: crearHistoriaClinicaVacia(),
-    radiografias: [],
-  },
-];

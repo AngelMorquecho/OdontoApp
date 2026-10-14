@@ -62,6 +62,8 @@ export default function TabRecetasTratamiento({
   };
 
   const cambiarEstado = async (receta: Receta, estado: EstadoTratamiento) => {
+    if (accionEnCurso) return;
+    setAccionEnCurso(`estado-${receta.id}`);
     try {
       await actualizarEstadoTratamiento(receta.id, estado);
     } catch (error) {
@@ -69,6 +71,8 @@ export default function TabRecetasTratamiento({
         'No se pudo actualizar el tratamiento',
         error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
       );
+    } finally {
+      setAccionEnCurso(null);
     }
   };
 
@@ -151,9 +155,11 @@ export default function TabRecetasTratamiento({
           ) : null}
           <Pressable
             accessibilityRole="button"
+            disabled={accionEnCurso !== null}
             onPress={() => void cambiarEstado(recetaActiva, 'completado')}
             style={({ pressed }) => [
               styles.botonEstado,
+              accionEnCurso !== null && styles.deshabilitado,
               pressed && styles.presionado,
             ]}
           >
@@ -220,9 +226,11 @@ export default function TabRecetasTratamiento({
               {receta.estadoTratamiento === 'completado' && (
                 <Pressable
                   accessibilityRole="button"
+                  disabled={accionEnCurso !== null}
                   onPress={() => void cambiarEstado(receta, 'activo')}
                   style={({ pressed }) => [
                     styles.botonReactivar,
+                    accionEnCurso !== null && styles.deshabilitado,
                     pressed && styles.presionado,
                   ]}
                 >
@@ -491,6 +499,9 @@ const styles = StyleSheet.create({
   },
   presionado: {
     opacity: 0.7,
+  },
+  deshabilitado: {
+    opacity: 0.55,
   },
   indicador: {
     marginVertical: 18,
