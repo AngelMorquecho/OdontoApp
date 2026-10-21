@@ -13,12 +13,15 @@ const COLOR_PRONOSTICO: Record<NotaEvolucion['pronostico'], string> = {
   Desfavorable: colors.danger,
 };
 
-function etiquetasEstudios(estudios: NotaEvolucion['estudios']): string {
+function etiquetasEstudios(estudios?: NotaEvolucion['estudios'] | null): string {
+  if (!estudios) return 'Ninguno';
+
   const activos: string[] = [];
-  if (estudios.rx) activos.push('Rx');
-  if (estudios.fotos) activos.push('Fotos');
-  if (estudios.escaneo) activos.push('Escaneo');
-  if (estudios.cbct) activos.push('CBCT');
+  if (estudios?.rx) activos.push('Rx');
+  if (estudios?.fotos) activos.push('Fotos');
+  if (estudios?.escaneo) activos.push('Escaneo');
+  if (estudios?.cbct) activos.push('CBCT');
+
   return activos.length > 0 ? activos.join(' · ') : 'Ninguno';
 }
 

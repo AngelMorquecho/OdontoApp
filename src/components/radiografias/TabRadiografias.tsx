@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -13,6 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Radiografia, TipoRadiografia } from '../../types/paciente';
 import { borderRadius, colors } from '../../constants/theme';
+import { obtenerUrlRadiografia } from '../../services/storageService';
 
 interface Props {
   radiografias: Radiografia[];
@@ -23,7 +24,61 @@ function fechaHoy(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Pestaña de Radiografías / Galería: visualiza y permite adjuntar fotos y placas. */
+/** Componente interno para resolver y renderizar la miniatura con fallback firmado */
+function MiniaturaImagen({ item }: { item: Radiografia }) {
+  const [uriVisual, setUriVisual] = useState<string>(item.uri);
+  const [fallo, setFallo] = useState(false);
+
+  useEffect(() => {
+    let activo = true;
+    const ruta = item.storagePath || item.uri;
+
+    if (/^https?:\/\//i.test(item.uri)) {
+      setUriVisual(item.uri);
+      return;
+    }
+
+    if (ruta) {
+      obtenerUrlRadiografia(ruta)
+        .then((signedUrl) => {
+          if (activo) setUriVisual(signedUrl);
+        })
+        .catch(() => {
+          if (activo) setFallo(true);
+        });
+    }
+
+    return () => {
+      activo = false;
+    };
+  }, [item.uri, item.storagePath]);
+
+  if (fallo || !uriVisual) {
+    return (
+      <View style={[styles.miniatura, styles.miniaturaVacia]}>
+        <Text style={styles.textoErrorMiniatura}>📷 Sin vista previa</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: uriVisual }}
+      style={styles.miniatura}
+      resizeMode="cover"
+      onError={() => {
+        // Si la Signed URL caducó, regenera una nueva
+        const ruta = item.storagePath || item.uri;
+        if (ruta && !fallo) {
+          obtenerUrlRadiografia(ruta)
+            .then(setUriVisual)
+            .catch(() => setFallo(true));
+        }
+      }}
+    />
+  );
+}
+
 export default function TabRadiografias({ radiografias, onAgregar }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [uriPendiente, setUriPendiente] = useState<string | null>(null);
@@ -132,26 +187,32 @@ export default function TabRadiografias({ radiografias, onAgregar }: Props) {
         </View>
       ) : (
         <FlatList
-          data={[...radiografias].reverse()}
+          data={[...radiografias]}
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.lista}
-          renderItem={({ item }) => (
-            <View style={styles.tarjeta}>
-              <Image source={{ uri: item.uri }} style={styles.miniatura} />
-              <View style={styles.etiquetaTipo}>
-                <Text style={styles.etiquetaTipoTexto}>
-                  {item.tipo === 'rx' ? 'Rx' : 'Foto'}
-                </Text>
+          renderItem={({ item }) => {
+            const esRx =
+              item.tipo === 'rx' ||
+              item.tipo?.toString().toLowerCase().includes('radiog');
+
+            return (
+              <View style={styles.tarjeta}>
+                <MiniaturaImagen item={item} />
+                <View style={styles.etiquetaTipo}>
+                  <Text style={styles.etiquetaTipoTexto}>
+                    {esRx ? 'Rx' : 'Foto'}
+                  </Text>
+                </View>
+                <Text style={styles.fechaItem}>{item.fecha}</Text>
+                {!!(item.descripcion || item.notas) && (
+                  <Text style={styles.descripcionItem} numberOfLines={2}>
+                    {item.descripcion || item.notas}
+                  </Text>
+                )}
               </View>
-              <Text style={styles.fechaItem}>{item.fecha}</Text>
-              {!!item.descripcion && (
-                <Text style={styles.descripcionItem} numberOfLines={2}>
-                  {item.descripcion}
-                </Text>
-              )}
-            </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -159,7 +220,11 @@ export default function TabRadiografias({ radiografias, onAgregar }: Props) {
         <View style={styles.modalFondo}>
           <View style={styles.modalContenido}>
             {uriPendiente && (
-              <Image source={{ uri: uriPendiente }} style={styles.previsualizacion} />
+              <Image
+                source={{ uri: uriPendiente }}
+                style={styles.previsualizacion}
+                resizeMode="cover"
+              />
             )}
             <Text style={styles.etiqueta}>Tipo de archivo</Text>
             <View style={styles.filaTipos}>
@@ -280,6 +345,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     backgroundColor: colors.border,
+  },
+  miniaturaVacia: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textoErrorMiniatura: {
+    fontSize: 11,
+    color: colors.textSecondary,
   },
   etiquetaTipo: {
     position: 'absolute',

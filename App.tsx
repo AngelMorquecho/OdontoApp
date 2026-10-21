@@ -1,29 +1,27 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  StatusBar,
-  View,
-} from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ListaPacientes from './src/screens/ListaPacientes';
-import EducacionPacienteScreen from './src/screens/EducacionPacienteScreen';
-import AjustesScreen from './src/screens/AjustesScreen';
-import DetallePaciente from './src/screens/DetallePaciente';
-import AgregarPaciente from './src/screens/AgregarPaciente';
-import AgendaCitasScreen from './src/screens/AgendaCitasScreen';
-import AgendarCitaScreen from './src/screens/AgendarCitaScreen';
-import ModalCrearReceta from './src/screens/ModalCrearReceta';
-import PortalPacienteScreen from './src/screens/paciente/PortalPacienteScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import AdminDoctoresScreen from './src/screens/AdminDoctoresScreen';
-import NuevoTratamientoModal from './src/screens/NuevoTratamientoModal';
-import RegistrarAbonoModal from './src/screens/RegistrarAbonoModal';
-import type { RootStackParamList } from './src/navigation/types';
-import { PacientesProvider } from './src/context/PacientesContext';
-import { ConsultorioProvider } from './src/context/ConsultorioContext';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { colors } from './src/constants/theme';
+import React from "react";
+import { ActivityIndicator, StatusBar, View } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import ListaPacientes from "./src/screens/ListaPacientes";
+import EducacionPacienteScreen from "./src/screens/EducacionPacienteScreen";
+import AjustesScreen from "./src/screens/AjustesScreen";
+import DetallePaciente from "./src/screens/DetallePaciente";
+import AgregarPaciente from "./src/screens/AgregarPaciente";
+import AgendaCitasScreen from "./src/screens/AgendaCitasScreen";
+import AgendarCitaScreen from "./src/screens/AgendarCitaScreen";
+import ModalCrearReceta from "./src/screens/ModalCrearReceta";
+import PortalPacienteScreen from "./src/screens/paciente/PortalPacienteScreen";
+import LoginScreen from "./src/screens/LoginScreen";
+import AdminDoctoresScreen from "./src/screens/AdminDoctoresScreen";
+import NuevoTratamientoModal from "./src/screens/NuevoTratamientoModal";
+import RegistrarAbonoModal from "./src/screens/RegistrarAbonoModal";
+import type { RootStackParamList } from "./src/navigation/types";
+import { PacientesProvider } from "./src/context/PacientesContext";
+import { ConsultorioProvider } from "./src/context/ConsultorioContext";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import { colors } from "./src/constants/theme";
+import CrearAsistenteScreen from "./src/screens/CrearAsistenteScreen";
+import ListaAsistentesScreen from "./src/screens/ListaAsistentesScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -41,12 +39,12 @@ export default function App() {
 
 function AppNavegacion() {
   const { user, isAuthenticated, cargandoAuth } = useAuth();
-  const esPaciente = user?.rol === 'PACIENTE';
-  const esSuperAdmin = user?.rol === 'SUPER_ADMIN';
+  const esPaciente = user?.rol === "PACIENTE";
+  const esSuperAdmin = user?.rol === "SUPER_ADMIN";
 
   if (cargandoAuth) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator color={colors.primary} />
       </View>
     );
@@ -54,23 +52,23 @@ function AppNavegacion() {
 
   return (
     <NavigationContainer
-      key={`${isAuthenticated ? 'authenticated' : 'guest'}:${user?.rol ?? 'none'}:${user?.doctorId ?? ''}:${user?.pacienteId ?? ''}`}
+      key={`${isAuthenticated ? "authenticated" : "guest"}:${user?.rol ?? "none"}:${user?.doctorId ?? ""}:${user?.pacienteId ?? ""}`}
     >
       <StatusBar barStyle="dark-content" />
       <Stack.Navigator
         initialRouteName={
           !isAuthenticated
-            ? 'Login'
+            ? "Login"
             : esSuperAdmin
-              ? 'AdminDoctores'
+              ? "AdminDoctores"
               : esPaciente
-              ? 'PortalPaciente'
-              : 'ListaPacientes'
+                ? "PortalPaciente"
+                : "ListaPacientes"
         }
         screenOptions={{
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
-          headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
+          headerTitleStyle: { color: colors.textPrimary, fontWeight: "700" },
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },
         }}
@@ -79,30 +77,30 @@ function AppNavegacion() {
           <Stack.Screen
             name="Login"
             component={LoginScreen}
-            options={{ title: '', headerShown: false }}
+            options={{ title: "", headerShown: false }}
           />
         ) : esSuperAdmin ? (
           <Stack.Screen
             name="AdminDoctores"
             component={AdminDoctoresScreen}
-            options={{ title: 'Gestión de doctores', headerLeft: () => null }}
+            options={{ title: "Gestión de doctores", headerLeft: () => null }}
           />
         ) : esPaciente ? (
           <>
             <Stack.Screen
               name="PortalPaciente"
               component={PortalPacienteScreen}
-              options={{ title: 'Portal Paciente', headerLeft: () => null }}
+              options={{ title: "Portal Paciente", headerLeft: () => null }}
             />
             <Stack.Screen
               name="EducacionPaciente"
               component={EducacionPacienteScreen}
-              options={{ title: 'Educación e Higiene', headerLeft: () => null }}
+              options={{ title: "Educación e Higiene", headerLeft: () => null }}
             />
             <Stack.Screen
               name="Ajustes"
               component={AjustesScreen}
-              options={{ title: 'Perfil y acceso' }}
+              options={{ title: "Perfil y acceso" }}
             />
           </>
         ) : (
@@ -110,55 +108,74 @@ function AppNavegacion() {
             <Stack.Screen
               name="ListaPacientes"
               component={ListaPacientes}
-              options={{ title: 'Pacientes', headerLeft: () => null }}
+              options={{ title: "Pacientes", headerLeft: () => null }}
             />
             <Stack.Screen
               name="AgendaCitas"
               component={AgendaCitasScreen}
-              options={{ title: 'Agenda de Citas', headerLeft: () => null }}
+              options={{ title: "Agenda de Citas", headerLeft: () => null }}
             />
             <Stack.Screen
               name="AgendarCita"
               component={AgendarCitaScreen}
-              options={{ title: 'Agendar Cita', presentation: 'modal' }}
+              options={{ title: "Agendar Cita", presentation: "modal" }}
             />
             <Stack.Screen
               name="CrearReceta"
               component={ModalCrearReceta}
-              options={{ title: 'Crear nueva receta', presentation: 'modal' }}
+              options={{ title: "Crear nueva receta", presentation: "modal" }}
             />
             <Stack.Screen
               name="NuevoTratamiento"
               component={NuevoTratamientoModal}
-              options={{ title: 'Nuevo tratamiento', presentation: 'modal' }}
+              options={{ title: "Nuevo tratamiento", presentation: "modal" }}
             />
             <Stack.Screen
               name="RegistrarAbono"
               component={RegistrarAbonoModal}
-              options={{ title: 'Registrar abono', presentation: 'modal' }}
+              options={{ title: "Registrar abono", presentation: "modal" }}
             />
             <Stack.Screen
               name="EducacionPaciente"
               component={EducacionPacienteScreen}
-              options={{ title: 'Educación al Paciente', headerLeft: () => null }}
+              options={{
+                title: "Educación al Paciente",
+                headerLeft: () => null,
+              }}
             />
             <Stack.Screen
               name="DetallePaciente"
               component={DetallePaciente}
-              options={{ title: 'Detalle del paciente' }}
+              options={{ title: "Detalle del paciente" }}
             />
             <Stack.Screen
               name="AgregarPaciente"
               component={AgregarPaciente}
               options={{
-                title: 'Agregar nuevo paciente',
-                presentation: 'modal',
+                title: "Agregar nuevo paciente",
+                presentation: "modal",
+              }}
+            />
+            <Stack.Screen
+              name="ListaAsistentes"
+              component={ListaAsistentesScreen}
+              options={{ title: "Asistentes" }}
+            />
+            <Stack.Screen
+              name="CrearAsistente"
+              component={CrearAsistenteScreen}
+              options={{
+                title: "Registrar asistente",
+                presentation: "modal",
               }}
             />
             <Stack.Screen
               name="Ajustes"
               component={AjustesScreen}
-              options={{ title: 'Ajustes del consultorio', headerLeft: () => null }}
+              options={{
+                title: "Ajustes del consultorio",
+                headerLeft: () => null,
+              }}
             />
           </>
         )}

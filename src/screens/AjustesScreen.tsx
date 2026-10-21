@@ -28,7 +28,9 @@ export default function AjustesScreen({ navigation }: Props) {
     cargandoConsultorio,
     actualizarConsultorio,
   } = useConsultorio();
+
   if (!user) return null;
+
   const navegar = (ruta: FloatingTabRoute) => {
     switch (ruta) {
       case 'ListaPacientes':
@@ -45,6 +47,7 @@ export default function AjustesScreen({ navigation }: Props) {
         break;
     }
   };
+
   return (
     <View style={styles.root}>
       <BlurTargetView ref={blurTarget} style={styles.destinoBlur}>
@@ -63,12 +66,59 @@ export default function AjustesScreen({ navigation }: Props) {
           </View>
 
           {user.rol === 'DOCTOR' && (
-            <FormularioConsultorio
-              key={JSON.stringify(consultorio)}
-              consultorio={consultorio}
-              cargando={cargandoConsultorio}
-              actualizarConsultorio={actualizarConsultorio}
-            />
+            <>
+              <View style={styles.seccion}>
+                <Text style={styles.titulo}>Gestión de personal</Text>
+                <Text style={styles.descripcion}>
+                  Registra y administra las asistentes para permitirles gestionar citas y expedientes de pacientes.
+                </Text>
+
+                {/* Opción 1: Ver Lista de Asistentes */}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => navigation.navigate('ListaAsistentes')}
+                  style={({ pressed }) => [
+                    styles.botonOpcion,
+                    pressed && styles.presionado,
+                  ]}
+                >
+                  <Ionicons name="people-outline" size={20} color={colors.primary} />
+                  <View style={styles.textoContenedorOpcion}>
+                    <Text style={styles.tituloOpcion}>Ver lista de asistentes</Text>
+                    <Text style={styles.subtituloOpcion}>
+                      Consulta y gestiona las cuentas activas
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+
+                {/* Opción 2: Registrar Nueva Asistente */}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => navigation.navigate('CrearAsistente')}
+                  style={({ pressed }) => [
+                    styles.botonOpcion,
+                    pressed && styles.presionado,
+                  ]}
+                >
+                  <Ionicons name="person-add-outline" size={20} color={colors.primary} />
+                  <View style={styles.textoContenedorOpcion}>
+                    <Text style={styles.tituloOpcion}>Registrar Asistente</Text>
+                    <Text style={styles.subtituloOpcion}>
+                      Crear una cuenta vinculada a tu consultorio
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+
+              <FormularioConsultorio
+                key={JSON.stringify(consultorio)}
+                consultorio={consultorio}
+                cargando={cargandoConsultorio}
+                actualizarConsultorio={actualizarConsultorio}
+              />
+            </>
           )}
 
           <Pressable
@@ -109,9 +159,11 @@ function FormularioConsultorio({
 }) {
   const [formulario, setFormulario] = useState(consultorio);
   const [guardando, setGuardando] = useState(false);
+
   const actualizarCampo = (campo: keyof DatosConsultorio, valor: string) => {
     setFormulario((actual) => ({ ...actual, [campo]: valor }));
   };
+
   const guardar = async () => {
     if (guardando || cargando) return;
     setGuardando(true);
@@ -231,6 +283,32 @@ const styles = StyleSheet.create({
   secundario: { marginTop: 4, color: colors.textSecondary, fontSize: 13 },
   etiquetaRol: { marginTop: 12, color: colors.textSecondary, fontSize: 12 },
   descripcion: { marginTop: 6, marginBottom: 8, color: colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  
+  botonOpcion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
+  },
+  textoContenedorOpcion: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  tituloOpcion: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  subtituloOpcion: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+
   campoContenedor: { marginTop: 12 },
   etiqueta: { marginBottom: 6, color: colors.textPrimary, fontSize: 13, fontWeight: '600' },
   input: {

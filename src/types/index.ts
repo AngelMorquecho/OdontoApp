@@ -43,14 +43,15 @@ export interface Receta {
   estadoTratamiento: EstadoTratamiento;
 }
 
-export type RolUsuario = 'SUPER_ADMIN' | 'DOCTOR' | 'PACIENTE';
+// 1. Agregado el rol 'ASISTENTE'
+export type RolUsuario = 'SUPER_ADMIN' | 'DOCTOR' | 'PACIENTE' | 'ASISTENTE';
 
 export interface Usuario {
   id: string;
   nombre: string;
   email: string;
   rol: RolUsuario;
-  doctorId?: string;
+  doctorId?: string; // ID del doctor al que pertenece si es asistente
   pacienteId?: string;
 }
 
@@ -87,4 +88,15 @@ export interface TratamientoPaciente {
   estado: EstadoPlanTratamiento;
   fechaCreacion: string;
   abonos: AbonoTratamiento[];
+}
+
+// 2. Interfaz Perfil (representación de la tabla perfiles)
+export interface Perfil {
+  id: string;
+  email: string;
+  nombre: string;
+  rol: RolUsuario;
+  doctor_id?: string | null;
+  cedula?: string | null;
+  especialidad?: string | null;
 }

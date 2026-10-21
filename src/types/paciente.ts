@@ -188,6 +188,7 @@ export interface Radiografia {
   tipo: TipoRadiografia;
   fecha: string; // ISO 8601 (yyyy-mm-dd)
   descripcion: string;
+  notas?:string
 }
 
 /** Datos clínicos y de contacto de un paciente. */
@@ -199,6 +200,7 @@ export interface Paciente {
   telefono: string;
   fechaNacimiento?: string;
   correo?: string;
+ doctor_id?: string;
   odontograma: Odontograma;
   historiaClinica: HistoriaClinica;
   radiografias: Radiografia[];

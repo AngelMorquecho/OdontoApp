@@ -1,4 +1,4 @@
-export type RolPerfil = 'SUPER_ADMIN' | 'DOCTOR' | 'PACIENTE';
+export type RolPerfil = 'SUPER_ADMIN' | 'DOCTOR' | 'PACIENTE'| 'ASISTENTE';
 
 export interface PerfilDatabase {
   id: string;

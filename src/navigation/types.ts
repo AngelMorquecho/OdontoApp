@@ -13,6 +13,8 @@ export type RootStackParamList = {
   Ajustes: { seccion?: 'respaldo' } | undefined;
   DetallePaciente: { pacienteId: string; pestana?: 'odontograma' | 'notas' };
   AgregarPaciente: undefined;
+  ListaAsistentes: undefined;
+  CrearAsistente: undefined;
 };
 
 declare global {

@@ -4,34 +4,51 @@ import type { PerfilDatabase } from '../types/database';
 import { getSupabaseClient } from '../lib/supabase';
 import { showAlert } from '../utils/alert';
 
+// 1. Incluir 'ASISTENTE' en la validación de rol
 function esRol(valor: unknown): valor is PerfilDatabase['rol'] {
-  return valor === 'SUPER_ADMIN' || valor === 'DOCTOR' || valor === 'PACIENTE';
+  return (
+    valor === 'SUPER_ADMIN' ||
+    valor === 'DOCTOR' ||
+    valor === 'PACIENTE' ||
+    valor === 'ASISTENTE'
+  );
 }
 
 export async function obtenerUsuarioDeSesion(authUser: SupabaseUser): Promise<Usuario> {
   try {
     const { data, error } = await getSupabaseClient()
       .from('perfiles')
-      .select('id, email, nombre, rol, cedula, especialidad, logo_url, suscripcion_estado')
+      .select('id, email, nombre, rol, doctor_id, cedula, especialidad, logo_url, suscripcion_estado')
       .eq('id', authUser.id)
       .single();
+
     if (error) throw error;
-    const perfil = data as PerfilDatabase;
+    const perfil = data as PerfilDatabase & { doctor_id?: string | null };
+
     if (!esRol(perfil.rol)) throw new Error('El perfil no tiene un rol válido.');
-    if (perfil.rol === 'DOCTOR' && perfil.suscripcion_estado &&
-      !['activa', 'activo'].includes(perfil.suscripcion_estado.toLowerCase())) {
-        throw new Error('La licencia del doctor está inactiva o vencida. Contacta al administrador.');
+
+    if (
+      perfil.rol === 'DOCTOR' &&
+      perfil.suscripcion_estado &&
+      !['activa', 'activo'].includes(perfil.suscripcion_estado.toLowerCase())
+    ) {
+      throw new Error('La licencia del doctor está inactiva o vencida. Contacta al administrador.');
     }
+
     return {
       id: perfil.id,
       nombre: perfil.nombre,
       email: perfil.email || authUser.email || '',
       rol: perfil.rol,
+      // Asigna doctorId según el rol
       ...(perfil.rol === 'DOCTOR' ? { doctorId: perfil.id } : {}),
+      ...(perfil.rol === 'ASISTENTE' ? { doctorId: perfil.doctor_id || undefined } : {}),
       ...(perfil.rol === 'PACIENTE' ? { pacienteId: perfil.id } : {}),
     };
   } catch (error) {
-    const mensaje = `No se pudo consultar el perfil de acceso: ${error instanceof Error ? error.message : 'error desconocido.'}`;
+    const mensaje = `No se pudo consultar el perfil de acceso: ${
+      error instanceof Error ? error.message : 'error desconocido.'
+    }`;
     showAlert('Error', mensaje);
     throw new Error(mensaje);
   }
@@ -55,7 +72,9 @@ export async function iniciarSesionConContrasena(
     usuarioAuth = respuesta.data.user;
     sesion = respuesta.data.session;
   } catch (error) {
-    const mensaje = `No se pudo iniciar sesión: ${error instanceof Error ? error.message : 'error desconocido.'}`;
+    const mensaje = `No se pudo iniciar sesión: ${
+      error instanceof Error ? error.message : 'error desconocido.'
+    }`;
     showAlert('Error', mensaje);
     throw new Error(mensaje);
   }
@@ -66,8 +85,9 @@ export async function iniciarSesionConContrasena(
     const { error: signOutError } = await getSupabaseClient().auth.signOut();
     if (signOutError) {
       throw new Error(
-        `${profileError instanceof Error ? profileError.message : 'El perfil no es válido.'} ` +
-          `No se pudo limpiar la sesión: ${signOutError.message}`,
+        `${
+          profileError instanceof Error ? profileError.message : 'El perfil no es válido.'
+        } No se pudo limpiar la sesión: ${signOutError.message}`,
       );
     }
     throw profileError;
