@@ -12,6 +12,7 @@ import { borderRadius, colors } from '../../constants/theme';
 interface Props {
   historiaClinica: HistoriaClinica;
   onGuardar: (nueva: HistoriaClinica) => Promise<void>;
+  fechaNacimientoPaciente?: string; // 👈 Recibimos la fecha de la tabla pacientes
 }
 
 /**
@@ -19,7 +20,11 @@ interface Props {
  * desplegables. Mantiene un borrador local y solo persiste en el servidor
  * cuando el usuario presiona "Guardar".
  */
-export default function HistoriaClinicaForm({ historiaClinica, onGuardar }: Props) {
+export default function HistoriaClinicaForm({
+  historiaClinica,
+  onGuardar,
+  fechaNacimientoPaciente,
+}: Props) {
   const [borrador, setBorrador] = useState<HistoriaClinica>(historiaClinica);
   const [hayCambiosSinGuardar, setHayCambiosSinGuardar] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -50,7 +55,11 @@ export default function HistoriaClinicaForm({ historiaClinica, onGuardar }: Prop
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.contenedor}>
         <SeccionColapsable titulo="Datos de identificación" iniciaAbierta>
-          <SeccionDatosGenerales historiaClinica={borrador} onChange={actualizarBorrador} />
+          <SeccionDatosGenerales
+            historiaClinica={borrador}
+            onChange={actualizarBorrador}
+            fechaNacimientoPaciente={fechaNacimientoPaciente} // 👈 Pasa la fecha a la sección
+          />
         </SeccionColapsable>
 
         <SeccionColapsable titulo="Factores de riesgo y heredofamiliares">

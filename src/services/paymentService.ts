@@ -7,7 +7,7 @@ interface AbonoFila {
   monto: number;
   fecha: string;
   metodo_pago: AbonoTratamiento['metodoPago'];
-  concepto: string;
+  nota_concepto: string; // 👈 Nombre real en Supabase
 }
 
 interface TratamientoFila {
@@ -19,7 +19,7 @@ interface TratamientoFila {
   costo_total: number;
   estado: TratamientoPaciente['estado'];
   fecha_creacion: string;
-  pagos_abonos: AbonoFila[];
+  abonos: AbonoFila[]; // 👈 Cambiado de 'pagos_abonos' a 'abonos'
 }
 
 function desdeFila(fila: TratamientoFila): TratamientoPaciente {
@@ -32,12 +32,12 @@ function desdeFila(fila: TratamientoFila): TratamientoPaciente {
     costoTotal: Number(fila.costo_total),
     estado: fila.estado,
     fechaCreacion: fila.fecha_creacion,
-    abonos: (fila.pagos_abonos ?? []).map((abono) => ({
+    abonos: (fila.abonos ?? []).map((abono) => ({ // 👈 Cambiado a fila.abonos
       id: abono.id,
       monto: Number(abono.monto),
       fecha: abono.fecha,
       metodoPago: abono.metodo_pago,
-      concepto: abono.concepto,
+      concepto: abono.nota_concepto, // 👈 Lee nota_concepto de Supabase
     })),
   };
 }
@@ -46,7 +46,7 @@ export async function listarTratamientos(pacienteId?: string): Promise<Tratamien
   const doctorId = await obtenerDoctorIdAutenticado();
   let consulta = getSupabaseClient()
     .from('tratamientos')
-    .select('*, pagos_abonos(*)')
+    .select('*, abonos(*)')
     .order('fecha_creacion', { ascending: false });
   if (pacienteId) consulta = consulta.eq('paciente_id', pacienteId);
   if (doctorId) consulta = consulta.eq('doctor_id', doctorId);
@@ -70,7 +70,7 @@ export async function crearTratamiento(
       costo_total: tratamiento.costoTotal,
       estado: tratamiento.estado,
     })
-    .select('*, pagos_abonos(*)')
+    .select('*, abonos(*)')
     .single();
   if (error) throw new Error(`No se pudo crear el tratamiento: ${error.message}`);
   return desdeFila(data as unknown as TratamientoFila);
@@ -130,12 +130,12 @@ export async function actualizarAbono(
   const doctorId = await obtenerDoctorIdAutenticado();
   if (!doctorId) throw new Error('Solo un doctor puede actualizar pagos o abonos.');
   const { error } = await getSupabaseClient()
-    .from('pagos_abonos')
+    .from('abonos')
     .update({
       ...(cambios.monto !== undefined ? { monto: cambios.monto } : {}),
       ...(cambios.fecha !== undefined ? { fecha: cambios.fecha } : {}),
       ...(cambios.metodoPago !== undefined ? { metodo_pago: cambios.metodoPago } : {}),
-      ...(cambios.concepto !== undefined ? { concepto: cambios.concepto } : {}),
+      ...(cambios.concepto !== undefined ? { nota_concepto: cambios.concepto } : {}), // 👈 Actualizado a nota_concepto
     })
     .eq('id', abonoId)
     .eq('doctor_id', doctorId);
@@ -146,7 +146,7 @@ export async function eliminarAbono(abonoId: string): Promise<void> {
   const doctorId = await obtenerDoctorIdAutenticado();
   if (!doctorId) throw new Error('Solo un doctor puede eliminar pagos o abonos.');
   const { error } = await getSupabaseClient()
-    .from('pagos_abonos')
+    .from('abonos')
     .delete()
     .eq('id', abonoId)
     .eq('doctor_id', doctorId);

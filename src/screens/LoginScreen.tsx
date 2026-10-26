@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { borderRadius, shadows } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 import type { RootStackParamList } from '../navigation/types';
+import {
+  autenticarConBiometriaDirecta,
+  checkBiometricAvailability,
+  guardarCredencialesSeguras,
+  obtenerCredencialesSeguras,
+} from '../services/biometrics';
 
 // Paleta de colores basada en tu logo
 const GOLD_COLORS = {
@@ -32,7 +38,6 @@ const GOLD_COLORS = {
   textMuted: '#777777',
 };
 
-// Patrón SVG repetitivo con siluetas vectoriales de dientes
 const xmlPatronDientes = `
 <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -54,7 +59,33 @@ export default function LoginScreen(_props: Props) {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  const autenticar = async () => {
+  useEffect(() => {
+    void intentarBiometriaAutomatica();
+  }, []);
+
+  const intentarBiometriaAutomatica = async () => {
+    const tieneHardware = await checkBiometricAvailability();
+    const credenciales = await obtenerCredencialesSeguras();
+
+    // Solo se dispara si el celular tiene biometría y ya hay credenciales guardadas de un inicio anterior
+    if (tieneHardware && credenciales) {
+      setEmail(credenciales.email); // Auto-rellenar correo visualmente
+
+      const exito = await autenticarConBiometriaDirecta();
+      if (exito) {
+        setEnviando(true);
+        try {
+          await iniciarSesion(credenciales.email, credenciales.password);
+        } catch (error) {
+          console.error('Error al iniciar sesión con biometría:', error);
+        } finally {
+          setEnviando(false);
+        }
+      }
+    }
+  };
+
+  const autenticarManual = async () => {
     if (enviando) return;
     if (!email.trim() || !password) {
       Alert.alert('Datos requeridos', 'Ingresa tu correo electrónico y contraseña.');
@@ -63,6 +94,8 @@ export default function LoginScreen(_props: Props) {
     setEnviando(true);
     try {
       await iniciarSesion(email, password);
+      // Guardar credenciales de forma encriptada para las próximas aperturas de la app
+      await guardarCredencialesSeguras(email, password);
     } finally {
       setEnviando(false);
     }
@@ -75,7 +108,6 @@ export default function LoginScreen(_props: Props) {
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Fondo SVG continuo utilizando StyleSheet.absoluteFill */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <SvgXml xml={xmlPatronDientes} width="100%" height="100%" style={styles.patronSvg} />
       </View>
@@ -84,7 +116,6 @@ export default function LoginScreen(_props: Props) {
         contentContainerStyle={styles.contenido}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Encabezado */}
         <View style={styles.encabezado}>
           <Image
             source={require('../../assets/LogoDental.png')}
@@ -95,12 +126,10 @@ export default function LoginScreen(_props: Props) {
           <Text style={styles.subtitulo}>MORQUECHO RODRIGUEZ.</Text>
         </View>
 
-        {/* Tarjeta de Formulario */}
         <View style={styles.tarjeta}>
           <Text style={styles.tituloTarjeta}>Bienvenido</Text>
           <Text style={styles.descripcion}>Inicia sesión para continuar con tu atención.</Text>
 
-          {/* Campo Email */}
           <Text style={styles.etiqueta}>Correo electrónico</Text>
           <View style={styles.campo}>
             <Ionicons name="mail-outline" size={19} color={GOLD_COLORS.textPrimary} />
@@ -119,7 +148,6 @@ export default function LoginScreen(_props: Props) {
             />
           </View>
 
-          {/* Campo Contraseña */}
           <Text style={styles.etiqueta}>Contraseña</Text>
           <View style={styles.campo}>
             <Ionicons name="lock-closed-outline" size={19} color={GOLD_COLORS.textPrimary} />
@@ -134,12 +162,11 @@ export default function LoginScreen(_props: Props) {
               autoCapitalize="none"
               editable={!bloqueado}
               returnKeyType="done"
-              onSubmitEditing={() => void autenticar()}
+              onSubmitEditing={() => void autenticarManual()}
             />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              accessibilityState={{ selected: mostrarPassword }}
               hitSlop={8}
               onPress={() => setMostrarPassword((visible) => !visible)}
             >
@@ -151,12 +178,11 @@ export default function LoginScreen(_props: Props) {
             </Pressable>
           </View>
 
-          {/* Botón Iniciar Sesión */}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ disabled: bloqueado, busy: enviando }}
             disabled={bloqueado}
-            onPress={() => void autenticar()}
+            onPress={() => void autenticarManual()}
             style={({ pressed }) => [
               styles.botonPrimario,
               pressed && !bloqueado && styles.presionado,
@@ -172,7 +198,6 @@ export default function LoginScreen(_props: Props) {
           </Pressable>
         </View>
 
-        {/* Pie de página */}
         <View style={styles.piePagina}>
           <View style={styles.puntoDorado} />
           <Text style={styles.textoPie}>Atención Odontológica Especializada</Text>
@@ -184,90 +209,23 @@ export default function LoginScreen(_props: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: GOLD_COLORS.background },
-  patronSvg: {
-    opacity: 0.08,
-  },
-  contenido: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-    paddingTop: 28,
-    paddingBottom: 32,
-  },
+  patronSvg: { opacity: 0.08 },
+  contenido: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 32 },
   encabezado: { alignItems: 'center', marginBottom: 26 },
   logoImagen: { width: 95, height: 95, marginBottom: 12 },
   titulo: { color: GOLD_COLORS.textPrimary, fontSize: 29, fontWeight: '800', letterSpacing: -0.5 },
-  subtitulo: {
-    maxWidth: 290,
-    marginTop: 5,
-    color: GOLD_COLORS.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  tarjeta: {
-    padding: 22,
-    borderRadius: 22,
-    backgroundColor: GOLD_COLORS.surface,
-    borderWidth: 1,
-    borderColor: GOLD_COLORS.border,
-    ...shadows.sm,
-  },
+  subtitulo: { maxWidth: 290, marginTop: 5, color: GOLD_COLORS.textSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center', fontWeight: '600' },
+  tarjeta: { padding: 22, borderRadius: 22, backgroundColor: GOLD_COLORS.surface, borderWidth: 1, borderColor: GOLD_COLORS.border, ...shadows.sm },
   tituloTarjeta: { color: GOLD_COLORS.textPrimary, fontSize: 20, fontWeight: '700' },
   descripcion: { marginTop: 4, marginBottom: 14, color: GOLD_COLORS.textSecondary, fontSize: 13 },
   etiqueta: { marginTop: 12, marginBottom: 7, color: GOLD_COLORS.textPrimary, fontSize: 13, fontWeight: '700' },
-  campo: {
-    minHeight: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 13,
-    borderWidth: 1.2,
-    borderColor: GOLD_COLORS.border,
-    borderRadius: borderRadius.md,
-    backgroundColor: GOLD_COLORS.inputBg,
-  },
-  input: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 48,
-    paddingVertical: 10,
-    color: GOLD_COLORS.textPrimary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  botonPrimario: {
-    minHeight: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 24,
-    paddingHorizontal: 16,
-    borderRadius: borderRadius.md,
-    backgroundColor: GOLD_COLORS.primary,
-    ...shadows.sm,
-  },
+  campo: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 13, borderWidth: 1.2, borderColor: GOLD_COLORS.border, borderRadius: borderRadius.md, backgroundColor: GOLD_COLORS.inputBg },
+  input: { flex: 1, minWidth: 0, minHeight: 48, paddingVertical: 10, color: GOLD_COLORS.textPrimary, fontSize: 14, fontWeight: '500' },
+  botonPrimario: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, paddingHorizontal: 16, borderRadius: borderRadius.md, backgroundColor: GOLD_COLORS.primary, ...shadows.sm },
   textoBotonPrimario: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   presionado: { opacity: 0.82, backgroundColor: GOLD_COLORS.primaryDark },
   deshabilitado: { opacity: 0.55 },
-  piePagina: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 28,
-  },
-  puntoDorado: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: GOLD_COLORS.primary,
-  },
-  textoPie: {
-    color: GOLD_COLORS.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  piePagina: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 28 },
+  puntoDorado: { width: 6, height: 6, borderRadius: 3, backgroundColor: GOLD_COLORS.primary },
+  textoPie: { color: GOLD_COLORS.textPrimary, fontSize: 13, fontWeight: '600' },
 });

@@ -8,18 +8,27 @@ import { colors } from '../../constants/theme';
 interface Props {
   historiaClinica: HistoriaClinica;
   onChange: (nueva: HistoriaClinica) => void;
+  fechaNacimientoPaciente?: string; // 👈 Agregamos la fecha que viene de la tabla pacientes
 }
 
 /** Sección de Identificación del paciente. */
-export default function SeccionDatosGenerales({ historiaClinica, onChange }: Props) {
+export default function SeccionDatosGenerales({
+  historiaClinica,
+  onChange,
+  fechaNacimientoPaciente,
+}: Props) {
   const { identificacion } = historiaClinica;
+
+  // Usa la fecha grabada en historias_clinicas; si está vacía, toma la fecha_nacimiento de la tabla pacientes
+  const fechaNacimientoEfectiva =
+    identificacion.fechaNacimiento || fechaNacimientoPaciente || '';
 
   return (
     <View>
       <Text style={styles.subtitulo}>Identificación</Text>
       <CampoTexto
-        etiqueta="Fecha de nacimiento (AAAA-MM-DD)"
-        value={identificacion.fechaNacimiento}
+        etiqueta="Fecha de nacimiento"
+        value={fechaNacimientoEfectiva}
         onChangeText={(v) =>
           onChange({
             ...historiaClinica,

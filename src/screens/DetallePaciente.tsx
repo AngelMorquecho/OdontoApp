@@ -173,6 +173,7 @@ export default function DetallePaciente({ route, navigation }: Props) {
           <HistoriaClinicaForm
             historiaClinica={paciente.historiaClinica ?? crearHistoriaClinicaVacia()}
             onGuardar={alGuardarHistoriaClinica}
+            fechaNacimientoPaciente={paciente?.fechaNacimiento}
           />
         )}
 

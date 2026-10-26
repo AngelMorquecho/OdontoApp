@@ -126,7 +126,7 @@ export function PacientesProvider({ children }: Props) {
   const [tratamientos, setTratamientos] = useState<TratamientoPaciente[]>([]);
   const [datosDeUsuario, setDatosDeUsuario] = useState<typeof user>(null);
 
-  // Obtener el doctorId principal para Doctores y Asistentes asignados
+  // Identificador principal del consultorio
   const doctorId =
     user?.rol === "DOCTOR"
       ? (user.doctorId ?? user.id)
@@ -137,41 +137,47 @@ export function PacientesProvider({ children }: Props) {
   const cargando =
     !!user && user.rol !== "SUPER_ADMIN" && datosDeUsuario !== user;
 
+  // Unico useEffect desacoplado e inmune a fallos en sub-consultas
   useEffect(() => {
     let activo = true;
     if (!user || user.rol === "SUPER_ADMIN") return;
-    void Promise.all([
-      listarPacientes(),
-      listarCitas(),
-      listarRecetas(),
-      listarTratamientos(),
-    ])
-      .then(
-        ([
-          pacientesCargados,
-          citasCargadas,
-          recetasCargadas,
-          tratamientosCargados,
-        ]) => {
-          if (!activo) return;
-          setPacientes(pacientesCargados);
-          setCitas(citasCargadas);
-          setRecetas(recetasCargadas);
-          setTratamientos(tratamientosCargados);
-          setDatosDeUsuario(user);
-        },
-      )
-      .catch((error: unknown) => {
-        if (!activo) return;
-        Alert.alert("No se pudieron cargar los expedientes", textoError(error));
-        setDatosDeUsuario(user);
-      });
+
+    // 1. Pacientes (Inmune)
+    listarPacientes()
+      .then((data) => {
+        if (activo) setPacientes(data);
+      })
+      .catch((err) => console.error("Error cargando pacientes:", err));
+
+    // 2. Citas
+    listarCitas()
+      .then((data) => {
+        if (activo) setCitas(data);
+      })
+      .catch((err) => console.warn("Error cargando citas:", err));
+
+    // 3. Recetas
+    listarRecetas()
+      .then((data) => {
+        if (activo) setRecetas(data);
+      })
+      .catch((err) => console.warn("Error cargando recetas:", err));
+
+    // 4. Tratamientos
+    listarTratamientos()
+      .then((data) => {
+        if (activo) setTratamientos(data);
+      })
+      .catch((err) => console.warn("Error cargando tratamientos:", err));
+
+    setDatosDeUsuario(user);
+
     return () => {
       activo = false;
     };
   }, [user]);
 
-  // Visualización compartida de Pacientes
+  // Visualización compartida de Pacientes (Doctor y Asistente ven todo el consultorio)
   const pacientesVisibles = useMemo(() => {
     if (!user) return [];
 
@@ -180,14 +186,11 @@ export function PacientesProvider({ children }: Props) {
     }
 
     if (user.rol === "DOCTOR" || user.rol === "ASISTENTE") {
-      if (doctorId) {
-        return pacientes.filter((paciente) => paciente.doctorId === doctorId);
-      }
-      return pacientes;
+      return pacientes; // La RLS y la consulta de Supabase ya traen los del doctor y asistente
     }
 
     return [];
-  }, [pacientes, user, doctorId]);
+  }, [pacientes, user]);
 
   // Visualización compartida de Citas
   const citasVisibles = useMemo(() => {
@@ -198,14 +201,11 @@ export function PacientesProvider({ children }: Props) {
     }
 
     if (user.rol === "DOCTOR" || user.rol === "ASISTENTE") {
-      if (doctorId) {
-        return citas.filter((cita) => cita.doctorId === doctorId);
-      }
       return citas;
     }
 
     return [];
-  }, [citas, doctorId, user]);
+  }, [citas, user]);
 
   // Visualización compartida de Recetas
   const recetasVisibles = useMemo(() => {
@@ -216,14 +216,11 @@ export function PacientesProvider({ children }: Props) {
     }
 
     if (user.rol === "DOCTOR" || user.rol === "ASISTENTE") {
-      if (doctorId) {
-        return recetas.filter((receta) => receta.doctorId === doctorId);
-      }
       return recetas;
     }
 
     return [];
-  }, [doctorId, recetas, user]);
+  }, [recetas, user]);
 
   // Visualización compartida de Tratamientos
   const tratamientosVisibles = useMemo(() => {
@@ -234,14 +231,11 @@ export function PacientesProvider({ children }: Props) {
     }
 
     if (user.rol === "DOCTOR" || user.rol === "ASISTENTE") {
-      if (doctorId) {
-        return tratamientos.filter((item) => item.doctorId === doctorId);
-      }
       return tratamientos;
     }
 
     return [];
-  }, [doctorId, tratamientos, user]);
+  }, [tratamientos, user]);
 
   const obtenerPaciente = useCallback(
     (id: string) => pacientesVisibles.find((paciente) => paciente.id === id),
@@ -431,57 +425,54 @@ export function PacientesProvider({ children }: Props) {
     },
     [user?.rol],
   );
-const agregarRadiografia = useCallback(
-  async (pacienteId: string, imagen: Radiografia) => {
-    if ((user?.rol !== "DOCTOR" && user?.rol !== "ASISTENTE") || !doctorId) {
-      throw new Error(
-        "No se pudo validar el consultorio para adjuntar imágenes.",
-      );
-    }
 
-    const paciente = obtenerPaciente(pacienteId);
-    if (!paciente) {
-      throw new Error("No se encontró el paciente seleccionado.");
-    }
-
-    // 1. Subir la imagen física al Storage de Supabase
-    const subida = await subirRadiografia(doctorId, pacienteId, imagen.uri);
-
-    try {
-      // 2. Insertar el registro en la tabla 'archivos_pacientes' (guarda la descripción en la BD)
-      const nuevaImagenRegistrada = await guardarMetaArchivo(
-        pacienteId,
-        imagen.tipo || "Fotografía",
-        imagen.descripcion || imagen.notas || "",
-        subida.storagePath,
-      );
-
-      // 3. Actualizar el estado local para reflejar la tarjeta con su descripción
-      setPacientes((actuales) =>
-        actuales.map((item) =>
-          item.id === pacienteId
-            ? {
-                ...item,
-                radiografias: [nuevaImagenRegistrada, ...(item.radiografias ?? [])],
-              }
-            : item,
-        ),
-      );
-    } catch (error) {
-      // Si falla el guardado en la base de datos, limpiar la imagen subida al bucket
-      try {
-        await eliminarRadiografia({ uri: subida.uri, storagePath: subida.storagePath } as Radiografia);
-      } catch (cleanupError) {
-        console.error(
-          "No se pudo limpiar la imagen después del fallo al guardar el expediente.",
-          cleanupError,
+  const agregarRadiografia = useCallback(
+    async (pacienteId: string, imagen: Radiografia) => {
+      if ((user?.rol !== "DOCTOR" && user?.rol !== "ASISTENTE") || !doctorId) {
+        throw new Error(
+          "No se pudo validar el consultorio para adjuntar imágenes.",
         );
       }
-      throw error;
-    }
-  },
-  [doctorId, obtenerPaciente, user?.rol],
-);
+
+      const paciente = obtenerPaciente(pacienteId);
+      if (!paciente) {
+        throw new Error("No se encontró el paciente seleccionado.");
+      }
+
+      const subida = await subirRadiografia(doctorId, pacienteId, imagen.uri);
+
+      try {
+        const nuevaImagenRegistrada = await guardarMetaArchivo(
+          pacienteId,
+          imagen.tipo || "Fotografía",
+          imagen.descripcion || imagen.notas || "",
+          subida.storagePath,
+        );
+
+        setPacientes((actuales) =>
+          actuales.map((item) =>
+            item.id === pacienteId
+              ? {
+                  ...item,
+                  radiografias: [nuevaImagenRegistrada, ...(item.radiografias ?? [])],
+                }
+              : item,
+          ),
+        );
+      } catch (error) {
+        try {
+          await eliminarRadiografia({ uri: subida.uri, storagePath: subida.storagePath } as Radiografia);
+        } catch (cleanupError) {
+          console.error(
+            "No se pudo limpiar la imagen después del fallo al guardar el expediente.",
+            cleanupError,
+          );
+        }
+        throw error;
+      }
+    },
+    [doctorId, obtenerPaciente, user?.rol],
+  );
 
   const value = useMemo<PacientesContextValor>(
     () => ({

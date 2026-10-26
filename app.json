@@ -11,13 +11,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#E6F4FE"
     },
-    "ios": {
-      "supportsTablet": true,
-      "config": {
-        "usesNonExemptEncryption": false
-      },
-      "bundleIdentifier": "com.angel0107.OdontoApp"
-    },
+   "ios": {
+  "supportsTablet": true,
+  "config": {
+    "usesNonExemptEncryption": false
+  },
+  "bundleIdentifier": "com.angel0107.OdontoApp",
+  "infoPlist": {
+    "NSFaceIDUsageDescription": "OdontoApp requiere Face ID para permitirte ingresar rápidamente sin ingresar tu contraseña."
+  }
+},
     "android": {
       "package": "com.angel0107.OdontoApp",
       "adaptiveIcon": {
@@ -41,7 +44,14 @@
           "photosPermission": "OdontoApp necesita acceso a tus fotos para adjuntar radiografías e imágenes al expediente del paciente.",
           "cameraPermission": "OdontoApp necesita acceso a la cámara para tomar fotos intraorales y radiografías."
         }
+        
       ],
+      [
+    "expo-local-authentication",
+    {
+      "faceIDPermission": "OdontoApp requiere Face ID para permitirte ingresar rápidamente sin ingresar tu contraseña."
+    }
+  ],
       "expo-sharing",
       "@react-native-community/datetimepicker",
       "expo-secure-store"
