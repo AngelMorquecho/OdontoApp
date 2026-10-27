@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-       "EXPO_PUBLIC_SUPABASE_URL": "https://sbhqxgqyhotmvznqgfcd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://sbhqxgqyhotmvznqgfcd.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_IazOJ0aJSKNAOajAq5m5KQ_A7VjbgS8"
       }
     },
@@ -19,7 +19,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://sbhqxgqyhotmvznqgfcd.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_IazOJ0aJSKNAOajAq5m5KQ_A7VjbgS8"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_IazOJ0aJSKNAOajAq5m5KQ_A7VjbgS8",
+        "GRADLE_OPTS": "-Dorg.gradle.jvmargs=-Xmx3072m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
       }
     },
     "production": {
