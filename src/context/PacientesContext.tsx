@@ -124,9 +124,10 @@ export function PacientesProvider({ children }: Props) {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [tratamientos, setTratamientos] = useState<TratamientoPaciente[]>([]);
-  const [datosDeUsuario, setDatosDeUsuario] = useState<typeof user>(null);
+  
+  // Estado real de carga de Supabase
+  const [cargandoPacientes, setCargandoPacientes] = useState(true);
 
-  // Identificador principal del consultorio
   const doctorId =
     user?.rol === "DOCTOR"
       ? (user.doctorId ?? user.id)
@@ -134,50 +135,43 @@ export function PacientesProvider({ children }: Props) {
         ? user.doctorId
         : undefined;
 
-  const cargando =
-    !!user && user.rol !== "SUPER_ADMIN" && datosDeUsuario !== user;
-
-  // Unico useEffect desacoplado e inmune a fallos en sub-consultas
   useEffect(() => {
     let activo = true;
-    if (!user || user.rol === "SUPER_ADMIN") return;
+    if (!user || user.rol === "SUPER_ADMIN") {
+      setCargandoPacientes(false);
+      return;
+    }
 
-    // 1. Pacientes (Inmune)
-    listarPacientes()
+    setCargandoPacientes(true);
+
+    // 1. Cargar lista de Pacientes
+    const p1 = listarPacientes()
       .then((data) => {
         if (activo) setPacientes(data);
       })
-      .catch((err) => console.error("Error cargando pacientes:", err));
+      .catch((err) => console.error("Error cargando pacientes:", err))
+      .finally(() => {
+        if (activo) setCargandoPacientes(false); // 👈 Desactiva cargando SOLO cuando termina Supabase
+      });
 
-    // 2. Citas
+    // 2. Sub-consultas secundarias
     listarCitas()
-      .then((data) => {
-        if (activo) setCitas(data);
-      })
+      .then((data) => { if (activo) setCitas(data); })
       .catch((err) => console.warn("Error cargando citas:", err));
 
-    // 3. Recetas
     listarRecetas()
-      .then((data) => {
-        if (activo) setRecetas(data);
-      })
+      .then((data) => { if (activo) setRecetas(data); })
       .catch((err) => console.warn("Error cargando recetas:", err));
 
-    // 4. Tratamientos
     listarTratamientos()
-      .then((data) => {
-        if (activo) setTratamientos(data);
-      })
+      .then((data) => { if (activo) setTratamientos(data); })
       .catch((err) => console.warn("Error cargando tratamientos:", err));
-
-    setDatosDeUsuario(user);
 
     return () => {
       activo = false;
     };
   }, [user]);
 
-  // Visualización compartida de Pacientes (Doctor y Asistente ven todo el consultorio)
   const pacientesVisibles = useMemo(() => {
     if (!user) return [];
 
@@ -186,13 +180,12 @@ export function PacientesProvider({ children }: Props) {
     }
 
     if (user.rol === "DOCTOR" || user.rol === "ASISTENTE") {
-      return pacientes; // La RLS y la consulta de Supabase ya traen los del doctor y asistente
+      return pacientes;
     }
 
     return [];
   }, [pacientes, user]);
 
-  // Visualización compartida de Citas
   const citasVisibles = useMemo(() => {
     if (!user) return [];
 
@@ -207,7 +200,6 @@ export function PacientesProvider({ children }: Props) {
     return [];
   }, [citas, user]);
 
-  // Visualización compartida de Recetas
   const recetasVisibles = useMemo(() => {
     if (!user) return [];
 
@@ -222,7 +214,6 @@ export function PacientesProvider({ children }: Props) {
     return [];
   }, [recetas, user]);
 
-  // Visualización compartida de Tratamientos
   const tratamientosVisibles = useMemo(() => {
     if (!user) return [];
 
@@ -480,9 +471,9 @@ export function PacientesProvider({ children }: Props) {
       citas: citasVisibles,
       recetas: recetasVisibles,
       tratamientos: tratamientosVisibles,
-      cargandoCitas: cargando,
-      cargandoRecetas: cargando,
-      cargando,
+      cargandoCitas: cargandoPacientes,
+      cargandoRecetas: cargandoPacientes,
+      cargando: cargandoPacientes, // 👈 Ahora devuelve true de forma real hasta recibir la respuesta de la BD
       getCitas: () => citasVisibles,
       crearCita,
       cambiarEstatusCita,
@@ -504,7 +495,7 @@ export function PacientesProvider({ children }: Props) {
       citasVisibles,
       recetasVisibles,
       tratamientosVisibles,
-      cargando,
+      cargandoPacientes,
       crearCita,
       cambiarEstatusCita,
       getRecetasPaciente,

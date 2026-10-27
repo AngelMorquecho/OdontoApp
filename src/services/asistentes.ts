@@ -15,7 +15,20 @@ export const crearAsistente = async ({
   doctorId,
 }: CrearAsistenteParams) => {
   const supabaseMain = getSupabaseClient();
-  
+
+  // 1. Obtener el ID del consultorio desde la tabla 'consultorios' asociada al doctor
+  const { data: consultorio, error: consultorioError } = await supabaseMain
+    .from('consultorios')
+    .select('id')
+    .eq('doctor_id', doctorId)
+    .maybeSingle();
+
+  if (consultorioError) {
+    console.error('Error al consultar el consultorio del doctor:', consultorioError);
+  }
+
+  console.log('🏢 [crearAsistente] Consultorio encontrado:', consultorio?.id);
+
   // Extraer URL y Key de la instancia principal de Supabase
   const supabaseUrl = (supabaseMain as any).supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = (supabaseMain as any).supabaseKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,6 +46,7 @@ export const crearAsistente = async ({
     },
   });
 
+  // 2. Transmitir el consultorio_id correcto extraído de la tabla 'consultorios'
   const { data: authData, error: authError } = await tempSupabase.auth.signUp({
     email: email.trim().toLowerCase(),
     password: password,
@@ -41,6 +55,7 @@ export const crearAsistente = async ({
         nombre: nombre.trim(),
         rol: 'ASISTENTE',
         doctor_id: doctorId,
+        consultorio_id: consultorio?.id ?? null, // <-- ID proveniente de la tabla consultorios
       },
     },
   });
@@ -56,7 +71,7 @@ export const obtenerAsistentesPorDoctor = async (doctorId: string) => {
 
   const { data, error } = await supabase
     .from('perfiles')
-    .select('id, email, nombre, rol, doctor_id, created_at')
+    .select('id, email, nombre, rol, doctor_id, consultorio_id, created_at')
     .eq('doctor_id', doctorId)
     .order('created_at', { ascending: false });
 
@@ -64,6 +79,6 @@ export const obtenerAsistentesPorDoctor = async (doctorId: string) => {
     console.error('Error Supabase al traer asistentes:', error);
     throw error;
   }
-console.log(data)
+  console.log(data);
   return data || [];
 };

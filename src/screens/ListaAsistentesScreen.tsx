@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -75,24 +74,33 @@ export default function ListaAsistentesScreen({ navigation }: any) {
         </Pressable>
       </View>
 
-      {cargando ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={asistentes}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refrescando}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-            />
-          }
-          ListEmptyComponent={
+      <FlatList
+        data={cargando ? [] : asistentes}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refrescando}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        ListEmptyComponent={
+          cargando ? (
+            <View style={styles.contenedorSkeleton}>
+              {[1, 2, 3].map((key) => (
+                <View key={key} style={styles.cardSkeleton}>
+                  <View style={styles.avatarSkeleton} />
+                  <View style={styles.infoSkeleton}>
+                    <View style={styles.lineaNombreSkeleton} />
+                    <View style={styles.lineaEmailSkeleton} />
+                  </View>
+                  <View style={styles.badgeSkeleton} />
+                </View>
+              ))}
+            </View>
+          ) : (
             <View style={styles.centerEmpty}>
               <Ionicons
                 name="people-outline"
@@ -104,9 +112,9 @@ export default function ListaAsistentesScreen({ navigation }: any) {
                 Presiona el botón "Nueva" para agregar la primera asistente.
               </Text>
             </View>
-          }
-        />
-      )}
+          )
+        }
+      />
     </View>
   );
 }
@@ -192,11 +200,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   centerEmpty: {
     paddingTop: 80,
     alignItems: 'center',
@@ -216,5 +219,49 @@ const styles = StyleSheet.create({
   },
   presionado: {
     opacity: 0.8,
+  },
+
+  /* ESTILOS SKELETON PARA LISTA DE ASISTENTES */
+  contenedorSkeleton: {
+    gap: 12,
+  },
+  cardSkeleton: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    opacity: 0.6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avatarSkeleton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E2E8F0',
+    marginRight: 12,
+  },
+  infoSkeleton: {
+    flex: 1,
+    gap: 6,
+  },
+  lineaNombreSkeleton: {
+    width: '55%',
+    height: 14,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+  },
+  lineaEmailSkeleton: {
+    width: '75%',
+    height: 11,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 4,
+  },
+  badgeSkeleton: {
+    width: 65,
+    height: 22,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#E2E8F0',
   },
 });

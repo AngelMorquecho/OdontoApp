@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurTargetView } from 'expo-blur';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurTargetView } from "expo-blur";
 import {
   ActivityIndicator,
   Alert,
@@ -11,21 +11,34 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
-import { Paciente } from '../types/paciente';
-import { usePacientes } from '../context/PacientesContext';
-import FloatingTabBar, { FloatingTabRoute } from '../components/FloatingTabBar';
-import { borderRadius, colors, shadows } from '../constants/theme';
-import { obtenerUltimaCitaPaciente } from '../utils/citas';
+} from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/types";
+import { Paciente } from "../types/paciente";
+import { usePacientes } from "../context/PacientesContext";
+import FloatingTabBar, { FloatingTabRoute } from "../components/FloatingTabBar";
+import { borderRadius, colors, shadows } from "../constants/theme";
+import { obtenerUltimaCitaPaciente } from "../utils/citas";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ListaPacientes'>;
+type Props = NativeStackScreenProps<RootStackParamList, "ListaPacientes">;
 
 export default function ListaPacientes({ navigation }: Props) {
   const blurTarget = useRef<View | null>(null);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState("");
   const { pacientes, citas, cargando } = usePacientes();
+
+  // Control estricto de primera carga local para evitar el parpadeo
+  const [listaInicializada, setListaInicializada] = useState(false);
+
+  useEffect(() => {
+    // Cuando cargando es false y ya se hizo la primera asignación de pacientes, marcamos inicializada
+    if (!cargando) {
+      const timer = setTimeout(() => {
+        setListaInicializada(true);
+      }, 150); // Pequeño margen para asegurar renderizado de datos
+      return () => clearTimeout(timer);
+    }
+  }, [cargando, pacientes]);
 
   const pacientesFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -34,11 +47,11 @@ export default function ListaPacientes({ navigation }: Props) {
   }, [busqueda, pacientes]);
 
   const irADetalle = (paciente: Paciente) => {
-    navigation.navigate('DetallePaciente', { pacienteId: paciente.id });
+    navigation.navigate("DetallePaciente", { pacienteId: paciente.id });
   };
 
   const irAAgregar = () => {
-    navigation.navigate('AgregarPaciente');
+    navigation.navigate("AgregarPaciente");
   };
 
   const obtenerIniciales = (nombre: string) =>
@@ -46,18 +59,19 @@ export default function ListaPacientes({ navigation }: Props) {
       .trim()
       .split(/\s+/)
       .slice(0, 2)
-      .map((parte) => parte.charAt(0).toLocaleUpperCase('es'))
-      .join('');
+      .map((parte) => parte.charAt(0).toLocaleUpperCase("es"))
+      .join("");
 
-  const contactar = async (telefono: string, canal: 'llamada' | 'whatsapp') => {
-    const numeroLimpio = telefono.replace(/\D/g, '');
+  const contactar = async (telefono: string, canal: "llamada" | "whatsapp") => {
+    const numeroLimpio = telefono.replace(/\D/g, "");
     const url =
-      canal === 'llamada'
-        ? `tel:${telefono}`
-        : `https://wa.me/${numeroLimpio}`;
+      canal === "llamada" ? `tel:${telefono}` : `https://wa.me/${numeroLimpio}`;
 
-    if (canal === 'whatsapp' && !numeroLimpio) {
-      Alert.alert('Número no válido', 'El paciente no tiene un teléfono válido para WhatsApp.');
+    if (canal === "whatsapp" && !numeroLimpio) {
+      Alert.alert(
+        "Número no válido",
+        "El paciente no tiene un teléfono válido para WhatsApp.",
+      );
       return;
     }
 
@@ -65,150 +79,185 @@ export default function ListaPacientes({ navigation }: Props) {
       await Linking.openURL(url);
     } catch {
       Alert.alert(
-        canal === 'llamada' ? 'No se pudo iniciar la llamada' : 'No se pudo abrir WhatsApp',
-        'Verifica que el dispositivo tenga una aplicación compatible y que el teléfono sea válido.',
+        canal === "llamada"
+          ? "No se pudo iniciar la llamada"
+          : "No se pudo abrir WhatsApp",
+        "Verifica que el dispositivo tenga una aplicación compatible y que el teléfono sea válido.",
       );
     }
   };
 
-  if (cargando) {
-    return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
   const navegar = (ruta: FloatingTabRoute) => {
     switch (ruta) {
-      case 'ListaPacientes':
-        navigation.navigate('ListaPacientes');
+      case "ListaPacientes":
+        navigation.navigate("ListaPacientes");
         break;
-      case 'AgendaCitas':
-        navigation.navigate('AgendaCitas');
+      case "AgendaCitas":
+        navigation.navigate("AgendaCitas");
         break;
-      case 'EducacionPaciente':
-        navigation.navigate('EducacionPaciente');
+      case "EducacionPaciente":
+        navigation.navigate("EducacionPaciente");
         break;
-      case 'Ajustes':
-        navigation.navigate('Ajustes');
+      case "Ajustes":
+        navigation.navigate("Ajustes");
         break;
     }
   };
 
+  // Determinar si debemos mostrar el estado de carga
+  const estaCargandoLista =
+    cargando || (!listaInicializada && pacientes.length === 0);
+
   return (
     <View style={styles.pantalla}>
       <BlurTargetView ref={blurTarget} style={styles.contenedor}>
-      <TextInput
-        style={styles.buscador}
-        placeholder="Buscar paciente por nombre..."
-        placeholderTextColor={colors.textSecondary}
-        value={busqueda}
-        onChangeText={setBusqueda}
-        autoCapitalize="words"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-      />
+        <TextInput
+          style={styles.buscador}
+          placeholder="Buscar paciente por nombre..."
+          placeholderTextColor={colors.textSecondary}
+          value={busqueda}
+          onChangeText={setBusqueda}
+          autoCapitalize="words"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => navigation.navigate('AgendarCita', undefined)}
-        style={({ pressed }) => [styles.botonAgendar, pressed && styles.botonAccesoPresionado]}
-      >
-        <Ionicons name="calendar-outline" size={19} color={colors.primary} />
-        <Text numberOfLines={1} style={styles.textoAgendar}>Agendar cita</Text>
-        <Ionicons name="chevron-forward" size={17} color={colors.textSecondary} />
-      </Pressable>
-
-      <FlatList
-        data={pacientesFiltrados}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.lista}
-        ListEmptyComponent={
-          <Text style={styles.sinResultados}>
-            No se encontraron pacientes con ese nombre.
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("AgendarCita", undefined)}
+          style={({ pressed }) => [
+            styles.botonAgendar,
+            pressed && styles.botonAccesoPresionado,
+          ]}
+        >
+          <Ionicons name="calendar-outline" size={19} color={colors.primary} />
+          <Text numberOfLines={1} style={styles.textoAgendar}>
+            Agendar cita
           </Text>
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => irADetalle(item)}
-            style={({ pressed }) => [
-              styles.tarjeta,
-              pressed && styles.tarjetaPresionada,
-            ]}
-            android_ripple={{ color: colors.border }}
-          >
-            <View style={styles.avatar}>
-              <Text numberOfLines={1} style={styles.avatarTexto}>
-                {obtenerIniciales(item.nombre)}
-              </Text>
-            </View>
-            <View style={styles.infoPaciente}>
-              <View style={styles.filaNombre}>
-                <Text style={styles.nombre} numberOfLines={1}>{item.nombre}</Text>
-                <View style={styles.badgeEdad}>
-                  <Text style={styles.textoEdad} numberOfLines={1}>{item.edad} años</Text>
-                </View>
+          <Ionicons
+            name="chevron-forward"
+            size={17}
+            color={colors.textSecondary}
+          />
+        </Pressable>
+
+        <FlatList
+          data={pacientesFiltrados}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.lista}
+          ListEmptyComponent={
+            estaCargandoLista ? (
+              <View style={styles.contenedorSkeleton}>
+                {[1, 2, 3].map((key) => (
+                  <View key={key} style={styles.tarjetaSkeleton}>
+                    <View style={styles.avatarSkeleton} />
+                    <View style={styles.infoSkeleton}>
+                      <View style={styles.lineaLarga} />
+                      <View style={styles.lineaCorta} />
+                    </View>
+                  </View>
+                ))}
               </View>
-              <Text style={styles.detalle} numberOfLines={1}>{item.telefono}</Text>
-              <View style={styles.cajaMotivo}>
-                <Text style={styles.motivo} numberOfLines={2}>
-                  {obtenerUltimaCitaPaciente(item.id, citas)?.motivoConsulta ?? 'Sin citas registradas'}
+            ) : (
+              <Text style={styles.sinResultados}>
+                {busqueda.trim()
+                  ? "No se encontraron pacientes con ese nombre."
+                  : "Aún no hay pacientes registrados."}
+              </Text>
+            )
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => irADetalle(item)}
+              style={({ pressed }) => [
+                styles.tarjeta,
+                pressed && styles.tarjetaPresionada,
+              ]}
+              android_ripple={{ color: colors.border }}
+            >
+              <View style={styles.avatar}>
+                <Text numberOfLines={1} style={styles.avatarTexto}>
+                  {obtenerIniciales(item.nombre)}
                 </Text>
               </View>
-              <View style={styles.filaAccionesContacto}>
-                <View style={styles.accionesContacto}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Llamar a ${item.nombre}`}
-                    hitSlop={6}
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      void contactar(item.telefono, 'llamada');
-                    }}
-                    style={({ pressed }) => [
-                      styles.botonContacto,
-                      styles.botonLlamada,
-                      pressed && styles.contactoPresionado,
-                    ]}
-                  >
-                    <Ionicons name="call-outline" size={18} color="#0284C7" />
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Contactar a ${item.nombre} por WhatsApp`}
-                    hitSlop={6}
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      void contactar(item.telefono, 'whatsapp');
-                    }}
-                    style={({ pressed }) => [
-                      styles.botonContacto,
-                      styles.botonWhatsApp,
-                      pressed && styles.contactoPresionado,
-                    ]}
-                  >
-                    <Ionicons name="logo-whatsapp" size={18} color="#16A34A" />
-                  </Pressable>
+              <View style={styles.infoPaciente}>
+                <View style={styles.filaNombre}>
+                  <Text style={styles.nombre} numberOfLines={1}>
+                    {item.nombre}
+                  </Text>
+                  <View style={styles.badgeEdad}>
+                    <Text style={styles.textoEdad} numberOfLines={1}>
+                      {item.edad} años
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.detalle} numberOfLines={1}>
+                  {item.telefono}
+                </Text>
+                <View style={styles.cajaMotivo}>
+                  <Text style={styles.motivo} numberOfLines={2}>
+                    {obtenerUltimaCitaPaciente(item.id, citas)
+                      ?.motivoConsulta ?? "Sin citas registradas"}
+                  </Text>
+                </View>
+                <View style={styles.filaAccionesContacto}>
+                  <View style={styles.accionesContacto}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Llamar a ${item.nombre}`}
+                      hitSlop={6}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        void contactar(item.telefono, "llamada");
+                      }}
+                      style={({ pressed }) => [
+                        styles.botonContacto,
+                        styles.botonLlamada,
+                        pressed && styles.contactoPresionado,
+                      ]}
+                    >
+                      <Ionicons name="call-outline" size={18} color="#0284C7" />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Contactar a ${item.nombre} por WhatsApp`}
+                      hitSlop={6}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        void contactar(item.telefono, "whatsapp");
+                      }}
+                      style={({ pressed }) => [
+                        styles.botonContacto,
+                        styles.botonWhatsApp,
+                        pressed && styles.contactoPresionado,
+                      ]}
+                    >
+                      <Ionicons
+                        name="logo-whatsapp"
+                        size={18}
+                        color="#16A34A"
+                      />
+                    </Pressable>
+                  </View>
                 </View>
               </View>
-            </View>
-          </Pressable>
-        )}
-      />
+            </Pressable>
+          )}
+        />
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.botonFlotante,
-          pressed && styles.botonFlotantePresionado,
-        ]}
-        onPress={irAAgregar}
-        accessibilityRole="button"
-        accessibilityLabel="Agregar nuevo paciente"
-      >
-        <Ionicons name="add" size={29} color={colors.surface} />
-      </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.botonFlotante,
+            pressed && styles.botonFlotantePresionado,
+          ]}
+          onPress={irAAgregar}
+          accessibilityRole="button"
+          accessibilityLabel="Agregar nuevo paciente"
+        >
+          <Ionicons name="add" size={29} color={colors.surface} />
+        </Pressable>
       </BlurTargetView>
+
       <FloatingTabBar
         rutaActiva="ListaPacientes"
         onNavegar={navegar}
@@ -229,8 +278,8 @@ const styles = StyleSheet.create({
   },
   centrado: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.surface,
   },
   buscador: {
@@ -244,8 +293,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   botonAgendar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     minHeight: 44,
     paddingHorizontal: 12,
@@ -260,7 +309,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   botonAccesoPresionado: {
     opacity: 0.7,
@@ -269,9 +318,26 @@ const styles = StyleSheet.create({
   lista: {
     paddingBottom: 100,
   },
+  cajaCargandoLista: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 40,
+  },
+  textoCargandoLista: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  sinResultados: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    marginTop: 40,
+    fontSize: 15,
+  },
   tarjeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: 14,
@@ -288,27 +354,27 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   avatarTexto: {
     color: colors.primary,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   infoPaciente: {
     flex: 1,
     minWidth: 0,
   },
   filaNombre: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   nombre: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.textPrimary,
     flex: 1,
     flexShrink: 1,
@@ -320,26 +386,26 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   filaAccionesContacto: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
     marginTop: 8,
   },
   accionesContacto: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   botonContacto: {
     padding: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 20,
   },
   botonLlamada: {
-    backgroundColor: '#E0F2FE',
+    backgroundColor: "#E0F2FE",
   },
   botonWhatsApp: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: "#DCFCE7",
   },
   contactoPresionado: {
     opacity: 0.65,
@@ -355,10 +421,10 @@ const styles = StyleSheet.create({
   textoEdad: {
     color: colors.primary,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cajaMotivo: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     backgroundColor: colors.primaryLight,
     borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
@@ -371,25 +437,56 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     flexShrink: 1,
   },
-  sinResultados: {
-    textAlign: 'center',
-    color: colors.textSecondary,
-    marginTop: 40,
-    fontSize: 15,
-  },
   botonFlotante: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 104,
     width: 56,
     height: 56,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...shadows.md,
   },
   botonFlotantePresionado: {
     opacity: 0.7,
+  },
+  contenedorSkeleton: {
+    gap: 12,
+    paddingTop: 8,
+  },
+  tarjetaSkeleton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    opacity: 0.6,
+  },
+  avatarSkeleton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#E2E8F0",
+    marginRight: 12,
+  },
+  infoSkeleton: {
+    flex: 1,
+    gap: 8,
+  },
+  lineaLarga: {
+    width: "65%",
+    height: 14,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 4,
+  },
+  lineaCorta: {
+    width: "40%",
+    height: 10,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 4,
   },
 });

@@ -50,7 +50,9 @@ export default function TabRecetasTratamiento({
     setAccionEnCurso(`pdf-${receta.id}`);
     try {
       const uri = await generarPdfReceta(receta, paciente, consultorio);
-      await compartirPdfReceta(uri);
+      if (uri) {
+        await compartirPdfReceta(uri);
+      }
     } catch (error) {
       Alert.alert(
         'No se pudo compartir la receta',
@@ -102,75 +104,75 @@ export default function TabRecetasTratamiento({
         <ActivityIndicator color={colors.primary} style={styles.indicador} />
       ) : recetasActivas.length > 0 ? (
         recetasActivas.map((recetaActiva) => (
-        <View key={recetaActiva.id} style={styles.tarjetaActiva}>
-          <View style={styles.filaEstado}>
-            <View style={styles.badgeActivo}>
-              <View style={styles.puntoActivo} />
-              <Text style={styles.textoBadgeActivo}>Activo</Text>
+          <View key={recetaActiva.id} style={styles.tarjetaActiva}>
+            <View style={styles.filaEstado}>
+              <View style={styles.badgeActivo}>
+                <View style={styles.puntoActivo} />
+                <Text style={styles.textoBadgeActivo}>Activo</Text>
+              </View>
+              <Text style={styles.fecha}>{fechaLegible(recetaActiva.fechaEmision)}</Text>
             </View>
-            <Text style={styles.fecha}>{fechaLegible(recetaActiva.fechaEmision)}</Text>
-          </View>
-          <Text style={styles.etiquetaSeccion}>Diagnóstico</Text>
-          <Text style={styles.textoDiagnostico}>{recetaActiva.diagnostico}</Text>
-          {recetaActiva.medicamentos.length > 0 && (
-            <>
-              <Text style={styles.etiquetaSeccion}>Medicamentos y horarios</Text>
-              {recetaActiva.medicamentos.map((medicamento) => (
-                <View key={medicamento.id} style={styles.filaMedicamento}>
-                  <MaterialCommunityIcons
-                    name="pill"
-                    size={18}
-                    color={colors.primary}
-                  />
-                  <View style={styles.detalleMedicamento}>
-                    <Text style={styles.nombreMedicamento}>{medicamento.nombre}</Text>
-                    <Text style={styles.detalleTexto}>
-                      {medicamento.dosis} · {medicamento.frecuencia} · {medicamento.duracion}
-                    </Text>
-                    {medicamento.indicaciones ? (
-                      <Text style={styles.detalleTexto}>{medicamento.indicaciones}</Text>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
-            </>
-          )}
-          {recetaActiva.indicacionesGenerales ? (
-            <>
-              <Text style={styles.etiquetaSeccion}>Cuidados y recomendaciones</Text>
-              {recetaActiva.indicacionesGenerales
-                .split(/\n+/)
-                .filter(Boolean)
-                .map((indicacion, indice) => (
-                  <View key={`${indice}-${indicacion}`} style={styles.filaChecklist}>
+            <Text style={styles.etiquetaSeccion}>Diagnóstico</Text>
+            <Text style={styles.textoDiagnostico}>{recetaActiva.diagnostico}</Text>
+            {recetaActiva.medicamentos.length > 0 && (
+              <>
+                <Text style={styles.etiquetaSeccion}>Medicamentos y horarios</Text>
+                {recetaActiva.medicamentos.map((medicamento) => (
+                  <View key={medicamento.id} style={styles.filaMedicamento}>
                     <MaterialCommunityIcons
-                      name="checkbox-marked-circle-outline"
+                      name="pill"
                       size={18}
-                      color={colors.success}
+                      color={colors.primary}
                     />
-                    <Text style={styles.textoIndicacion}>{indicacion}</Text>
+                    <View style={styles.detalleMedicamento}>
+                      <Text style={styles.nombreMedicamento}>{medicamento.nombre}</Text>
+                      <Text style={styles.detalleTexto}>
+                        {medicamento.dosis} · {medicamento.frecuencia} · {medicamento.duracion}
+                      </Text>
+                      {medicamento.indicaciones ? (
+                        <Text style={styles.detalleTexto}>{medicamento.indicaciones}</Text>
+                      ) : null}
+                    </View>
                   </View>
                 ))}
-            </>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            disabled={accionEnCurso !== null}
-            onPress={() => void cambiarEstado(recetaActiva, 'completado')}
-            style={({ pressed }) => [
-              styles.botonEstado,
-              accionEnCurso !== null && styles.deshabilitado,
-              pressed && styles.presionado,
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="check-circle-outline"
-              size={18}
-              color={colors.success}
-            />
-            <Text style={styles.textoBotonEstado}>Marcar tratamiento completado</Text>
-          </Pressable>
-        </View>
+              </>
+            )}
+            {recetaActiva.indicacionesGenerales ? (
+              <>
+                <Text style={styles.etiquetaSeccion}>Cuidados y recomendaciones</Text>
+                {recetaActiva.indicacionesGenerales
+                  .split(/\n+/)
+                  .filter(Boolean)
+                  .map((indicacion, indice) => (
+                    <View key={`${indice}-${indicacion}`} style={styles.filaChecklist}>
+                      <MaterialCommunityIcons
+                        name="checkbox-marked-circle-outline"
+                        size={18}
+                        color={colors.success}
+                      />
+                      <Text style={styles.textoIndicacion}>{indicacion}</Text>
+                    </View>
+                  ))}
+              </>
+            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              disabled={accionEnCurso !== null}
+              onPress={() => void cambiarEstado(recetaActiva, 'completado')}
+              style={({ pressed }) => [
+                styles.botonEstado,
+                accionEnCurso !== null && styles.deshabilitado,
+                pressed && styles.presionado,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={18}
+                color={colors.success}
+              />
+              <Text style={styles.textoBotonEstado}>Marcar tratamiento completado</Text>
+            </Pressable>
+          </View>
         ))
       ) : (
         <View style={styles.vacio}>

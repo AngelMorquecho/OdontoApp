@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurTargetView } from 'expo-blur';
 import {
@@ -50,7 +50,16 @@ export default function EducacionPacienteScreen({ navigation }: Props) {
     null,
   );
   const [temaSeleccionado, setTemaSeleccionado] = useState<TemaEducativo | null>(null);
+  const [cargando, setCargando] = useState(true);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    // Simula la carga inicial de los recursos educativos
+    const timer = setTimeout(() => {
+      setCargando(false);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, []);
 
   const temasFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLocaleLowerCase('es');
@@ -123,182 +132,199 @@ export default function EducacionPacienteScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-    <BlurTargetView
-      ref={blurTarget}
-      style={[styles.pantalla, { paddingTop: Math.max(insets.top, 12) }]}
-    >
-      <View style={styles.filtros}>
-        <Text style={styles.introduccion}>
-          {modoPaciente
-            ? 'Guías sencillas para cuidar tu sonrisa, conocer tus tratamientos y resolver dudas sobre higiene bucal.'
-            : 'Información clara para conocer los tratamientos y cuidar tu salud bucal.'}
-        </Text>
+      <BlurTargetView
+        //ref={blurTarget}
+        style={[styles.pantalla, { paddingTop: Math.max(insets.top, 12) }]}
+      >
+        <View style={styles.filtros}>
+          <Text style={styles.introduccion}>
+            {modoPaciente
+              ? 'Guías sencillas para cuidar tu sonrisa, conocer tus tratamientos y resolver dudas sobre higiene bucal.'
+              : 'Información clara para conocer los tratamientos y cuidar tu salud bucal.'}
+          </Text>
 
-        <TextInput
-          accessibilityLabel="Buscar temas educativos"
-          style={styles.buscador}
-          placeholder="Buscar temas..."
-          placeholderTextColor={colors.textSecondary}
-          value={busqueda}
-          onChangeText={setBusqueda}
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
+          <TextInput
+            accessibilityLabel="Buscar temas educativos"
+            style={styles.buscador}
+            placeholder="Buscar temas..."
+            placeholderTextColor={colors.textSecondary}
+            value={busqueda}
+            onChangeText={setBusqueda}
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listaCategorias}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: categoriaSeleccionada === null }}
-            onPress={() => setCategoriaSeleccionada(null)}
-            style={({ pressed }) => [
-              styles.chipCategoria,
-              categoriaSeleccionada === null && styles.chipActivo,
-              pressed && styles.chipPresionado,
-            ]}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.listaCategorias}
+            keyboardShouldPersistTaps="handled"
           >
-            <Ionicons
-              name={ICONOS_CATEGORIA.Todos}
-              size={15}
-              color={categoriaSeleccionada === null ? colors.surface : colors.textSecondary}
-            />
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.textoChip,
-                categoriaSeleccionada === null && styles.textoChipActivo,
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: categoriaSeleccionada === null }}
+              onPress={() => setCategoriaSeleccionada(null)}
+              style={({ pressed }) => [
+                styles.chipCategoria,
+                categoriaSeleccionada === null && styles.chipActivo,
+                pressed && styles.chipPresionado,
               ]}
             >
-              Todos
-            </Text>
-          </Pressable>
-          {CATEGORIAS.map((categoria) => {
-            const activo = categoriaSeleccionada === categoria;
-            return (
-              <Pressable
-                key={categoria}
-                accessibilityRole="button"
-                accessibilityState={{ selected: activo }}
-                onPress={() => setCategoriaSeleccionada(activo ? null : categoria)}
-                style={({ pressed }) => [
-                  styles.chipCategoria,
-                  activo && styles.chipActivo,
-                  pressed && styles.chipPresionado,
+              <Ionicons
+                name={ICONOS_CATEGORIA.Todos}
+                size={15}
+                color={categoriaSeleccionada === null ? colors.surface : colors.textSecondary}
+              />
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.textoChip,
+                  categoriaSeleccionada === null && styles.textoChipActivo,
                 ]}
               >
-                <Ionicons
-                  name={ICONOS_CATEGORIA[categoria]}
-                  size={15}
-                  color={activo ? colors.surface : colors.textSecondary}
-                />
-                <Text
-                  numberOfLines={1}
-                  style={[styles.textoChip, activo && styles.textoChipActivo]}
+                Todos
+              </Text>
+            </Pressable>
+            {CATEGORIAS.map((categoria) => {
+              const activo = categoriaSeleccionada === categoria;
+              return (
+                <Pressable
+                  key={categoria}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: activo }}
+                  onPress={() => setCategoriaSeleccionada(activo ? null : categoria)}
+                  style={({ pressed }) => [
+                    styles.chipCategoria,
+                    activo && styles.chipActivo,
+                    pressed && styles.chipPresionado,
+                  ]}
                 >
-                  {categoria}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                  <Ionicons
+                    name={ICONOS_CATEGORIA[categoria]}
+                    size={15}
+                    color={activo ? colors.surface : colors.textSecondary}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.textoChip, activo && styles.textoChipActivo]}
+                  >
+                    {categoria}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-      <FlatList
-        style={styles.listaTemas}
-        contentContainerStyle={styles.contenidoLista}
-        data={gruposVisibles}
-        keyExtractor={(grupo) => grupo.categoria}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <Text style={styles.sinResultados}>
-            No encontramos temas con esos filtros. Prueba otra búsqueda.
-          </Text>
-        }
-        renderItem={({ item: grupo, index }) => (
-          <View style={[styles.grupo, index === 0 && styles.primerGrupo]}>
-            <Text style={styles.tituloGrupo}>{grupo.categoria}</Text>
-            <View style={styles.gridTemas}>{grupo.temas.map(renderTema)}</View>
-          </View>
-        )}
-      />
-
-      <Modal
-        visible={temaSeleccionado !== null}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setTemaSeleccionado(null)}
-      >
-        {temaSeleccionado && (
-          <View style={[styles.detallePantalla, { paddingTop: Math.max(insets.top, 12) }]}>
-            <View style={styles.barraDetalle}>
-              <View style={styles.tituloDetalleContenedor}>
-                <Text style={styles.categoriaDetalle}>{temaSeleccionado.categoria}</Text>
-                <Text style={styles.tituloDetalle}>{temaSeleccionado.titulo}</Text>
+        <FlatList
+          style={styles.listaTemas}
+          contentContainerStyle={styles.contenidoLista}
+          data={cargando ? [] : gruposVisibles}
+          keyExtractor={(grupo) => grupo.categoria}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={
+            cargando ? (
+              <View style={styles.contenedorSkeleton}>
+                <View style={styles.lineaTituloGrupoSkeleton} />
+                <View style={styles.gridSkeleton}>
+                  {[1, 2, 3, 4].map((key) => (
+                    <View key={key} style={styles.tarjetaSkeleton}>
+                      <View style={styles.ilustracionSkeleton} />
+                      <View style={styles.badgeSkeleton} />
+                      <View style={styles.tituloSkeleton} />
+                      <View style={styles.descripcionSkeletonLine1} />
+                      <View style={styles.descripcionSkeletonLine2} />
+                    </View>
+                  ))}
+                </View>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar detalle"
-                onPress={() => setTemaSeleccionado(null)}
-                hitSlop={10}
-                style={({ pressed }) => [styles.botonCerrar, pressed && styles.botonPresionado]}
-              >
-                <Text style={styles.textoCerrar}>Cerrar</Text>
-              </Pressable>
+            ) : (
+              <Text style={styles.sinResultados}>
+                No encontramos temas con esos filtros. Prueba otra búsqueda.
+              </Text>
+            )
+          }
+          renderItem={({ item: grupo, index }) => (
+            <View style={[styles.grupo, index === 0 && styles.primerGrupo]}>
+              <Text style={styles.tituloGrupo}>{grupo.categoria}</Text>
+              <View style={styles.gridTemas}>{grupo.temas.map(renderTema)}</View>
             </View>
-            <ScrollView
-              contentContainerStyle={[
-                styles.contenidoDetalle,
-                { paddingBottom: Math.max(insets.bottom, 120) },
-              ]}
-            >
-              <View style={styles.ilustracionDetalle}>
-                <SvgXml xml={temaSeleccionado.svgIlustracion} width="100%" height="100%" />
-              </View>
-              <Text style={styles.tituloSeccion}>¿En qué consiste?</Text>
-              <Text style={styles.textoDetalle}>{temaSeleccionado.explicacionDetallada}</Text>
+          )}
+        />
 
-              <Text style={styles.tituloSeccion}>Pasos del tratamiento</Text>
-              {temaSeleccionado.pasosTratamiento.map((paso, indice) => (
-                <View key={`${temaSeleccionado.id}-paso-${indice}`} style={styles.filaPaso}>
-                  <View style={styles.numeroPaso}>
-                    <Text style={styles.textoNumeroPaso}>{indice + 1}</Text>
-                  </View>
-                  <Text style={styles.textoPaso}>{paso}</Text>
+        <Modal
+          visible={temaSeleccionado !== null}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setTemaSeleccionado(null)}
+        >
+          {temaSeleccionado && (
+            <View style={[styles.detallePantalla, { paddingTop: Math.max(insets.top, 12) }]}>
+              <View style={styles.barraDetalle}>
+                <View style={styles.tituloDetalleContenedor}>
+                  <Text style={styles.categoriaDetalle}>{temaSeleccionado.categoria}</Text>
+                  <Text style={styles.tituloDetalle}>{temaSeleccionado.titulo}</Text>
                 </View>
-              ))}
-
-              <Text style={styles.tituloSeccion}>Recomendaciones</Text>
-              {temaSeleccionado.recomendacionesPostTratamiento.map((recomendacion, indice) => (
-                <View
-                  key={`${temaSeleccionado.id}-recomendacion-${indice}`}
-                  style={styles.filaRecomendacion}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar detalle"
+                  onPress={() => setTemaSeleccionado(null)}
+                  hitSlop={10}
+                  style={({ pressed }) => [styles.botonCerrar, pressed && styles.botonPresionado]}
                 >
-                  <Text style={styles.vineta}>•</Text>
-                  <Text style={styles.textoRecomendacion}>{recomendacion}</Text>
-                </View>
-              ))}
-
-              <View style={styles.aviso}>
-                <Text style={styles.textoAviso}>
-                  Este contenido es informativo y no sustituye una valoración ni las indicaciones
-                  personalizadas de tu odontólogo.
-                </Text>
+                  <Text style={styles.textoCerrar}>Cerrar</Text>
+                </Pressable>
               </View>
-            </ScrollView>
-          </View>
-        )}
-      </Modal>
-    </BlurTargetView>
-    <FloatingTabBar
-      rutaActiva="EducacionPaciente"
-      onNavegar={navegar}
-      blurTarget={blurTarget}
-      modoPaciente={modoPaciente}
-    />
+              <ScrollView
+                contentContainerStyle={[
+                  styles.contenidoDetalle,
+                  { paddingBottom: Math.max(insets.bottom, 120) },
+                ]}
+              >
+                <View style={styles.ilustracionDetalle}>
+                  <SvgXml xml={temaSeleccionado.svgIlustracion} width="100%" height="100%" />
+                </View>
+                <Text style={styles.tituloSeccion}>¿En qué consiste?</Text>
+                <Text style={styles.textoDetalle}>{temaSeleccionado.explicacionDetallada}</Text>
+
+                <Text style={styles.tituloSeccion}>Pasos del tratamiento</Text>
+                {temaSeleccionado.pasosTratamiento.map((paso, indice) => (
+                  <View key={`${temaSeleccionado.id}-paso-${indice}`} style={styles.filaPaso}>
+                    <View style={styles.numeroPaso}>
+                      <Text style={styles.textoNumeroPaso}>{indice + 1}</Text>
+                    </View>
+                    <Text style={styles.textoPaso}>{paso}</Text>
+                  </View>
+                ))}
+
+                <Text style={styles.tituloSeccion}>Recomendaciones</Text>
+                {temaSeleccionado.recomendacionesPostTratamiento.map((recomendacion, indice) => (
+                  <View
+                    key={`${temaSeleccionado.id}-recomendacion-${indice}`}
+                    style={styles.filaRecomendacion}
+                  >
+                    <Text style={styles.vineta}>•</Text>
+                    <Text style={styles.textoRecomendacion}>{recomendacion}</Text>
+                  </View>
+                ))}
+
+                <View style={styles.aviso}>
+                  <Text style={styles.textoAviso}>
+                    Este contenido es informativo y no sustituye una valoración ni las indicaciones
+                    personalizadas de tu odontólogo.
+                  </Text>
+                </View>
+              </ScrollView>
+            </View>
+          )}
+        </Modal>
+      </BlurTargetView>
+      <FloatingTabBar
+        rutaActiva="EducacionPaciente"
+        onNavegar={navegar}
+        blurTarget={blurTarget}
+        modoPaciente={modoPaciente}
+      />
     </View>
   );
 }
@@ -451,6 +477,70 @@ const styles = StyleSheet.create({
     marginTop: 36,
     lineHeight: 22,
   },
+
+  /* ESTILOS SKELETON PARA EDUCACIÓN PACIENTE */
+  contenedorSkeleton: {
+    paddingTop: 4,
+    gap: 12,
+  },
+  lineaTituloGrupoSkeleton: {
+    width: 140,
+    height: 18,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  gridSkeleton: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  tarjetaSkeleton: {
+    width: '48%',
+    flexBasis: '48%',
+    minHeight: 215,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    padding: 12,
+    backgroundColor: colors.surface,
+    opacity: 0.6,
+  },
+  ilustracionSkeleton: {
+    height: 94,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 10,
+  },
+  badgeSkeleton: {
+    width: 60,
+    height: 16,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 8,
+  },
+  tituloSkeleton: {
+    width: '85%',
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 8,
+  },
+  descripcionSkeletonLine1: {
+    width: '95%',
+    height: 10,
+    borderRadius: 4,
+    backgroundColor: '#F1F5F9',
+    marginBottom: 4,
+  },
+  descripcionSkeletonLine2: {
+    width: '70%',
+    height: 10,
+    borderRadius: 4,
+    backgroundColor: '#F1F5F9',
+  },
+
   detallePantalla: {
     flex: 1,
     backgroundColor: '#fff',

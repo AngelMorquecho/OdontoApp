@@ -201,6 +201,7 @@ export interface Paciente {
   fechaNacimiento?: string;
   correo?: string;
  doctor_id?: string;
+ consultorioId?:string;
   odontograma: Odontograma;
   historiaClinica: HistoriaClinica;
   radiografias: Radiografia[];

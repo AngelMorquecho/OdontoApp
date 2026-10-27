@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -16,6 +18,8 @@ import type { RootStackParamList } from '../navigation/types';
 import { usePacientes } from '../context/PacientesContext';
 import { borderRadius, colors } from '../constants/theme';
 import AppointmentDateTimePicker from '../components/AppointmentDateTimePicker';
+import { listarDoctoresPorConsultorio, DoctorOpcion } from '../services/doctores';
+import { getSupabaseClient } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AgregarPaciente'>;
 
@@ -29,6 +33,45 @@ export default function AgregarPaciente({ navigation }: Props) {
   const [telefono, setTelefono] = useState('');
   const [correo, setCorreo] = useState('');
   const [guardando, setGuardando] = useState(false);
+
+  // Estados para manejo de multi-doctor
+  const [rolUsuario, setRolUsuario] = useState<'DOCTOR' | 'ASISTENTE' | null>(null);
+  const [doctores, setDoctores] = useState<DoctorOpcion[]>([]);
+  const [doctorSeleccionado, setDoctorSeleccionado] = useState<DoctorOpcion | null>(null);
+  const [cargandoDoctores, setCargandoDoctores] = useState<boolean>(true);
+  const [mostrarModalDoctor, setMostrarModalDoctor] = useState<boolean>(false);
+
+useEffect(() => {
+  async function obtenerRolYDoctores() {
+    try {
+      const cliente = getSupabaseClient();
+      const { data: authData } = await cliente.auth.getUser();
+
+      if (!authData?.user) return;
+
+      const { data: perfil, error: errorPerfil } = await cliente
+        .from('perfiles')
+        .select('rol, consultorio_id')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+
+      if (errorPerfil || !perfil) return;
+
+      setRolUsuario(perfil.rol as 'DOCTOR' | 'ASISTENTE');
+
+      if (perfil.rol === 'ASISTENTE' && perfil.consultorio_id) {
+        const lista = await listarDoctoresPorConsultorio(perfil.consultorio_id);
+        setDoctores(lista);
+      }
+    } catch (error) {
+      console.error('Error al obtener rol o doctores:', error);
+    } finally {
+      setCargandoDoctores(false);
+    }
+  }
+
+  obtenerRolYDoctores();
+}, []);
 
   const actualizarFechaNacimiento = (fecha: Date) => {
     setFechaNacimiento(fecha);
@@ -57,6 +100,12 @@ export default function AgregarPaciente({ navigation }: Props) {
       Alert.alert('Falta información', 'Ingresa el nombre completo del paciente.');
       return;
     }
+
+    if (rolUsuario === 'ASISTENTE' && !doctorSeleccionado) {
+      Alert.alert('Falta información', 'Selecciona el doctor asignado a este paciente.');
+      return;
+    }
+
     if (!telefono.trim()) {
       Alert.alert('Falta información', 'Ingresa un teléfono de contacto.');
       return;
@@ -93,8 +142,14 @@ export default function AgregarPaciente({ navigation }: Props) {
         telefono: telefono.trim(),
         ...(fechaNacimiento ? { fechaNacimiento: fechaISO(fechaNacimiento) } : {}),
         ...(correo.trim() ? { correo: correo.trim() } : {}),
+        ...(rolUsuario === 'ASISTENTE' && doctorSeleccionado ? { doctorId: doctorSeleccionado.id } : {}),
       });
       navigation.goBack();
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'No se pudo guardar el paciente.',
+      );
     } finally {
       setGuardando(false);
     }
@@ -121,6 +176,35 @@ export default function AgregarPaciente({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.contenedor} keyboardShouldPersistTaps="handled">
         <View style={styles.tarjeta}>
           <Text style={styles.tituloSeccion}>Datos demográficos</Text>
+
+          {/* SELECTOR DE DOCTOR NATIVO (Solo para ASISTENTE) */}
+          {rolUsuario === 'ASISTENTE' && (
+            <View style={styles.contenedorDoctor}>
+              <Text style={styles.etiqueta}>Doctor Asignado *</Text>
+              {cargandoDoctores ? (
+                <ActivityIndicator color={colors.primary} style={styles.cargandoDoctor} />
+              ) : (
+                <Pressable
+                  onPress={() => setMostrarModalDoctor(true)}
+                  style={({ pressed }) => [
+                    styles.selectorDoctor,
+                    pressed && styles.botonPresionado,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.textoDoctor,
+                      !doctorSeleccionado && styles.placeholderDoctor,
+                    ]}
+                  >
+                    {doctorSeleccionado ? doctorSeleccionado.nombre : 'Selecciona un doctor...'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+                </Pressable>
+              )}
+            </View>
+          )}
+
           <Text style={styles.etiqueta}>Nombre completo *</Text>
           <TextInput
             style={styles.input}
@@ -216,6 +300,7 @@ export default function AgregarPaciente({ navigation }: Props) {
             autoCorrect={false}
           />
         </View>
+
         <Pressable
           style={({ pressed }) => [
             styles.boton,
@@ -230,6 +315,7 @@ export default function AgregarPaciente({ navigation }: Props) {
             {guardando ? 'Guardando...' : 'Guardar paciente'}
           </Text>
         </Pressable>
+
         {mostrarSelectorFecha && (
           <AppointmentDateTimePicker
             visible
@@ -240,6 +326,50 @@ export default function AgregarPaciente({ navigation }: Props) {
             onClose={() => setMostrarSelectorFecha(false)}
           />
         )}
+
+        {/* MODAL DESPLEGABLE DE SELECCIÓN DE DOCTOR */}
+        <Modal
+          visible={mostrarModalDoctor}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMostrarModalDoctor(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setMostrarModalDoctor(false)}>
+            <View style={styles.modalContenido}>
+              <Text style={styles.modalTitulo}>Seleccionar Doctor</Text>
+              <ScrollView style={styles.modalLista}>
+                {doctores.map((doc) => (
+                  <Pressable
+                    key={doc.id}
+                    style={({ pressed }) => [
+                      styles.opcionDoctor,
+                      doctorSeleccionado?.id === doc.id && styles.opcionDoctorSeleccionada,
+                      pressed && styles.botonPresionado,
+                    ]}
+                    onPress={() => {
+                      setDoctorSeleccionado(doc);
+                      setMostrarModalDoctor(false);
+                    }}
+                  >
+                    <Ionicons
+                      name="medkit-outline"
+                      size={18}
+                      color={doctorSeleccionado?.id === doc.id ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.textoOpcionDoctor,
+                        doctorSeleccionado?.id === doc.id && styles.textoOpcionDoctorSeleccionada,
+                      ]}
+                    >
+                      {doc.nombre}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          </Pressable>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -270,6 +400,32 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
+  },
+  contenedorDoctor: {
+    marginBottom: 4,
+  },
+  selectorDoctor: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F8FAFC',
+  },
+  textoDoctor: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  placeholderDoctor: {
+    color: colors.textSecondary,
+    fontWeight: '400',
+  },
+  cargandoDoctor: {
+    marginVertical: 10,
   },
   etiqueta: {
     fontSize: 13,
@@ -344,5 +500,52 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: 16,
     fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContenido: {
+    width: '100%',
+    maxHeight: '60%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalTitulo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  modalLista: {
+    maxHeight: 250,
+  },
+  opcionDoctor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.md,
+    marginBottom: 4,
+  },
+  opcionDoctorSeleccionada: {
+    backgroundColor: colors.primaryLight,
+  },
+  textoOpcionDoctor: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  textoOpcionDoctorSeleccionada: {
+    fontWeight: '700',
+    color: colors.primary,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,8 @@ interface Props {
   consultorio: DatosConsultorio;
   navigation: NativeStackNavigationProp<RootStackParamList, 'DetallePaciente'>;
 }
+
+const ELEMENTOS_POR_PAGINA = 3;
 
 function moneda(cantidad: number): string {
   return cantidad.toLocaleString('es-MX', {
@@ -106,35 +108,11 @@ export default function TabTratamientosPagos({
           <Text style={styles.textoProgreso}>{Math.round(progreso)}% pagado</Text>
 
           {tratamiento.abonos.length > 0 && (
-            <View style={styles.listaAbonos}>
-              <Text style={styles.tituloAbonos}>Historial de abonos</Text>
-              {tratamiento.abonos
-                .slice()
-                .sort((a, b) => b.fecha.localeCompare(a.fecha))
-                .map((abono) => (
-                  <View key={abono.id} style={styles.filaAbono}>
-                    <View style={styles.detalleAbono}>
-                      <Text style={styles.montoAbono}>{moneda(abono.monto)}</Text>
-                      <Text style={styles.metaAbono}>
-                        {fechaLegible(abono.fecha)} · {nombreMetodo(abono.metodoPago)}
-                        {abono.concepto ? ` · ${abono.concepto}` : ''}
-                      </Text>
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Imprimir o compartir comprobante del abono"
-                      onPress={() => void imprimirRecibo(abono, tratamiento)}
-                      style={({ pressed }) => [
-                        styles.botonComprobante,
-                        pressed && styles.presionado,
-                      ]}
-                    >
-                      <Ionicons name="receipt-outline" size={17} color={colors.primary} />
-                      <Text style={styles.textoComprobante}>Recibo</Text>
-                    </Pressable>
-                  </View>
-                ))}
-            </View>
+            <SeccionAbonosPaginada
+              abonos={tratamiento.abonos}
+              tratamiento={tratamiento}
+              onImprimirRecibo={imprimirRecibo}
+            />
           )}
 
           {!liquidado && (
@@ -164,6 +142,7 @@ export default function TabTratamientosPagos({
     <ScrollView
       contentContainerStyle={styles.contenido}
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled={true}
     >
       <Pressable
         accessibilityRole="button"
@@ -184,6 +163,126 @@ export default function TabTratamientosPagos({
         {renderizarLista(historial, 'Los tratamientos completados aparecerán aquí.')}
       </Seccion>
     </ScrollView>
+  );
+}
+
+/** Componente interno para gestionar la tabla scrollable y paginada de abonos */
+function SeccionAbonosPaginada({
+  abonos,
+  tratamiento,
+  onImprimirRecibo,
+}: {
+  abonos: AbonoTratamiento[];
+  tratamiento: TratamientoPaciente;
+  onImprimirRecibo: (abono: AbonoTratamiento, tratamiento: TratamientoPaciente) => void;
+}) {
+  const [paginaActual, setPaginaActual] = useState(1);
+
+  const abonosOrdenados = abonos
+    .slice()
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  const totalPaginas = Math.ceil(abonosOrdenados.length / ELEMENTOS_POR_PAGINA);
+  const inicio = (paginaActual - 1) * ELEMENTOS_POR_PAGINA;
+  const abonosPaginados = abonosOrdenados.slice(inicio, inicio + ELEMENTOS_POR_PAGINA);
+
+  return (
+    <View style={styles.listaAbonos}>
+      <View style={styles.encabezadoAbonos}>
+        <Text style={styles.tituloAbonos}>Historial de abonos ({abonos.length})</Text>
+        {totalPaginas > 1 && (
+          <Text style={styles.textoContadorPagina}>
+            Pág. {paginaActual} de {totalPaginas}
+          </Text>
+        )}
+      </View>
+
+      {/* ScrollView propio con scroll anidado habilitado */}
+      <ScrollView
+        nestedScrollEnabled={true}
+        style={styles.contenedorScrollAbonos}
+        showsVerticalScrollIndicator={true}
+      >
+        {abonosPaginados.map((abono) => (
+          <View key={abono.id} style={styles.filaAbono}>
+            <View style={styles.detalleAbono}>
+              <Text style={styles.montoAbono}>{moneda(abono.monto)}</Text>
+              <Text style={styles.metaAbono}>
+                {fechaLegible(abono.fecha)} · {nombreMetodo(abono.metodoPago)}
+                {abono.concepto ? ` · ${abono.concepto}` : ''}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Imprimir o compartir comprobante del abono"
+              onPress={() => void onImprimirRecibo(abono, tratamiento)}
+              style={({ pressed }) => [
+                styles.botonComprobante,
+                pressed && styles.presionado,
+              ]}
+            >
+              <Ionicons name="receipt-outline" size={17} color={colors.primary} />
+              <Text style={styles.textoComprobante}>Recibo</Text>
+            </Pressable>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Barra de Controles de Paginación */}
+      {totalPaginas > 1 && (
+        <View style={styles.barraPaginacion}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={paginaActual === 1}
+            onPress={() => setPaginaActual((prev) => Math.max(1, prev - 1))}
+            style={({ pressed }) => [
+              styles.btnPaginacion,
+              paginaActual === 1 && styles.btnDeshabilitado,
+              pressed && styles.presionado,
+            ]}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={16}
+              color={paginaActual === 1 ? colors.textSecondary : colors.primary}
+            />
+            <Text
+              style={[
+                styles.textoBtnPaginacion,
+                paginaActual === 1 && styles.textoBtnDeshabilitado,
+              ]}
+            >
+            
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            disabled={paginaActual === totalPaginas}
+            onPress={() => setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))}
+            style={({ pressed }) => [
+              styles.btnPaginacion,
+              paginaActual === totalPaginas && styles.btnDeshabilitado,
+              pressed && styles.presionado,
+            ]}
+          >
+            <Text
+              style={[
+                styles.textoBtnPaginacion,
+                paginaActual === totalPaginas && styles.textoBtnDeshabilitado,
+              ]}
+            >
+         
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={paginaActual === totalPaginas ? colors.textSecondary : colors.primary}
+            />
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -289,8 +388,13 @@ const styles = StyleSheet.create({
   fondoProgreso: { height: 7, overflow: 'hidden', marginTop: 14, borderRadius: 6, backgroundColor: '#E2E8F0' },
   progreso: { height: '100%', borderRadius: 6, backgroundColor: '#16A34A' },
   textoProgreso: { marginTop: 5, color: colors.textSecondary, fontSize: 10, textAlign: 'right' },
+  
+  /* ESTILOS DE LA SECCIÓN DE ABONOS SCROLLABLE Y PAGINADA */
   listaAbonos: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  tituloAbonos: { marginBottom: 8, color: colors.textPrimary, fontSize: 12, fontWeight: '700' },
+  encabezadoAbonos: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  tituloAbonos: { color: colors.textPrimary, fontSize: 12, fontWeight: '700' },
+  textoContadorPagina: { color: colors.textSecondary, fontSize: 11, fontWeight: '600' },
+  contenedorScrollAbonos: { maxHeight: 180 },
   filaAbono: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
   detalleAbono: { flex: 1, minWidth: 0 },
   montoAbono: { color: colors.textPrimary, fontSize: 13, fontWeight: '700' },
@@ -305,6 +409,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
   },
   textoComprobante: { color: colors.primary, fontSize: 11, fontWeight: '700' },
+  
+  /* BARRA Y BOTONES DE PAGINACIÓN */
+  barraPaginacion: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  btnPaginacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight,
+  },
+  btnDeshabilitado: {
+    backgroundColor: colors.background,
+  },
+  textoBtnPaginacion: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  textoBtnDeshabilitado: {
+    color: colors.textSecondary,
+  },
+
   botonAbonar: {
     minHeight: 42,
     flexDirection: 'row',

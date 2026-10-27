@@ -22,16 +22,46 @@ interface PacienteFila {
 export async function listarPacientes(): Promise<Paciente[]> {
   const cliente = getSupabaseClient();
   const { data: authData } = await cliente.auth.getUser();
+
+  if (!authData?.user) return [];
+
+  // 1. Obtener perfil del usuario activo para conocer su consultorio_id
+  const { data: perfil } = await cliente
+    .from('perfiles')
+    .select('consultorio_id, doctor_id, rol')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
   const doctorId = await obtenerDoctorIdAutenticado();
-
   const idBusqueda = doctorId || authData?.user?.id;
-  if (!idBusqueda) return [];
 
-  // 1. Consulta de pacientes del consultorio
-  let consulta = cliente
+  if (!perfil?.consultorio_id && !idBusqueda) return [];
+
+  // 2. Obtener los IDs de TODOS los doctores vinculados a este consultorio
+  let idsDoctores: string[] = [];
+
+  if (perfil?.consultorio_id) {
+    const { data: doctoresConsultorio } = await cliente
+      .from('perfiles')
+      .select('id')
+      .eq('consultorio_id', perfil.consultorio_id)
+      .eq('rol', 'DOCTOR');
+
+    idsDoctores = (doctoresConsultorio || []).map((doc) => doc.id);
+  }
+
+  // Fallback de seguridad si no hay consultorio o la lista está vacía
+  if (idsDoctores.length === 0 && idBusqueda) {
+    idsDoctores = [idBusqueda];
+  }
+
+  if (idsDoctores.length === 0) return [];
+
+  // 3. Consultar pacientes asignados a cualquiera de los doctores del consultorio
+  const consulta = cliente
     .from('pacientes')
     .select('*')
-    .or(`doctor_id.eq.${idBusqueda},creado_por.eq.${authData?.user?.id}`)
+    .in('doctor_id', idsDoctores)
     .order('nombre');
 
   const filas = (await ejecutarSupabase(
@@ -43,7 +73,7 @@ export async function listarPacientes(): Promise<Paciente[]> {
 
   const ids = filas.map((fila) => fila.id);
 
-  // 2. Carga paralela defensiva de Historias, Notas y Radiografías/Fotos
+  // 4. Carga paralela defensiva de Historias, Notas y Radiografías/Fotos
   let historias = new Map();
   let notas = new Map();
   const mapaRadiografias = new Map<string, Radiografia[]>();
@@ -56,7 +86,6 @@ export async function listarPacientes(): Promise<Paciente[]> {
     historias = hRes || new Map();
     notas = nRes || new Map();
 
-    // 👈 Usamos la función centralizada de storageService para cada paciente
     await Promise.all(
       ids.map(async (pacienteId) => {
         try {
@@ -72,7 +101,7 @@ export async function listarPacientes(): Promise<Paciente[]> {
     console.warn('Aviso: Detalle durante la carga masiva del expediente:', err);
   }
 
-  // 3. Mapeo final unificado
+  // 5. Mapeo final unificado
   return filas.map((fila) => {
     const historiaClinica = historias.get(fila.id) ?? crearHistoriaClinicaVacia();
 
@@ -95,7 +124,7 @@ export async function listarPacientes(): Promise<Paciente[]> {
 
 export async function crearPaciente(
   datos: Pick<Paciente, 'nombre' | 'edad' | 'telefono'> &
-    Partial<Pick<Paciente, 'fechaNacimiento' | 'correo'>>,
+    Partial<Pick<Paciente, 'fechaNacimiento' | 'correo' | 'doctorId'>>,
 ): Promise<Paciente> {
   const cliente = getSupabaseClient();
   const { data: authData, error: authError } = await cliente.auth.getUser();
@@ -106,7 +135,7 @@ export async function crearPaciente(
   // 1. Obtener perfil del usuario activo (Doctor o Asistente)
   const { data: perfil, error: perfilError } = await cliente
     .from('perfiles')
-    .select('id, rol, doctor_id, suscripcion_estado')
+    .select('id, rol, consultorio_id, suscripcion_estado')
     .eq('id', authData.user.id)
     .maybeSingle();
 
@@ -114,14 +143,19 @@ export async function crearPaciente(
     throw new Error(`No se pudo validar el usuario: ${perfilError?.message || 'Perfil no encontrado'}`);
   }
 
-  // 2. Determinar el doctor_id real que posee el expediente
-  const doctorIdAsignado = perfil.rol === 'ASISTENTE' ? perfil.doctor_id : perfil.id;
+  // 2. Asignar el doctor_id según el rol
+  let doctorIdAsignado: string | undefined;
 
-  if (!doctorIdAsignado) {
-    throw new Error('No se encontró un doctor válido asociado a esta cuenta.');
+  if (perfil.rol === 'ASISTENTE') {
+    if (!datos.doctorId) {
+      throw new Error('Debes seleccionar a qué doctor le asignarás este paciente.');
+    }
+    doctorIdAsignado = datos.doctorId;
+  } else {
+    doctorIdAsignado = perfil.id;
   }
 
-  // 3. Validar la licencia del consultorio
+  // 3. Validar la licencia del doctor/consultorio
   const { data: doctor, error: doctorError } = await cliente
     .from('perfiles')
     .select('suscripcion_estado')
@@ -135,7 +169,7 @@ export async function crearPaciente(
     throw new Error('La licencia del consultorio está inactiva o vencida; contacta al administrador.');
   }
 
-  // 4. Insertar el nuevo paciente
+  // 4. Insertar paciente asignando doctor_id
   const { data, error } = await cliente
     .from('pacientes')
     .insert({
@@ -173,15 +207,13 @@ export async function crearPaciente(
   const { error: odontogramaError } = await cliente
     .from('pacientes')
     .update({ odontograma })
-    .eq('id', fila.id)
-    .eq('doctor_id', doctorIdAsignado);
+    .eq('id', fila.id);
 
   if (odontogramaError) {
     const { error: cleanupError } = await cliente
       .from('pacientes')
       .delete()
-      .eq('id', fila.id)
-      .eq('doctor_id', doctorIdAsignado);
+      .eq('id', fila.id);
 
     throw new Error(
       `No se pudo inicializar el odontograma: ${odontogramaError.message}` +
@@ -202,8 +234,7 @@ export async function crearPaciente(
     const { error: cleanupError } = await cliente
       .from('pacientes')
       .delete()
-      .eq('id', paciente.id)
-      .eq('doctor_id', doctorIdAsignado);
+      .eq('id', paciente.id);
 
     throw new Error(
       `No se pudo inicializar la historia clínica: ${historyError.message}` +
@@ -216,9 +247,9 @@ export async function crearPaciente(
 
 export async function actualizarPaciente(paciente: Paciente): Promise<void> {
   const cliente = getSupabaseClient();
-  const doctorId = await obtenerDoctorIdAutenticado();
+  const { data: authData } = await cliente.auth.getUser();
 
-  if (!doctorId) throw new Error('No se pudo verificar la sesión del usuario.');
+  if (!authData?.user) throw new Error('No se pudo verificar la sesión del usuario.');
 
   const { error } = await cliente
     .from('pacientes')
@@ -229,23 +260,23 @@ export async function actualizarPaciente(paciente: Paciente): Promise<void> {
       fecha_nacimiento: paciente.fechaNacimiento || null,
       correo: paciente.correo || null,
       odontograma: paciente.odontograma,
+      doctor_id: paciente.doctorId,
     })
-    .eq('id', paciente.id)
-    .eq('doctor_id', doctorId);
+    .eq('id', paciente.id);
 
   if (error) throw new Error(`No se pudieron guardar los cambios del paciente: ${error.message}`);
 }
 
 export async function eliminarPaciente(pacienteId: string): Promise<void> {
-  const doctorId = await obtenerDoctorIdAutenticado();
+  const cliente = getSupabaseClient();
+  const { data: authData } = await cliente.auth.getUser();
 
-  if (!doctorId) throw new Error('No se pudo verificar la sesión del usuario.');
+  if (!authData?.user) throw new Error('No se pudo verificar la sesión del usuario.');
 
-  const { error } = await getSupabaseClient()
+  const { error } = await cliente
     .from('pacientes')
     .delete()
-    .eq('id', pacienteId)
-    .eq('doctor_id', doctorId);
+    .eq('id', pacienteId);
 
   if (error) throw new Error(`No se pudo eliminar el paciente: ${error.message}`);
 }

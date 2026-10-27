@@ -2,7 +2,6 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurTargetView } from 'expo-blur';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -121,160 +120,180 @@ export default function AgendaCitasScreen({ navigation }: Props) {
           />
         </View>
 
-      <FlatList
-        data={citasFiltradas}
-        keyExtractor={(cita) => cita.id}
-        contentContainerStyle={styles.lista}
-        ListEmptyComponent={
-          cargandoCitas ? (
-            <View style={styles.vacio}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.detalleVacio}>Cargando agenda…</Text>
-            </View>
-          ) : (
-            <View style={styles.vacio}>
-              <Ionicons name="calendar-outline" size={36} color={colors.primary} />
-              <Text style={styles.tituloVacio}>Sin citas {estatusActivo === 'programada' ? 'programadas' : ESTATUS.find((item) => item.valor === estatusActivo)?.etiqueta.toLowerCase()}</Text>
-              <Text style={styles.detalleVacio}>Las citas de este estado aparecerán aquí.</Text>
-            </View>
-          )
-        }
-        renderItem={({ item }) => {
-          const estiloBase = ESTATUS.find((estado) =>
-            item.estatus === 'confirmada'
-              ? estado.valor === 'programada'
-              : estado.valor === item.estatus,
-          ) ?? ESTATUS[0];
-          const estiloEstado = item.estatus === 'confirmada'
-            ? { ...estiloBase, etiqueta: 'Confirmada' }
-            : estiloBase;
-          const pacienteExiste = Boolean(obtenerPaciente(item.pacienteId));
-          return (
-            <View style={styles.tarjeta}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Abrir ficha de ${item.nombrePaciente}`}
-                onPress={() => {
-                  if (!pacienteExiste) {
-                    Alert.alert('Paciente no disponible', 'No se encontró el expediente asociado a esta cita.');
-                    return;
-                  }
-                  navigation.navigate('DetallePaciente', {
-                    pacienteId: item.pacienteId,
-                    pestana: 'notas',
-                  });
-                }}
-                style={({ pressed }) => [styles.filaPaciente, pressed && styles.presionado]}
-              >
-                <View style={[styles.avatar, { backgroundColor: estiloEstado.fondo }]}>
-                  <Text style={[styles.textoAvatar, { color: estiloEstado.color }]}>
-                    {iniciales(item.nombrePaciente)}
-                  </Text>
-                </View>
-                <View style={styles.infoPaciente}>
-                  <Text numberOfLines={1} style={styles.nombrePaciente}>{item.nombrePaciente}</Text>
-                  <Text numberOfLines={1} style={styles.fecha}>
-                    {fechaLegible(item.fecha)} · {item.hora}
-                  </Text>
-                </View>
-                <View style={[styles.badgeEstado, { backgroundColor: estiloEstado.fondo }]}>
-                  <Text style={[styles.textoEstado, { color: estiloEstado.color }]}>
-                    {estiloEstado.etiqueta}
-                  </Text>
-                </View>
-              </Pressable>
-
-              <View style={styles.separador} />
-              <Text style={styles.etiqueta}>Motivo de consulta</Text>
-              <Text style={styles.contenido}>{item.motivoConsulta}</Text>
-              <Text style={styles.etiqueta}>Tratamiento previsto</Text>
-              <Text style={styles.contenido}>{item.tratamientoPrevisto}</Text>
-              {item.notasAgenda ? (
-                <>
-                  <Text style={styles.etiqueta}>Notas</Text>
-                  <Text style={styles.contenido}>{item.notasAgenda}</Text>
-                </>
-              ) : null}
-
-              <View style={styles.filaAcciones}>
+        <FlatList
+          data={citasFiltradas}
+          keyExtractor={(cita) => cita.id}
+          contentContainerStyle={styles.lista}
+          ListEmptyComponent={
+            cargandoCitas ? (
+              <View style={styles.contenedorSkeleton}>
+                {[1, 2, 3].map((key) => (
+                  <View key={key} style={styles.tarjetaSkeleton}>
+                    <View style={styles.filaPacienteSkeleton}>
+                      <View style={styles.avatarSkeleton} />
+                      <View style={styles.infoSkeleton}>
+                        <View style={styles.lineaNombreSkeleton} />
+                        <View style={styles.lineaFechaSkeleton} />
+                      </View>
+                      <View style={styles.badgeSkeleton} />
+                    </View>
+                    <View style={styles.separadorSkeleton} />
+                    <View style={styles.lineaTextoCortaSkeleton} />
+                    <View style={styles.lineaTextoLargaSkeleton} />
+                    <View style={styles.botoneraSkeleton}>
+                      <View style={styles.botonSkeletonFlex} />
+                      <View style={styles.botonSkeletonFijo} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.vacio}>
+                <Ionicons name="calendar-outline" size={36} color={colors.primary} />
+                <Text style={styles.tituloVacio}>
+                  Sin citas {estatusActivo === 'programada' ? 'programadas' : ESTATUS.find((item) => item.valor === estatusActivo)?.etiqueta.toLowerCase()}
+                </Text>
+                <Text style={styles.detalleVacio}>Las citas de este estado aparecerán aquí.</Text>
+              </View>
+            )
+          }
+          renderItem={({ item }) => {
+            const estiloBase = ESTATUS.find((estado) =>
+              item.estatus === 'confirmada'
+                ? estado.valor === 'programada'
+                : estado.valor === item.estatus,
+            ) ?? ESTATUS[0];
+            const estiloEstado = item.estatus === 'confirmada'
+              ? { ...estiloBase, etiqueta: 'Confirmada' }
+              : estiloBase;
+            const pacienteExiste = Boolean(obtenerPaciente(item.pacienteId));
+            return (
+              <View style={styles.tarjeta}>
                 <Pressable
                   accessibilityRole="button"
-                  disabled={!pacienteExiste}
-                  onPress={() =>
+                  accessibilityLabel={`Abrir ficha de ${item.nombrePaciente}`}
+                  onPress={() => {
+                    if (!pacienteExiste) {
+                      Alert.alert('Paciente no disponible', 'No se encontró el expediente asociado a esta cita.');
+                      return;
+                    }
                     navigation.navigate('DetallePaciente', {
                       pacienteId: item.pacienteId,
                       pestana: 'notas',
-                    })
-                  }
-                  style={({ pressed }) => [
-                    styles.botonConsulta,
-                    pressed && styles.presionado,
-                    !pacienteExiste && styles.deshabilitado,
-                  ]}
+                    });
+                  }}
+                  style={({ pressed }) => [styles.filaPaciente, pressed && styles.presionado]}
                 >
-                  <Text style={styles.textoConsulta}>Iniciar consulta</Text>
+                  <View style={[styles.avatar, { backgroundColor: estiloEstado.fondo }]}>
+                    <Text style={[styles.textoAvatar, { color: estiloEstado.color }]}>
+                      {iniciales(item.nombrePaciente)}
+                    </Text>
+                  </View>
+                  <View style={styles.infoPaciente}>
+                    <Text numberOfLines={1} style={styles.nombrePaciente}>{item.nombrePaciente}</Text>
+                    <Text numberOfLines={1} style={styles.fecha}>
+                      {fechaLegible(item.fecha)} · {item.hora}
+                    </Text>
+                  </View>
+                  <View style={[styles.badgeEstado, { backgroundColor: estiloEstado.fondo }]}>
+                    <Text style={[styles.textoEstado, { color: estiloEstado.color }]}>
+                      {estiloEstado.etiqueta}
+                    </Text>
+                  </View>
                 </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: menuAbierto === item.id }}
-                  onPress={() => setMenuAbierto((abierto) => (abierto === item.id ? null : item.id))}
-                  style={({ pressed }) => [styles.botonEstado, pressed && styles.presionado]}
-                >
-                  <Text style={styles.textoCambiar}>Cambiar estado</Text>
-                </Pressable>
-              </View>
 
-              {menuAbierto === item.id && (
-                <View style={styles.menuEstados}>
-                  {ACCIONES_ESTATUS.filter((opcion) => opcion.valor !== item.estatus).map((opcion) => (
-                    <Pressable
-                      key={opcion.valor}
-                      accessibilityRole="button"
-                      disabled={citaEnProceso !== null}
-                      onPress={() => void cambiarEstado(item.id, opcion.valor)}
-                      style={({ pressed }) => [
-                        styles.opcionEstado,
-                        {
-                          backgroundColor:
-                            ESTATUS.find((estado) => estado.valor === opcion.valor)?.fondo ??
-                            colors.primaryLight,
-                          borderColor:
-                            ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
-                            colors.primary,
-                        },
-                        citaEnProceso !== null && styles.deshabilitado,
-                        pressed && styles.presionado,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.textoOpcionEstado,
+                <View style={styles.separador} />
+                <Text style={styles.etiqueta}>Motivo de consulta</Text>
+                <Text style={styles.contenido}>{item.motivoConsulta}</Text>
+                <Text style={styles.etiqueta}>Tratamiento previsto</Text>
+                <Text style={styles.contenido}>{item.tratamientoPrevisto}</Text>
+                {item.notasAgenda ? (
+                  <>
+                    <Text style={styles.etiqueta}>Notas</Text>
+                    <Text style={styles.contenido}>{item.notasAgenda}</Text>
+                  </>
+                ) : null}
+
+                <View style={styles.filaAcciones}>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!pacienteExiste}
+                    onPress={() =>
+                      navigation.navigate('DetallePaciente', {
+                        pacienteId: item.pacienteId,
+                        pestana: 'notas',
+                      })
+                    }
+                    style={({ pressed }) => [
+                      styles.botonConsulta,
+                      pressed && styles.presionado,
+                      !pacienteExiste && styles.deshabilitado,
+                    ]}
+                  >
+                    <Text style={styles.textoConsulta}>Iniciar consulta</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: menuAbierto === item.id }}
+                    onPress={() => setMenuAbierto((abierto) => (abierto === item.id ? null : item.id))}
+                    style={({ pressed }) => [styles.botonEstado, pressed && styles.presionado]}
+                  >
+                    <Text style={styles.textoCambiar}>Cambiar estado</Text>
+                  </Pressable>
+                </View>
+
+                {menuAbierto === item.id && (
+                  <View style={styles.menuEstados}>
+                    {ACCIONES_ESTATUS.filter((opcion) => opcion.valor !== item.estatus).map((opcion) => (
+                      <Pressable
+                        key={opcion.valor}
+                        accessibilityRole="button"
+                        disabled={citaEnProceso !== null}
+                        onPress={() => void cambiarEstado(item.id, opcion.valor)}
+                        style={({ pressed }) => [
+                          styles.opcionEstado,
                           {
-                            color:
+                            backgroundColor:
+                              ESTATUS.find((estado) => estado.valor === opcion.valor)?.fondo ??
+                              colors.primaryLight,
+                            borderColor:
                               ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
                               colors.primary,
                           },
+                          citaEnProceso !== null && styles.deshabilitado,
+                          pressed && styles.presionado,
                         ]}
                       >
-                        {citaEnProceso === item.id ? 'Actualizando…' : opcion.etiqueta}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-          );
-        }}
-      />
+                        <Text
+                          style={[
+                            styles.textoOpcionEstado,
+                            {
+                              color:
+                                ESTATUS.find((estado) => estado.valor === opcion.valor)?.color ??
+                                colors.primary,
+                            },
+                          ]}
+                        >
+                          {citaEnProceso === item.id ? 'Actualizando…' : opcion.etiqueta}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          }}
+        />
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => navigation.navigate('AgendarCita', undefined)}
-        style={({ pressed }) => [styles.botonFlotante, pressed && styles.presionado]}
-      >
-        <Ionicons name="add" size={29} color={colors.surface} />
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.navigate('AgendarCita', undefined)}
+          style={({ pressed }) => [styles.botonFlotante, pressed && styles.presionado]}
+        >
+          <Ionicons name="add" size={29} color={colors.surface} />
+        </Pressable>
       </BlurTargetView>
+
       <FloatingTabBar
         rutaActiva="AgendaCitas"
         onNavegar={navegar}
@@ -363,9 +382,38 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 24,
   },
-  iconoVacio: { fontSize: 36 },
   tituloVacio: { marginTop: 12, color: colors.textPrimary, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   detalleVacio: { marginTop: 6, color: colors.textSecondary, fontSize: 13, textAlign: 'center' },
+  
+  /* ESTILOS SKELETON PARA AGENDA DE CITAS */
+  contenedorSkeleton: { gap: 12, paddingTop: 4 },
+  tarjetaSkeleton: {
+    padding: 14,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    opacity: 0.6,
+  },
+  filaPacienteSkeleton: { flexDirection: 'row', alignItems: 'center' },
+  avatarSkeleton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E2E8F0',
+    marginRight: 10,
+  },
+  infoSkeleton: { flex: 1, gap: 6 },
+  lineaNombreSkeleton: { width: '60%', height: 14, backgroundColor: '#E2E8F0', borderRadius: 4 },
+  lineaFechaSkeleton: { width: '40%', height: 10, backgroundColor: '#F1F5F9', borderRadius: 4 },
+  badgeSkeleton: { width: 70, height: 22, borderRadius: 11, backgroundColor: '#E2E8F0' },
+  separadorSkeleton: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  lineaTextoCortaSkeleton: { width: '30%', height: 10, backgroundColor: '#E2E8F0', borderRadius: 4, marginBottom: 6 },
+  lineaTextoLargaSkeleton: { width: '85%', height: 12, backgroundColor: '#F1F5F9', borderRadius: 4, marginBottom: 12 },
+  botoneraSkeleton: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  botonSkeletonFlex: { flex: 1, height: 40, borderRadius: borderRadius.md, backgroundColor: '#E2E8F0' },
+  botonSkeletonFijo: { width: 110, height: 40, borderRadius: borderRadius.md, backgroundColor: '#F1F5F9' },
+
   botonFlotante: {
     position: 'absolute',
     right: 20,

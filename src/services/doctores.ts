@@ -6,6 +6,12 @@ export type NuevaCuentaDoctor = Omit<CuentaDoctor, 'id' | 'fechaAlta'> & {
   passwordTemporal: string;
 };
 
+export interface DoctorOpcion {
+  id: string;
+  nombre: string;
+  email: string;
+}
+
 interface DoctorFila {
   id: string;
   nombre: string;
@@ -37,6 +43,25 @@ export async function listarDoctores(): Promise<CuentaDoctor[]> {
     .order('created_at', { ascending: false });
   if (error) throw new Error(`No se pudieron cargar los doctores: ${error.message}`);
   return (data as unknown as DoctorFila[]).map(desdeFila);
+}
+
+/**
+ * Obtiene los doctores pertenecientes al consultorio del usuario activo.
+ * Se utiliza para que la asistente seleccione el doctor al registrar un paciente.
+ */
+export async function listarDoctoresPorConsultorio(consultorioId: string): Promise<DoctorOpcion[]> {
+  if (!consultorioId) return [];
+
+  const { data, error } = await getSupabaseClient()
+    .from('perfiles')
+    .select('id, nombre, email')
+    .eq('consultorio_id', consultorioId)
+    .eq('rol', 'DOCTOR')
+    .order('nombre', { ascending: true });
+
+  if (error) throw new Error(`No se pudieron cargar los doctores del consultorio: ${error.message}`);
+  
+  return (data || []) as DoctorOpcion[];
 }
 
 export function obtenerEstadoDoctor(doctor: CuentaDoctor): EstadoDoctor {
